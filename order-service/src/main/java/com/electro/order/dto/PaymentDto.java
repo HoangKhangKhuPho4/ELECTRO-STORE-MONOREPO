@@ -116,6 +116,21 @@ public class PaymentDto {
     }
 
     /**
+     * Kết quả gọi API hoàn tiền gateway
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class GatewayRefundResult {
+        private boolean success;
+        private String gatewayRefundId;
+        private String responseCode;
+        private String message;
+        private String rawResponse;
+    }
+
+    /**
      * Response cho payment transaction history
      */
     @Data

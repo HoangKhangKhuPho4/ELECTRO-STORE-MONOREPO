@@ -3,6 +3,7 @@ package com.electro.order.service.payment;
 import com.electro.order.config.PaymentConfig;
 import com.electro.order.dto.PaymentDto;
 import com.electro.order.entity.Order;
+import com.electro.order.entity.PaymentTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,11 +12,16 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Tích hợp VNPay Payment Gateway.
@@ -34,6 +40,9 @@ public class VNPayService {
 
     @Autowired
     private PaymentConfig paymentConfig;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     /**
      * Tạo URL thanh toán VNPay
@@ -166,6 +175,82 @@ public class VNPayService {
                     .success(false)
                     .verified(false)
                     .message("Lỗi xác thực callback VNPay: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * Gọi API hoàn tiền VNPay (full/partial refund).
+     */
+    public PaymentDto.GatewayRefundResult refund(
+            PaymentTransaction originalTxn, BigDecimal amount, String refundReason) {
+        try {
+            PaymentConfig.VnPay vnpayConfig = paymentConfig.getVnpay();
+            if (originalTxn.getGatewayTransactionId() == null || originalTxn.getGatewayTransactionId().isBlank()) {
+                return PaymentDto.GatewayRefundResult.builder()
+                        .success(false)
+                        .message("Thiếu mã giao dịch VNPay gốc (gatewayTransactionId)")
+                        .build();
+            }
+
+            String requestId = "RF_" + System.currentTimeMillis();
+            long refundAmount = amount.multiply(BigDecimal.valueOf(100)).longValue();
+            String createDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            String txnDate = originalTxn.getCreatedAt() != null
+                    ? originalTxn.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+                    : createDate;
+
+            Map<String, String> vnpParams = new TreeMap<>();
+            vnpParams.put("vnp_RequestId", requestId);
+            vnpParams.put("vnp_Version", vnpayConfig.getVersion());
+            vnpParams.put("vnp_Command", "refund");
+            vnpParams.put("vnp_TmnCode", vnpayConfig.getTmnCode());
+            vnpParams.put("vnp_TransactionType", "03");
+            vnpParams.put("vnp_TxnRef", originalTxn.getTransactionRef());
+            vnpParams.put("vnp_Amount", String.valueOf(refundAmount));
+            vnpParams.put("vnp_OrderInfo", refundReason != null ? refundReason : "Hoan tien don hang");
+            vnpParams.put("vnp_TransactionNo", originalTxn.getGatewayTransactionId());
+            vnpParams.put("vnp_TransactionDate", txnDate);
+            vnpParams.put("vnp_CreateBy", "admin");
+            vnpParams.put("vnp_CreateDate", createDate);
+            vnpParams.put("vnp_IpAddr", "127.0.0.1");
+
+            String signData = buildQueryString(vnpParams, false);
+            String secureHash = hmacSHA512(vnpayConfig.getHashSecret(), signData);
+            vnpParams.put("vnp_SecureHash", secureHash);
+
+            String jsonBody = objectMapper.writeValueAsString(vnpParams);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(vnpayConfig.getApiUrl()))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            String body = httpResponse.body();
+            log.info("VNPay refund response: {}", body);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> responseMap = objectMapper.readValue(body, Map.class);
+            String responseCode = responseMap.get("vnp_ResponseCode") != null
+                    ? responseMap.get("vnp_ResponseCode").toString() : null;
+            boolean success = "00".equals(responseCode);
+            String txnNo = responseMap.get("vnp_TransactionNo") != null
+                    ? responseMap.get("vnp_TransactionNo").toString() : requestId;
+
+            return PaymentDto.GatewayRefundResult.builder()
+                    .success(success)
+                    .gatewayRefundId(txnNo)
+                    .responseCode(responseCode)
+                    .message(success ? "Hoàn tiền VNPay thành công" : "VNPay refund failed: " + responseCode)
+                    .rawResponse(body)
+                    .build();
+        } catch (Exception e) {
+            log.error("VNPay refund error", e);
+            return PaymentDto.GatewayRefundResult.builder()
+                    .success(false)
+                    .message("Lỗi gọi API hoàn tiền VNPay: " + e.getMessage())
                     .build();
         }
     }

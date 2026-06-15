@@ -8,12 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface OrderDetailRepository extends JpaRepository<OrderDetail, Integer> {
 
     List<OrderDetail> findByOrderId(Integer orderId);
+
+    @Query("SELECT od FROM OrderDetail od WHERE od.order.id IN :orderIds")
+    List<OrderDetail> findByOrderIds(@Param("orderIds") Collection<Integer> orderIds);
 
     @Query("SELECT COALESCE(SUM(od.quantity), 0) FROM OrderDetail od WHERE od.productId = :productId")
     Long sumQuantityByProductId(@Param("productId") Integer productId);

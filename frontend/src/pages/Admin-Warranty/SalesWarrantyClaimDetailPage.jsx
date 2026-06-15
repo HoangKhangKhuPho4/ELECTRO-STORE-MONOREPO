@@ -48,9 +48,10 @@ import {
 } from "../../services/warrantyService";
 import { CLAIM_STATUS_COLORS, CLAIM_STATUS_LABELS, RESOLUTION_OPTIONS } from "../../utils/warrantyClaimStatus";
 import { isApiSuccess } from "../../utils/apiResponse";
+import { isGhnReturnTracking, isPlaceholderReturnTracking } from "../../utils/warrantyTracking";
 import { usePermissions } from "../../hooks/usePermissions";
 
-const RETURN_CARRIERS = ["GHTK", "GHN", "Viettel Post", "J&T Express", "VNPost", "Khác"];
+const RETURN_CARRIERS = ["GHN"];
 
 const TRACKING_VISIBLE_STATUSES = ["APPROVED", "RECEIVED", "INSPECTING", "REPAIRING", "COMPLETED"];
 
@@ -67,7 +68,7 @@ const SalesWarrantyClaimDetailPage = () => {
   const [inspectionText, setInspectionText] = useState("");
   const [resolution, setResolution] = useState("REPLACE");
   const [resolveNotes, setResolveNotes] = useState("");
-  const [returnCarrier, setReturnCarrier] = useState("GHTK");
+  const [returnCarrier, setReturnCarrier] = useState("GHN");
   const [returnTrackingCode, setReturnTrackingCode] = useState("");
   const [ghnTracking, setGhnTracking] = useState(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
@@ -217,8 +218,7 @@ const SalesWarrantyClaimDetailPage = () => {
     toast.info(`Đã copy: ${text}`);
   };
 
-  const isGhnReturn = (carrier, code) =>
-    (carrier || "").toUpperCase().includes("GHN") && code && !String(code).startsWith("GHTK-");
+  const isGhnReturn = isGhnReturnTracking;
 
   const loadGhnTracking = async () => {
     setLoadingTracking(true);
@@ -367,8 +367,14 @@ const SalesWarrantyClaimDetailPage = () => {
           >
             <Typography variant="h6" fontWeight="bold" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
               <ShipIcon color="primary" />
-              Theo dõi thu hồi máy lỗi (vận chuyển)
+              Thu hồi BH — Reverse Logistics (GHN)
             </Typography>
+            {isPlaceholderReturnTracking(claim.returnTrackingCode) && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Mã <strong>{claim.returnTrackingCode}</strong> là mã cũ tự sinh — không có trên GHN. Cần hủy và
+                duyệt lại để GHN cấp mã thật.
+              </Alert>
+            )}
             <Grid container spacing={2}>
               <Grid item xs={12} sm={4}>
                 <Typography variant="caption" color="text.secondary" display="block">
@@ -447,14 +453,13 @@ const SalesWarrantyClaimDetailPage = () => {
               sx={{ mb: 2 }}
             />
             <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
-              Vận chuyển thu hồi (hiển thị cho Kho khi máy về)
+              Vận chuyển thu hồi — chỉ qua GHN (Reverse Logistics)
             </Typography>
-            {claim.orderId && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Chọn <strong>GHN</strong> và để trống mã vận đơn → hệ thống tự tạo vận đơn thu hồi (khách → kho) nếu đơn
-                gốc có địa chỉ GHN. Không có đơn liên kết hoặc GHN lỗi → dùng mã mặc định GHTK-{"{ticket}"}.
-              </Alert>
-            )}
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Để trống mã vận đơn → hệ thống gọi <strong>API GHN</strong> tạo đơn thu hồi (khách → kho). Mã vận đơn{" "}
+              <strong>bắt buộc do GHN sinh ra</strong> — nếu GHN lỗi, duyệt sẽ thất bại (không tự bịa mã).
+              Cần địa chỉ GHN đầy đủ (Tỉnh/Quận/Phường) trên form khách gửi BH.
+            </Alert>
             <Grid container spacing={2} sx={{ mb: 2 }}>
               <Grid item xs={12} sm={4}>
                 <FormControl fullWidth size="small">
@@ -476,8 +481,9 @@ const SalesWarrantyClaimDetailPage = () => {
                 <TextField
                   fullWidth
                   size="small"
-                  label="Mã vận đơn thu hồi"
-                  placeholder="Để trống: GHN tự tạo (nếu chọn GHN + có đơn gốc), hoặc GHTK-{mã ticket}"
+                  label="Mã vận đơn GHN (tuỳ chọn)"
+                  placeholder="Để trống — GHN API tự sinh mã khi duyệt"
+                  helperText="Chỉ nhập nếu đã có mã GHN thật từ portal; không nhập mã tự đặt"
                   value={returnTrackingCode}
                   onChange={(e) => setReturnTrackingCode(e.target.value)}
                 />

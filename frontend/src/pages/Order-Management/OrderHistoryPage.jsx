@@ -41,7 +41,7 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import TrackingTimeline from "../../components/TrackingTimeline/TrackingTimeline";
 import WarrantyClaimFromOrderDialog from "../../components/Warranty/WarrantyClaimFromOrderDialog";
-import { canRequestWarrantyForItem } from "../../utils/warrantyFromOrder";
+import { canRequestWarrantyForItem, buildWarrantyClaimContext } from "../../utils/warrantyFromOrder";
 
 // ─── Tabs trạng thái ─────────────────────────────────────────────────────────
 const STATUS_TABS = [
@@ -136,7 +136,20 @@ const OrderList = () => {
       setTotalPages(data?.totalPages || 0);
     } catch (err) {
       console.error("Lỗi load đơn hàng:", err);
-      setError("Không thể tải danh sách đơn hàng. Vui lòng thử lại.");
+      const status = err.response?.status;
+      const msg = err.response?.data?.message;
+      if (status === 503) {
+        setError(
+          "Hệ thống đơn hàng tạm thời không phản hồi (service đang khởi động lại). Đợi ~30 giây rồi tải lại trang."
+        );
+      } else if (status === 502 || status === 500) {
+        setError(
+          msg ||
+            "Lỗi máy chủ khi tải đơn hàng. Kiểm tra order-service / catalog-service đã chạy (START.ps1) rồi thử lại."
+        );
+      } else {
+        setError(msg || "Không thể tải danh sách đơn hàng. Vui lòng thử lại.");
+      }
     } finally {
       setLoading(false);
     }
@@ -479,13 +492,7 @@ const OrderList = () => {
                                 onClick={() =>
                                   setClaimDialog({
                                     open: true,
-                                    context: {
-                                      orderId: orderDetail.id,
-                                      orderDetailId: item.id,
-                                      orderCode: orderDetail.orderCode,
-                                      productName: item.productName,
-                                      imei: item.assignedImeis[0],
-                                    },
+                                    context: buildWarrantyClaimContext(orderDetail, item),
                                   })
                                 }
                               >

@@ -36,20 +36,20 @@ public class GHNConfig {
      * Token xác thực GHN API
      * Lấy từ: https://khachhang.ghn.vn/ → Cài đặt → Token API
      */
-    private String token = "7e2513c5-ed99-11ee-983e-5a49fc0dd8ec";
+    private String token = "44cb4919-203c-11f1-a973-aee5264794df";
 
     /**
      * Shop ID của cửa hàng trên GHN
      * Lấy từ: https://khachhang.ghn.vn/ → Địa chỉ lấy hàng → Shop ID
      */
-    private int shopId = 4982538;
+    private int shopId = 199593;
 
     /**
      * Base URL của GHN API
      * Production: https://online-gateway.ghn.vn
      * Sandbox:    https://dev-online-gateway.ghn.vn
      */
-    private String baseUrl = "https://online-gateway.ghn.vn";
+    private String baseUrl = "https://dev-online-gateway.ghn.vn";
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Địa chỉ kho xuất hàng (Shop Warehouse — địa chỉ gửi hàng)

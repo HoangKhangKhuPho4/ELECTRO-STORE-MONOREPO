@@ -63,7 +63,19 @@ import SalesWarrantyClaimsPage from "./pages/Admin-Warranty/SalesWarrantyClaimsP
 import SalesWarrantyClaimDetailPage from "./pages/Admin-Warranty/SalesWarrantyClaimDetailPage.jsx";
 import WarrantyInboundPage from "./pages/Admin-Warranty/WarrantyInboundPage.jsx";
 import ImeiManagementPage from "./pages/Admin-Imei/ImeiManagementPage.jsx";
-import StockReturnPage from "./pages/Admin-Inventory/StockReturnPage.jsx";
+import ProductReturnListPage from "./pages/Admin-Warehouse/ProductReturnListPage.jsx";
+import ProductReturnProcessPage from "./pages/Admin-Warehouse/ProductReturnProcessPage.jsx";
+import PurchaseOrderListPage from "./pages/Admin-Warehouse/PurchaseOrderListPage.jsx";
+import PurchaseOrderReceivePage from "./pages/Admin-Warehouse/PurchaseOrderReceivePage.jsx";
+import PurchaseOrderAdminPage from "./pages/Admin-Warehouse/PurchaseOrderAdminPage.jsx";
+import PurchaseOrderProcurementPage from "./pages/Admin-Warehouse/PurchaseOrderProcurementPage.jsx";
+import WarehouseFulfillmentPage from "./pages/Admin-Warehouse/WarehouseFulfillmentPage.jsx";
+import WarehouseOrderFulfillmentPage from "./pages/Admin-Warehouse/WarehouseOrderFulfillmentPage.jsx";
+import InventoryAuditPage from "./pages/Admin-Warehouse/InventoryAuditPage.jsx";
+import InventoryAuditApprovalPage from "./pages/Admin-Warehouse/InventoryAuditApprovalPage.jsx";
+import RefundListPage from "./pages/Admin-Finance/RefundListPage.jsx";
+import RefundProcessPage from "./pages/Admin-Finance/RefundProcessPage.jsx";
+import RefundVoucherPage from "./pages/Admin-Finance/RefundVoucherPage.jsx";
 import AttributeManagementPage from "./pages/Admin-Attributes/AttributeManagementPage.jsx";
 import CouponManagementPage from "./pages/Admin-Coupons/CouponManagementPage.jsx";
 import ProducerManagementPage from "./pages/Admin-Producers/ProducerManagementPage.jsx";
@@ -132,7 +144,7 @@ function App() {
               path="/admin/*"
               element={
                 <ThemeProvider theme={adminTheme}>
-                  <ProtectedRoute requiredAny={["PRODUCT_VIEW", "CATEGORY_VIEW", "ORDER_VIEW_ALL", "INVENTORY_STAT", "USER_MANAGE", "CUSTOMER_VIEW", "BANNER_MANAGE", "POST_MANAGE", "REPORT_REVENUE", "REPORT_SALES", "WARRANTY_MANAGE", "IMEI_MANAGE"]}>
+                  <ProtectedRoute requiredAny={["PRODUCT_VIEW", "CATEGORY_VIEW", "ORDER_VIEW_ALL", "INVENTORY_STAT", "USER_MANAGE", "CUSTOMER_VIEW", "BANNER_MANAGE", "POST_MANAGE", "REPORT_REVENUE", "REPORT_SALES", "WARRANTY_MANAGE", "IMEI_MANAGE", "STOCK_IMPORT", "STOCK_RETURN"]}>
                     <Routes>
                     <Route index element={<DashboardPage />} />
                     <Route path="products" element={
@@ -161,13 +173,68 @@ function App() {
                       </ProtectedRoute>
                     } />
                     <Route path="orders" element={
-                      <ProtectedRoute requiredPermission="ORDER_VIEW_ALL">
+                      <ProtectedRoute requiredPermission="ORDER_VIEW_ALL" excludeWarehouseOnly>
                         <OrderManagementPage />
                       </ProtectedRoute>
                     } />
                     <Route path="inventory" element={
                       <ProtectedRoute requiredPermission="INVENTORY_STAT">
                         <InventoryManagementPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="purchase-orders" element={
+                      <ProtectedRoute requiredPermission="STOCK_IMPORT">
+                        <PurchaseOrderListPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="purchase-orders/:id/receive" element={
+                      <ProtectedRoute requiredPermission="STOCK_IMPORT">
+                        <PurchaseOrderReceivePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="procurement" element={
+                      <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <PurchaseOrderProcurementPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="po-management" element={
+                      <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <PurchaseOrderAdminPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="warehouse-fulfillment" element={
+                      <ProtectedRoute requiredAny={["ORDER_ASSIGN_SHIPPING", "ORDER_VIEW_ALL"]}>
+                        <WarehouseFulfillmentPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="warehouse-fulfillment/:orderId" element={
+                      <ProtectedRoute requiredAny={["ORDER_ASSIGN_SHIPPING", "ORDER_VIEW_ALL"]}>
+                        <WarehouseOrderFulfillmentPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="inventory-audit" element={
+                      <ProtectedRoute requiredAny={["INVENTORY_STAT", "STOCK_IMPORT"]}>
+                        <InventoryAuditPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="inventory-audit-approval" element={
+                      <ProtectedRoute requiredAny={["PRODUCT_MANAGE", "USER_MANAGE"]}>
+                        <InventoryAuditApprovalPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="refunds" element={
+                      <ProtectedRoute requiredAny={["REFUND_APPROVE", "USER_MANAGE"]}>
+                        <RefundListPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="refunds/:id" element={
+                      <ProtectedRoute requiredAny={["REFUND_APPROVE", "USER_MANAGE"]}>
+                        <RefundProcessPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="refunds/:id/voucher" element={
+                      <ProtectedRoute requiredAny={["REFUND_APPROVE", "USER_MANAGE"]}>
+                        <RefundVoucherPage />
                       </ProtectedRoute>
                     } />
                     <Route path="customers" element={
@@ -217,7 +284,12 @@ function App() {
                     } />
                     <Route path="return" element={
                       <ProtectedRoute requiredPermission="STOCK_RETURN">
-                        <StockReturnPage />
+                        <ProductReturnListPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="return/:id" element={
+                      <ProtectedRoute requiredPermission="STOCK_RETURN">
+                        <ProductReturnProcessPage />
                       </ProtectedRoute>
                     } />
                     <Route path="warranty-inbound" element={

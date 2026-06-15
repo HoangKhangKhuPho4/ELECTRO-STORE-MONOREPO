@@ -148,23 +148,74 @@ public class WarrantyClaimService {
                 ? request.getReturnCarrier().trim() : "";
         String tracking = request != null && request.getReturnTrackingCode() != null
                 ? request.getReturnTrackingCode().trim() : "";
-        if (carrier.isEmpty()) {
-            carrier = "GHTK";
-        }
-        if (isGhnCarrier(carrier) && tracking.isEmpty()) {
-            tryCreateGhnReturnOrder(claim).ifPresent(code -> {
-                claim.setReturnCarrier("GHN");
-                claim.setReturnTrackingCode(code);
-            });
-        }
-        if (claim.getReturnTrackingCode() == null || claim.getReturnTrackingCode().isBlank()) {
-            if (tracking.isEmpty()) {
-                tracking = "GHTK-" + claim.getClaimNumber();
-            }
-            claim.setReturnCarrier(carrier);
-            claim.setReturnTrackingCode(tracking);
-        }
+        assignReturnShipment(claim, carrier, tracking);
         return mapToDetail(claimRepository.save(claim), info);
+    }
+
+    /**
+     * Gán vận đơn thu hồi — mã GHN bắt buộc do API GHN sinh ra (không tự bịa GHTK-BH-...).
+     */
+    private void assignReturnShipment(WarrantyClaim claim, String carrier, String tracking) {
+        String normalizedCarrier = (carrier == null || carrier.isBlank()) ? "GHN" : carrier.trim();
+
+        if (isPlaceholderTrackingCode(tracking)) {
+            throw new BadRequestException(
+                    "Mã vận đơn không hợp lệ. Mã thu hồi bảo hành phải do GHN cấp qua API — không được tự sinh.");
+        }
+
+        if (!isGhnCarrier(normalizedCarrier)) {
+            throw new BadRequestException(
+                    "Thu hồi bảo hành chỉ hỗ trợ GHN. Vui lòng chọn GHN để hệ thống tạo vận đơn Reverse Logistics.");
+        }
+
+        if (tracking != null && !tracking.isBlank()) {
+            claim.setReturnCarrier("GHN");
+            claim.setReturnTrackingCode(tracking);
+            return;
+        }
+
+        String ghnCode = createGhnReturnOrderRequired(claim);
+        claim.setReturnCarrier("GHN");
+        claim.setReturnTrackingCode(ghnCode);
+    }
+
+    private String createGhnReturnOrderRequired(WarrantyClaim claim) {
+        PickupAddress addr = resolvePickupAddress(claim)
+                .orElseThrow(() -> new BadRequestException(
+                        "Thiếu địa chỉ lấy hàng GHN (mã quận/phường). "
+                                + "Khách cần chọn đủ Tỉnh/Quận/Phường GHN khi gửi yêu cầu BH."));
+        try {
+            GHNDto.CreateOrderResponse ghn = ghnService.createWarrantyReturnOrder(
+                    claim.getClaimNumber(),
+                    addr.name(),
+                    addr.phone(),
+                    addr.address(),
+                    addr.wardName(),
+                    addr.districtName(),
+                    addr.provinceName(),
+                    addr.districtId(),
+                    addr.wardCode(),
+                    claim.getProductName());
+            if (ghn.getOrderCode() == null || ghn.getOrderCode().isBlank()) {
+                throw new BadRequestException("GHN không trả về mã vận đơn.");
+            }
+            return ghn.getOrderCode();
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("GHN warranty return failed for {}: {}", claim.getClaimNumber(), e.getMessage());
+            throw new BadRequestException(
+                    "Không tạo được vận đơn thu hồi trên GHN: " + e.getMessage()
+                            + ". Duyệt thất bại — mã vận đơn chỉ hợp lệ khi GHN API trả về thành công.");
+        }
+    }
+
+    private static boolean isPlaceholderTrackingCode(String code) {
+        if (code == null || code.isBlank()) {
+            return false;
+        }
+        String normalized = code.trim().toUpperCase();
+        return normalized.startsWith("GHTK-BH") || normalized.startsWith("GHTK-BH-");
     }
 
     /** Tra cứu hành trình vận đơn thu hồi (GHN). */
@@ -174,7 +225,7 @@ public class WarrantyClaimService {
             throw new BadRequestException("Chỉ tra cứu GHN khi đơn vị VC là GHN.");
         }
         String code = claim.getReturnTrackingCode();
-        if (code == null || code.isBlank() || code.startsWith("GHTK-")) {
+        if (code == null || code.isBlank() || isPlaceholderTrackingCode(code)) {
             throw new BadRequestException("Chưa có mã vận đơn GHN hợp lệ cho ticket này.");
         }
         return ghnService.getTrackingInfo(code.trim());
@@ -478,28 +529,6 @@ public class WarrantyClaimService {
                 + " (hoặc ticket #" + c.getClaimNumber() + ").";
     }
 
-    private java.util.Optional<String> tryCreateGhnReturnOrder(WarrantyClaim claim) {
-        return resolvePickupAddress(claim).flatMap(addr -> {
-            try {
-                GHNDto.CreateOrderResponse ghn = ghnService.createWarrantyReturnOrder(
-                        claim.getClaimNumber(),
-                        addr.name(),
-                        addr.phone(),
-                        addr.address(),
-                        addr.wardName(),
-                        addr.districtName(),
-                        addr.provinceName(),
-                        addr.districtId(),
-                        addr.wardCode(),
-                        claim.getProductName());
-                return java.util.Optional.of(ghn.getOrderCode());
-            } catch (Exception e) {
-                log.warn("GHN warranty return failed for {}: {}", claim.getClaimNumber(), e.getMessage());
-                return java.util.Optional.empty();
-            }
-        });
-    }
-
     private record PickupAddress(
             String name,
             String phone,
@@ -571,7 +600,7 @@ public class WarrantyClaimService {
             return;
         }
         String code = claim.getReturnTrackingCode();
-        if (code == null || code.isBlank() || code.startsWith("GHTK-")) {
+        if (code == null || code.isBlank() || isPlaceholderTrackingCode(code)) {
             return;
         }
         try {

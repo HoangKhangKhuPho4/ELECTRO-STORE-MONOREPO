@@ -4,6 +4,7 @@ import com.electro.catalog.entity.Product;
 import com.electro.catalog.entity.ProductVariant;
 import com.electro.catalog.repository.ProductRepository;
 import com.electro.catalog.repository.ProductVariantRepository;
+import com.electro.catalog.service.InventoryAuditService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,9 @@ public class InternalProductController {
 
     @Autowired
     private ProductVariantRepository productVariantRepository;
+
+    @Autowired
+    private InventoryAuditService inventoryAuditService;
 
     @Value("${app.server.url:http://localhost:8080}")
     private String serverUrl;
@@ -100,6 +104,10 @@ public class InternalProductController {
 
     @org.springframework.web.bind.annotation.PutMapping("/variants/{variantId}/stock")
     public void updateStock(@PathVariable("variantId") Integer variantId, @org.springframework.web.bind.annotation.RequestParam("delta") Integer delta) {
+        if (delta != null && delta < 0 && inventoryAuditService.isVariantLockedForSale(variantId)) {
+            throw new com.electro.catalog.exception.BadRequestException(
+                    "Sản phẩm đang trong phiếu kiểm kê — tạm khóa trừ tồn kho.");
+        }
         ProductVariant variant = productVariantRepository.findById(variantId).orElseThrow();
         if (variant.getStockQuantity() == null) {
             variant.setStockQuantity(0);

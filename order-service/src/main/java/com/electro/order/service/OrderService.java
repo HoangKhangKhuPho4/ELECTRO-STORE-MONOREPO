@@ -5,7 +5,9 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -497,7 +499,83 @@ public class OrderService {
             orders = orderRepository.findAllActive(pageable);
         }
 
-        return orders.map(this::mapToAdminOrderSummary);
+        return mapAdminOrderPage(orders);
+    }
+
+    private Page<OrderDto.AdminOrderSummaryResponse> mapAdminOrderPage(Page<Order> orders) {
+        if (orders.isEmpty()) {
+            return orders.map(order -> mapToAdminOrderSummary(order, Collections.emptyList()));
+        }
+        List<Integer> orderIds = orders.getContent().stream().map(Order::getId).toList();
+        Map<Integer, List<OrderDetail>> detailsByOrderId = orderDetailRepository.findByOrderIds(orderIds).stream()
+                .collect(Collectors.groupingBy(detail -> detail.getOrder().getId()));
+        return orders.map(order -> mapToAdminOrderSummary(
+                order, detailsByOrderId.getOrDefault(order.getId(), Collections.emptyList())));
+    }
+
+    /** Kho: tra cứu đơn gốc theo Serial / mã đơn / vận đơn hoàn. */
+    @Transactional(readOnly = true)
+    public OrderDto.ReturnContextResponse lookupReturnContext(String keyword) {
+        String kw = keyword == null ? "" : keyword.trim();
+        if (kw.isEmpty()) {
+            throw new BadRequestException("Vui lòng nhập Serial, mã đơn hoặc mã vận đơn.");
+        }
+
+        var bySerial = orderItemRepository.findBySerialOrImeiWithOrder(kw);
+        if (bySerial.isPresent()) {
+            return mapReturnContext(bySerial.get());
+        }
+
+        Order order = orderRepository.findByOrderCode(kw).orElse(null);
+        if (order == null) {
+            order = orderRepository.findFirstByTrackingCodeIgnoreCase(kw).orElse(null);
+        }
+        if (order != null) {
+            List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            OrderItem first = items.isEmpty() ? null : items.get(0);
+            if (first != null) {
+                return mapReturnContext(first);
+            }
+            return OrderDto.ReturnContextResponse.builder()
+                    .orderId(order.getId())
+                    .orderCode(order.getOrderCode())
+                    .orderStatus(order.getStatus() != null ? order.getStatus().name() : null)
+                    .customerName(order.getShippingName())
+                    .customerPhone(order.getShippingPhone())
+                    .trackingCode(order.getTrackingCode())
+                    .build();
+        }
+
+        throw new ResourceNotFoundException("Order", "keyword", kw);
+    }
+
+    private OrderDto.ReturnContextResponse mapReturnContext(OrderItem oi) {
+        OrderDetail od = oi.getOrderDetail();
+        Order order = od != null ? od.getOrder() : null;
+        return OrderDto.ReturnContextResponse.builder()
+                .orderId(order != null ? order.getId() : null)
+                .orderCode(order != null ? order.getOrderCode() : null)
+                .orderStatus(order != null && order.getStatus() != null ? order.getStatus().name() : null)
+                .customerName(order != null ? order.getShippingName() : null)
+                .customerPhone(order != null ? order.getShippingPhone() : null)
+                .trackingCode(order != null ? order.getTrackingCode() : null)
+                .productItemId(oi.getProductItemId())
+                .serialNumber(oi.getSerialNumber() != null ? oi.getSerialNumber() : oi.getImei())
+                .productName(od != null ? od.getProductName() : null)
+                .skuCode(od != null ? od.getSkuCode() : null)
+                .variantName(od != null ? od.getVariantName() : null)
+                .build();
+    }
+
+    /** Hàng đợi gom hàng — CONFIRMED, PROCESSING (ưu tiên đơn cũ). */
+    @Transactional(readOnly = true)
+    public Page<OrderDto.AdminOrderSummaryResponse> warehouseFulfillmentQueue(Pageable pageable) {
+        List<Order.OrderStatus> statuses = List.of(
+                Order.OrderStatus.CONFIRMED,
+                Order.OrderStatus.PROCESSING
+        );
+        return mapAdminOrderPage(
+                orderRepository.findByStatusInAndHiddenFalse(statuses, pageable));
     }
 
     /**
@@ -784,7 +862,7 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public Page<OrderDto.AdminOrderSummaryResponse> adminGetHiddenOrders(Pageable pageable) {
-        return orderRepository.findHiddenOrders(pageable).map(this::mapToAdminOrderSummary);
+        return mapAdminOrderPage(orderRepository.findHiddenOrders(pageable));
     }
 
     // ─── Admin helper: validate chuyển trạng thái ─────────────────────────────
@@ -1056,7 +1134,7 @@ public class OrderService {
     }
 
     // ─── Admin mapper: Order → AdminOrderSummary ──────────────────────────────
-    private OrderDto.AdminOrderSummaryResponse mapToAdminOrderSummary(Order order) {
+    private OrderDto.AdminOrderSummaryResponse mapToAdminOrderSummary(Order order, List<OrderDetail> details) {
         OrderDto.AdminOrderSummaryResponse s = new OrderDto.AdminOrderSummaryResponse();
         s.setId(order.getId());
         s.setOrderCode(order.getOrderCode());
@@ -1068,37 +1146,34 @@ public class OrderService {
         s.setOrderDate(order.getOrderDate());
         s.setIsHidden(order.getIsHidden());
 
-        // Thông tin khách hàng
-        com.electro.order.dto.UserDto.Response user = userClient.getUserById(order.getUserId());
-        s.setUserId(user.getId());
-        s.setUsername(user.getUsername());
-        s.setCustomerName(user.getName());
+        // Thông tin khách hàng — dùng dữ liệu đã lưu trên đơn, tránh N+1 gọi user-service
+        s.setUserId(order.getUserId());
+        s.setCustomerName(order.getShippingName());
         s.setAssignedSalesUserId(order.getAssignedSalesUserId());
-        if (order.getAssignedSalesUserId() != null) {
-            try {
-                com.electro.order.dto.UserDto.Response sales = userClient.getUserById(order.getAssignedSalesUserId());
-                s.setAssignedSalesName(sales.getName());
-            } catch (Exception ignored) {
-                // optional display name
-            }
-        }
         s.setOrderSource(order.getOrderSource() != null ? order.getOrderSource().name() : "WEB_ORGANIC");
         s.setSalesPipelineStatus(order.getSalesPipelineStatus() != null
                 ? order.getSalesPipelineStatus().name() : "NEW_ASSIGNED");
 
-        List<OrderDetail> details = order.getOrderDetails();
+        s.setShippingName(order.getShippingName());
+        s.setShippingPhone(order.getShippingPhone());
+        s.setTrackingCode(order.getTrackingCode());
+        s.setCarrierLabel(order.getTrackingCode() != null && !order.getTrackingCode().isBlank()
+                ? "Giao Hàng Nhanh (GHN)"
+                : "GHN — tạo khi xuất kho");
+
         if (details != null && !details.isEmpty()) {
             s.setTotalItems(details.stream().mapToInt(OrderDetail::getQuantity).sum());
             OrderDetail first = details.get(0);
             s.setFirstItemName(first.getProductName());
-            if (first.getVariantId() != null) {
-                CatalogClientDto.VariantResponse v = catalogClient.getVariantById(first.getVariantId());
-                if (v != null) {
-                    s.setFirstItemImage(v.getImageUrl());
-                }
-            }
+            s.setProductSummary(details.stream()
+                    .map(d -> d.getProductName()
+                            + (d.getVariantName() != null && !d.getVariantName().isBlank()
+                            ? " (" + d.getVariantName() + ")" : "")
+                            + " ×" + d.getQuantity())
+                    .collect(Collectors.joining(", ")));
         } else {
             s.setTotalItems(0);
+            s.setProductSummary("");
         }
         return s;
     }
@@ -1121,11 +1196,14 @@ public class OrderService {
     }
 
     private String getVariantImageUrl(Integer variantId) {
-        if (variantId != null) {
+        if (variantId == null) return null;
+        try {
             CatalogClientDto.VariantResponse v = catalogClient.getVariantById(variantId);
-            if (v != null) return v.getImageUrl();
+            return v != null ? v.getImageUrl() : null;
+        } catch (Exception e) {
+            log.warn("Could not fetch variant image for variantId={}: {}", variantId, e.getMessage());
+            return null;
         }
-        return null;
     }
 
     // ─── map Order + details → full response ──────────────────────────────────
@@ -1139,6 +1217,8 @@ public class OrderService {
         r.setShippingProvince(order.getShippingProvince());
         r.setShippingDistrict(order.getShippingDistrict());
         r.setShippingWard(order.getShippingWard());
+        r.setToDistrictId(order.getToDistrictId());
+        r.setToWardCode(order.getToWardCode());
         r.setShippingFee(order.getShippingFee());
         r.setPaymentMethod(order.getPaymentMethod().name());
         r.setPaymentStatus(order.getPaymentStatus().name());
@@ -1191,7 +1271,7 @@ public class OrderService {
         s.setTotalAmount(order.getTotalAmount());
         s.setOrderDate(order.getOrderDate());
 
-        List<OrderDetail> details = order.getOrderDetails();
+        List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
         if (details != null && !details.isEmpty()) {
             s.setTotalItems(details.stream().mapToInt(OrderDetail::getQuantity).sum());
             OrderDetail first = details.get(0);

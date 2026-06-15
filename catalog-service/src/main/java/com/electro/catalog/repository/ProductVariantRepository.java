@@ -17,6 +17,13 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
            "WHERE v.product.productType.id = :categoryId AND v.isActive = true")
     List<ProductVariant> findByCategoryId(@Param("categoryId") Integer categoryId);
 
+    @Query("SELECT DISTINCT v FROM ProductVariant v " +
+           "JOIN FETCH v.product p " +
+           "JOIN p.productType pt " +
+           "WHERE v.isActive = true " +
+           "AND (pt.id = :categoryId OR pt.parent.id = :categoryId)")
+    List<ProductVariant> findActiveByCategoryWithProduct(@Param("categoryId") Integer categoryId);
+
     @Query("SELECT v FROM ProductVariant v " +
            "LEFT JOIN FETCH v.attributeValues av " +
            "LEFT JOIN FETCH av.attribute " +

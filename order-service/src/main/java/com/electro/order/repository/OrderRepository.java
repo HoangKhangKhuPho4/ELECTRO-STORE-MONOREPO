@@ -17,6 +17,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     Optional<Order> findByOrderCode(String orderCode);
 
+    Optional<Order> findFirstByTrackingCodeIgnoreCase(String trackingCode);
+
     // Danh sách đơn hàng hiển thị (chưa bị ẩn)
     @Query("SELECT o FROM Order o WHERE o.isHidden = false")
     Page<Order> findAllActive(Pageable pageable);
@@ -33,6 +35,11 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     @Query("SELECT o FROM Order o WHERE o.status = :status AND o.isHidden = false")
     Page<Order> findByStatus(@Param("status") Order.OrderStatus status, Pageable pageable);
+
+    @Query("SELECT o FROM Order o WHERE o.status IN :statuses AND o.isHidden = false ORDER BY o.orderDate ASC")
+    Page<Order> findByStatusInAndHiddenFalse(
+            @Param("statuses") List<Order.OrderStatus> statuses,
+            Pageable pageable);
 
     @Query("SELECT o FROM Order o WHERE " +
            "o.orderDate BETWEEN :startDate AND :endDate")

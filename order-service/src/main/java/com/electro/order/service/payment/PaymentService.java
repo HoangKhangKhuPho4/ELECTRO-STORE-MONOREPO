@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -284,6 +285,68 @@ public class PaymentService {
                 .stream()
                 .map(this::mapToTransactionResponse)
                 .collect(Collectors.toList());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 4. HOÀN TIỀN QUA GATEWAY
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Gọi API hoàn tiền cổng thanh toán cho đơn đã PAID.
+     */
+    public PaymentDto.GatewayRefundResult executeGatewayRefund(
+            Order order, BigDecimal amount, String reason) {
+        if (order.getPaymentStatus() != Order.PaymentStatus.PAID) {
+            return PaymentDto.GatewayRefundResult.builder()
+                    .success(false)
+                    .message("Đơn hàng chưa thanh toán — không thể hoàn qua cổng")
+                    .build();
+        }
+
+        PaymentTransaction originalTxn = transactionRepository
+                .findFirstByOrderCodeAndStatusOrderByCreatedAtDesc(
+                        order.getOrderCode(), PaymentTransaction.TransactionStatus.SUCCESS)
+                .orElse(null);
+
+        if (originalTxn == null) {
+            return PaymentDto.GatewayRefundResult.builder()
+                    .success(false)
+                    .message("Không tìm thấy giao dịch thanh toán thành công")
+                    .build();
+        }
+
+        PaymentDto.GatewayRefundResult result = switch (order.getPaymentMethod()) {
+            case VNPAY -> vnPayService.refund(originalTxn, amount, reason);
+            case MOMO -> momoService.refund(originalTxn, amount, reason);
+            case ZALOPAY -> zaloPayService.refund(originalTxn, amount, reason);
+            default -> PaymentDto.GatewayRefundResult.builder()
+                    .success(false)
+                    .message("Phương thức " + order.getPaymentMethod() + " không hỗ trợ hoàn tự động")
+                    .build();
+        };
+
+        if (!result.isSuccess() && paymentConfig.isRefundSimulateOnError()) {
+            log.warn("Gateway refund failed, simulating success for demo. Order: {}, reason: {}",
+                    order.getOrderCode(), result.getMessage());
+            result = PaymentDto.GatewayRefundResult.builder()
+                    .success(true)
+                    .gatewayRefundId("SIM_" + System.currentTimeMillis())
+                    .responseCode("SIMULATED")
+                    .message("Mô phỏng hoàn tiền thành công (sandbox/demo)")
+                    .rawResponse(result.getRawResponse())
+                    .build();
+        }
+
+        if (result.isSuccess()) {
+            originalTxn.setStatus(PaymentTransaction.TransactionStatus.REFUNDED);
+            originalTxn.setRefundedAt(LocalDateTime.now());
+            originalTxn.setRefundAmount(amount);
+            originalTxn.setRefundReason(reason);
+            originalTxn.setResponseMessage(result.getMessage());
+            transactionRepository.save(originalTxn);
+        }
+
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

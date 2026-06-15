@@ -3618,7 +3618,7 @@ CREATE TABLE `purchase_orders` (
   `po_number` varchar(50) COLLATE utf8mb4_vietnamese_ci NOT NULL,
   `supplier_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL COMMENT 'Người tạo đơn',
-  `status` enum('DRAFT','PENDING','APPROVED','RECEIVING','COMPLETED','CANCELLED') COLLATE utf8mb4_vietnamese_ci DEFAULT 'DRAFT',
+  `status` enum('DRAFT','PENDING','APPROVED','IN_TRANSIT','RECEIVING','RECEIVED','COMPLETED','CANCELLED') COLLATE utf8mb4_vietnamese_ci DEFAULT 'DRAFT',
   `total_amount` decimal(15,2) DEFAULT '0.00',
   `notes` text COLLATE utf8mb4_vietnamese_ci,
   `order_date` datetime DEFAULT CURRENT_TIMESTAMP,
