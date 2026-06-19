@@ -306,6 +306,8 @@ public class PaymentService {
         PaymentTransaction originalTxn = transactionRepository
                 .findFirstByOrderCodeAndStatusOrderByCreatedAtDesc(
                         order.getOrderCode(), PaymentTransaction.TransactionStatus.SUCCESS)
+                .or(() -> transactionRepository.findFirstByOrderCodeAndStatusOrderByCreatedAtDesc(
+                        order.getOrderCode(), PaymentTransaction.TransactionStatus.REFUNDED))
                 .orElse(null);
 
         if (originalTxn == null) {

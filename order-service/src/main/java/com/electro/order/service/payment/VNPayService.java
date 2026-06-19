@@ -181,6 +181,7 @@ public class VNPayService {
 
     /**
      * Gọi API hoàn tiền VNPay (full/partial refund).
+     * Checksum theo tài liệu VNPay: các field nối bằng "|", không dùng query-string như pay URL.
      */
     public PaymentDto.GatewayRefundResult refund(
             PaymentTransaction originalTxn, BigDecimal amount, String refundReason) {
@@ -193,30 +194,56 @@ public class VNPayService {
                         .build();
             }
 
-            String requestId = "RF_" + System.currentTimeMillis();
+            String requestId = String.valueOf(System.currentTimeMillis());
             long refundAmount = amount.multiply(BigDecimal.valueOf(100)).longValue();
+            long originalAmount = originalTxn.getAmount() != null
+                    ? originalTxn.getAmount().multiply(BigDecimal.valueOf(100)).longValue()
+                    : refundAmount;
+            String transactionType = refundAmount >= originalAmount ? "02" : "03";
+
             String createDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             String txnDate = originalTxn.getCreatedAt() != null
                     ? originalTxn.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
                     : createDate;
 
-            Map<String, String> vnpParams = new TreeMap<>();
+            String txnRef = originalTxn.getTransactionRef();
+            String transactionNo = originalTxn.getGatewayTransactionId();
+            String orderInfo = refundReason != null && !refundReason.isBlank()
+                    ? refundReason : "Hoan tien don hang";
+            if (orderInfo.length() > 255) {
+                orderInfo = orderInfo.substring(0, 255);
+            }
+
+            String signData = buildRefundSignData(
+                    requestId,
+                    vnpayConfig.getVersion(),
+                    "refund",
+                    vnpayConfig.getTmnCode(),
+                    transactionType,
+                    txnRef,
+                    String.valueOf(refundAmount),
+                    transactionNo,
+                    txnDate,
+                    "admin",
+                    createDate,
+                    "127.0.0.1",
+                    orderInfo);
+            String secureHash = hmacSHA512(vnpayConfig.getHashSecret(), signData);
+
+            Map<String, String> vnpParams = new LinkedHashMap<>();
             vnpParams.put("vnp_RequestId", requestId);
             vnpParams.put("vnp_Version", vnpayConfig.getVersion());
             vnpParams.put("vnp_Command", "refund");
             vnpParams.put("vnp_TmnCode", vnpayConfig.getTmnCode());
-            vnpParams.put("vnp_TransactionType", "03");
-            vnpParams.put("vnp_TxnRef", originalTxn.getTransactionRef());
+            vnpParams.put("vnp_TransactionType", transactionType);
+            vnpParams.put("vnp_TxnRef", txnRef);
             vnpParams.put("vnp_Amount", String.valueOf(refundAmount));
-            vnpParams.put("vnp_OrderInfo", refundReason != null ? refundReason : "Hoan tien don hang");
-            vnpParams.put("vnp_TransactionNo", originalTxn.getGatewayTransactionId());
+            vnpParams.put("vnp_OrderInfo", orderInfo);
+            vnpParams.put("vnp_TransactionNo", transactionNo);
             vnpParams.put("vnp_TransactionDate", txnDate);
             vnpParams.put("vnp_CreateBy", "admin");
             vnpParams.put("vnp_CreateDate", createDate);
             vnpParams.put("vnp_IpAddr", "127.0.0.1");
-
-            String signData = buildQueryString(vnpParams, false);
-            String secureHash = hmacSHA512(vnpayConfig.getHashSecret(), signData);
             vnpParams.put("vnp_SecureHash", secureHash);
 
             String jsonBody = objectMapper.writeValueAsString(vnpParams);
@@ -235,15 +262,22 @@ public class VNPayService {
             Map<String, Object> responseMap = objectMapper.readValue(body, Map.class);
             String responseCode = responseMap.get("vnp_ResponseCode") != null
                     ? responseMap.get("vnp_ResponseCode").toString() : null;
+            String responseMessage = responseMap.get("vnp_Message") != null
+                    ? responseMap.get("vnp_Message").toString() : null;
             boolean success = "00".equals(responseCode);
             String txnNo = responseMap.get("vnp_TransactionNo") != null
                     ? responseMap.get("vnp_TransactionNo").toString() : requestId;
+
+            String message = success
+                    ? "Hoàn tiền VNPay thành công"
+                    : "VNPay refund failed: " + responseCode
+                            + (responseMessage != null ? " - " + responseMessage : "");
 
             return PaymentDto.GatewayRefundResult.builder()
                     .success(success)
                     .gatewayRefundId(txnNo)
                     .responseCode(responseCode)
-                    .message(success ? "Hoàn tiền VNPay thành công" : "VNPay refund failed: " + responseCode)
+                    .message(message)
                     .rawResponse(body)
                     .build();
         } catch (Exception e) {
@@ -253,6 +287,39 @@ public class VNPayService {
                     .message("Lỗi gọi API hoàn tiền VNPay: " + e.getMessage())
                     .build();
         }
+    }
+
+    /**
+     * Checksum refund/querydr: field nối bằng "|" theo thứ tự tài liệu VNPay.
+     */
+    private static String buildRefundSignData(
+            String requestId,
+            String version,
+            String command,
+            String tmnCode,
+            String transactionType,
+            String txnRef,
+            String amount,
+            String transactionNo,
+            String transactionDate,
+            String createBy,
+            String createDate,
+            String ipAddr,
+            String orderInfo) {
+        return String.join("|",
+                requestId,
+                version,
+                command,
+                tmnCode,
+                transactionType,
+                txnRef,
+                amount,
+                transactionNo,
+                transactionDate,
+                createBy,
+                createDate,
+                ipAddr,
+                orderInfo);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

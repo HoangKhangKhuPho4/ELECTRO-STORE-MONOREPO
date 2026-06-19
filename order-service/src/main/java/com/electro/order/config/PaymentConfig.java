@@ -27,7 +27,7 @@ public class PaymentConfig {
     /**
      * Khi true: nếu gateway refund lỗi (sandbox/credentials), mô phỏng thành công để demo luồng.
      */
-    private boolean refundSimulateOnError = true;
+    private boolean refundSimulateOnError = false;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // VNPay Configuration
