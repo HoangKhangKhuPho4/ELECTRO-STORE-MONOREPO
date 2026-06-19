@@ -349,6 +349,32 @@ public class PaymentService {
         return result;
     }
 
+    /**
+     * Kiểm tra số dư ví merchant trên cổng (stub/demo).
+     */
+    public PaymentDto.GatewayBalanceResult checkMerchantBalance(
+            Order.PaymentMethod method, BigDecimal requiredAmount) {
+        BigDecimal simulatedBalance = switch (method) {
+            case VNPAY -> new BigDecimal("50000000");
+            case MOMO -> new BigDecimal("30000000");
+            case ZALOPAY -> new BigDecimal("20000000");
+            default -> BigDecimal.ZERO;
+        };
+        boolean sufficient = simulatedBalance.compareTo(requiredAmount) >= 0;
+        String message = sufficient
+                ? "Số dư ví đủ để hoàn " + requiredAmount.toPlainString() + " VND (kiểm tra demo)."
+                : "Số dư ví không đủ. Cần " + requiredAmount.toPlainString()
+                        + " VND, hiện có ~" + simulatedBalance.toPlainString() + " VND.";
+        return PaymentDto.GatewayBalanceResult.builder()
+                .paymentMethod(method.name())
+                .merchantBalance(simulatedBalance)
+                .requiredAmount(requiredAmount)
+                .sufficient(sufficient)
+                .message(message)
+                .checkedAt(LocalDateTime.now())
+                .build();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // PRIVATE HELPERS
     // ═══════════════════════════════════════════════════════════════════════════
@@ -399,6 +425,7 @@ public class PaymentService {
             order.setPaymentStatus(Order.PaymentStatus.PAID);
             order.setPaidAt(LocalDateTime.now());
             order.setTransactionRef(result.getTransactionRef());
+            autoConfirmOrderAfterOnlinePayment(order);
             log.info("Order {} payment SUCCESS, gateway txnId: {}", order.getOrderCode(), result.getGatewayTransactionId());
         } else {
             order.setPaymentStatus(Order.PaymentStatus.FAILED);
@@ -460,5 +487,29 @@ public class PaymentService {
             case FAILED -> "Thanh toán thất bại";
             case REFUNDED -> "Đã hoàn tiền";
         };
+    }
+
+    /**
+     * Luồng 1: Thanh toán online thành công → tự CONFIRMED (COD giữ PENDING chờ Sales duyệt).
+     */
+    private void autoConfirmOrderAfterOnlinePayment(Order order) {
+        if (order.getStatus() != Order.OrderStatus.PENDING) {
+            return;
+        }
+        if (!isOnlineGatewayPayment(order.getPaymentMethod())) {
+            return;
+        }
+        order.setStatus(Order.OrderStatus.CONFIRMED);
+        order.setConfirmedAt(LocalDateTime.now());
+        String note = "[Tự động] Đã xác nhận sau thanh toán online (" + order.getPaymentMethod() + ")";
+        String existing = order.getAdminNote();
+        order.setAdminNote(existing == null || existing.isBlank() ? note : existing + "\n" + note);
+        log.info("Auto-confirmed order {} after {} payment", order.getOrderCode(), order.getPaymentMethod());
+    }
+
+    private static boolean isOnlineGatewayPayment(Order.PaymentMethod method) {
+        return method == Order.PaymentMethod.VNPAY
+                || method == Order.PaymentMethod.MOMO
+                || method == Order.PaymentMethod.ZALOPAY;
     }
 }

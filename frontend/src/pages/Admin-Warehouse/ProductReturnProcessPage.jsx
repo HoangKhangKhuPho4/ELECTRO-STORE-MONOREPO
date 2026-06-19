@@ -23,6 +23,7 @@ const ProductReturnProcessPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isDefective, setIsDefective] = useState("false");
+  const [defectiveReason, setDefectiveReason] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -51,10 +52,15 @@ const ProductReturnProcessPage = () => {
 
   const handleConfirm = async () => {
     if (!canProcess) return;
+    if (isDefective === "true" && !defectiveReason) {
+      toast.warning("Hàng lỗi — vui lòng chọn lý do: vận chuyển hoặc sản xuất.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await processProductReturn(id, {
         isDefective: isDefective === "true",
+        defectiveReason: isDefective === "true" ? defectiveReason : undefined,
         reason: reason.trim(),
         warehouseNotes: notes.trim(),
       });
@@ -210,6 +216,29 @@ const ProductReturnProcessPage = () => {
                 />
               </Paper>
             </RadioGroup>
+
+            {isDefective === "true" && canProcess && (
+              <Box sx={{ mb: 2, pl: 1 }}>
+                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  Lý do hàng lỗi (bắt buộc)
+                </Typography>
+                <RadioGroup
+                  value={defectiveReason}
+                  onChange={(e) => setDefectiveReason(e.target.value)}
+                >
+                  <FormControlLabel
+                    value="DEFECTIVE_BY_CARRIER"
+                    control={<Radio color="error" />}
+                    label="Hãng vận chuyển làm vỡ / hư hỏng"
+                  />
+                  <FormControlLabel
+                    value="DEFECTIVE_BY_MANUFACTURER"
+                    control={<Radio color="error" />}
+                    label="Lỗi sản xuất / lỗi kỹ thuật từ nhà máy"
+                  />
+                </RadioGroup>
+              </Box>
+            )}
 
             <TextField
               fullWidth multiline minRows={2} label="Mô tả / lý do chi tiết"

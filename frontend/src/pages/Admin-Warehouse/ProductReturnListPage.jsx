@@ -72,6 +72,12 @@ const ProductReturnListPage = () => {
         navigate(`/admin/return/${itemRes.data.pendingSlipId}`);
         return;
       }
+      if (itemRes.data?.customerReturnRequestCode) {
+        toast.info(
+          `Khách đã yêu cầu trả: ${itemRes.data.customerReturnRequestCode} (${itemRes.data.customerReturnRequestStatusLabel})`,
+          { autoClose: 5000 },
+        );
+      }
 
       let orderCtx = null;
       try {

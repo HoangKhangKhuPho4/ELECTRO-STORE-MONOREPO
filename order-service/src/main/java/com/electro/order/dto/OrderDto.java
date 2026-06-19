@@ -132,6 +132,8 @@ public class OrderDto {
 
         // Sản phẩm
         private List<OrderItemResponse> items;
+
+        private RefundDto.CancellationRefundResult cancellationRefund;
     }
 
     // ─── Response: Tóm tắt đơn (dùng cho danh sách) ──────────────────────────
@@ -262,6 +264,9 @@ public class OrderDto {
         private String shippingWard;
         private BigDecimal shippingFee;
         private String trackingCode;
+        private String ghnShippingStatus;
+        private String ghnShippingStatusDisplay;
+        private LocalDateTime ghnStatusUpdatedAt;
 
         // Thanh toán & trạng thái
         private String paymentMethod;
@@ -296,6 +301,8 @@ public class OrderDto {
 
         // Sản phẩm
         private List<OrderItemResponse> items;
+
+        private RefundDto.CancellationRefundResult cancellationRefund;
     }
 
     // ─── Response: Tóm tắt đơn cho admin (thêm username) ────────────────────
@@ -334,6 +341,8 @@ public class OrderDto {
         private String productSummary;
         private String carrierLabel;
         private String trackingCode;
+        private String ghnShippingStatus;
+        private String ghnShippingStatusDisplay;
     }
 
     // ─── Response: Thống kê đơn hàng ─────────────────────────────────────────

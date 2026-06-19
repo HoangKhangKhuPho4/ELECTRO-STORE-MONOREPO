@@ -13,6 +13,21 @@ public class RefundDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class CreateFromWarrantyRequest {
+        private Integer warrantyClaimId;
+        private String warrantyClaimCode;
+        private Integer orderId;
+        private String orderCode;
+        private String serialNumber;
+        private String customerName;
+        private String customerPhone;
+        private String productName;
+        private String returnReason;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class CreateFromReturnRequest {
         private Integer returnSlipId;
         private String returnSlipCode;
@@ -23,7 +38,9 @@ public class RefundDto {
         private String customerPhone;
         private String productName;
         private Boolean isDefective;
+        private String defectiveReason;
         private String returnReason;
+        private String warehouseProcessedBy;
     }
 
     @Data
@@ -48,6 +65,16 @@ public class RefundDto {
     @AllArgsConstructor
     public static class ConfirmManualTransferRequest {
         private String transferReference;
+        private String notes;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateBankInfoRequest {
+        private String customerBankName;
+        private String customerBankAccount;
+        private String customerBankAccountName;
         private String notes;
     }
 
@@ -94,6 +121,7 @@ public class RefundDto {
         private String statusLabel;
         private String orderCode;
         private String returnSlipCode;
+        private String warrantyClaimCode;
         private String serialNumber;
         private String customerName;
         private String customerPhone;
@@ -103,6 +131,8 @@ public class RefundDto {
         private String refundChannel;
         private String refundChannelLabel;
         private Boolean isDefective;
+        private String defectiveReason;
+        private String defectiveReasonLabel;
         private String voucherCode;
         private LocalDateTime createdAt;
         private LocalDateTime completedAt;
@@ -123,6 +153,8 @@ public class RefundDto {
         private String orderPaymentStatus;
         private Integer returnSlipId;
         private String returnSlipCode;
+        private Integer warrantyClaimId;
+        private String warrantyClaimCode;
         private String serialNumber;
         private String customerName;
         private String customerPhone;
@@ -133,7 +165,14 @@ public class RefundDto {
         private String refundChannel;
         private String refundChannelLabel;
         private Boolean isDefective;
+        private String defectiveReason;
+        private String defectiveReasonLabel;
         private String returnReason;
+        private BigDecimal couponAllocatedDiscount;
+        private BigDecimal shippingExcludedAmount;
+        private String vietQrUrl;
+        private String bankInfoSavedBy;
+        private LocalDateTime bankInfoSavedAt;
         private String voucherCode;
         private String customerBankName;
         private String customerBankAccount;
@@ -155,5 +194,65 @@ public class RefundDto {
         private LocalDateTime completedAt;
         private String notes;
         private LocalDateTime createdAt;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NapasLookupRequest {
+        private String bankName;
+        private String bankAccount;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class NapasLookupResponse {
+        private String bankName;
+        private String bankAccount;
+        private String accountHolderName;
+        private boolean verified;
+        private String message;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class GatewayBalanceResponse {
+        private String paymentMethod;
+        private String paymentMethodLabel;
+        private BigDecimal merchantBalance;
+        private BigDecimal requiredAmount;
+        private boolean sufficient;
+        private String message;
+        private LocalDateTime checkedAt;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class AuditLogEntry {
+        private Integer id;
+        private String action;
+        private String actionLabel;
+        private String actorUsername;
+        private String actorRole;
+        private String detail;
+        private LocalDateTime createdAt;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CancellationRefundResult {
+        private boolean attempted;
+        private String refundCode;
+        private String status;
+        private String statusLabel;
+        private String message;
     }
 }

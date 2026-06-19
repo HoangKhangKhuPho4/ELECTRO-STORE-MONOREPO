@@ -45,6 +45,12 @@ public class GHNConfig {
     private int shopId = 199593;
 
     /**
+     * URL webhook đăng ký với GHN (staging/production).
+     * Dev local: dùng ngrok domain cố định → /api/shipping/ghn/webhook
+     */
+    private String webhookUrl = "https://uncallused-nongenetically-ervin.ngrok-free.dev/api/shipping/ghn/webhook";
+
+    /**
      * Base URL của GHN API
      * Production: https://online-gateway.ghn.vn
      * Sandbox:    https://dev-online-gateway.ghn.vn

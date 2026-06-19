@@ -38,6 +38,12 @@ public class RefundRequest {
     @Column(name = "return_slip_code", length = 30)
     private String returnSlipCode;
 
+    @Column(name = "warranty_claim_id")
+    private Integer warrantyClaimId;
+
+    @Column(name = "warranty_claim_code", length = 50)
+    private String warrantyClaimCode;
+
     @Column(name = "serial_number", length = 100)
     private String serialNumber;
 
@@ -53,6 +59,12 @@ public class RefundRequest {
     @Column(name = "refund_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal refundAmount;
 
+    @Column(name = "coupon_allocated_discount", precision = 15, scale = 2)
+    private BigDecimal couponAllocatedDiscount;
+
+    @Column(name = "shipping_excluded_amount", precision = 15, scale = 2)
+    private BigDecimal shippingExcludedAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 20)
     private Order.PaymentMethod paymentMethod;
@@ -63,6 +75,9 @@ public class RefundRequest {
 
     @Column(name = "is_defective")
     private Boolean isDefective;
+
+    @Column(name = "defective_reason", length = 40)
+    private String defectiveReason;
 
     @Column(name = "return_reason", columnDefinition = "TEXT")
     private String returnReason;
@@ -78,6 +93,12 @@ public class RefundRequest {
 
     @Column(name = "customer_bank_account_name", length = 200)
     private String customerBankAccountName;
+
+    @Column(name = "bank_info_saved_by", length = 100)
+    private String bankInfoSavedBy;
+
+    @Column(name = "bank_info_saved_at")
+    private LocalDateTime bankInfoSavedAt;
 
     @Column(name = "gateway_refund_id", length = 100)
     private String gatewayRefundId;

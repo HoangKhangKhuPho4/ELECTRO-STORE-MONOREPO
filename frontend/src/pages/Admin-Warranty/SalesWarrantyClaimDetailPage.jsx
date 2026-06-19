@@ -49,6 +49,7 @@ import {
 import { CLAIM_STATUS_COLORS, CLAIM_STATUS_LABELS, RESOLUTION_OPTIONS } from "../../utils/warrantyClaimStatus";
 import { isApiSuccess } from "../../utils/apiResponse";
 import { isGhnReturnTracking, isPlaceholderReturnTracking } from "../../utils/warrantyTracking";
+import GhnStatusBadge from "../../components/Shipping/GhnStatusBadge";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const RETURN_CARRIERS = ["GHN"];
@@ -409,15 +410,26 @@ const SalesWarrantyClaimDetailPage = () => {
                 </Box>
               </Grid>
             </Grid>
+            {(claim.ghnReturnShippingStatus || claim.ghnReturnShippingStatusDisplay) && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                  Trạng thái GHN (webhook thu hồi)
+                </Typography>
+                <GhnStatusBadge
+                  status={claim.ghnReturnShippingStatus}
+                  statusDisplay={claim.ghnReturnShippingStatusDisplay}
+                  updatedAt={claim.ghnReturnStatusUpdatedAt}
+                />
+              </Box>
+            )}
             {claim.returnInstruction && (
               <Alert severity="success" sx={{ mt: 2 }}>
                 <strong>Hướng dẫn khách:</strong> {claim.returnInstruction}
               </Alert>
             )}
             <Alert severity="info" sx={{ mt: 2 }}>
-              <strong>Kho:</strong> Khi shipper giao gói máy lỗi, tra cứu ticket bằng{" "}
-              <strong>mã vận đơn</strong> hoặc <strong>#{claim.claimNumber}</strong> tại danh sách Yêu cầu BH
-              online → bấm <strong>Xác nhận nhận máy (RECEIVED)</strong>.
+              <strong>Kho:</strong> Khi shipper giao gói máy lỗi, GHN webhook <em>delivered</em> tự hoàn tất ticket
+              (hoàn tiền RF) hoặc Kho xác nhận thủ công tại <strong>Tiếp nhận BH</strong>.
             </Alert>
             {isGhnReturn(claim.returnCarrier, claim.returnTrackingCode) && (
               <Box sx={{ mt: 2 }}>

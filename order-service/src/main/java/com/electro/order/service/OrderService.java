@@ -2,7 +2,9 @@ package com.electro.order.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,7 @@ import com.electro.order.dto.CatalogClientDto;
 import com.electro.order.dto.GHNDto;
 import com.electro.order.dto.OrderDto;
 import com.electro.order.dto.PaymentDto;
+import com.electro.order.dto.RefundDto;
 import com.electro.order.entity.Coupon;
 import com.electro.order.entity.Order;
 import com.electro.order.entity.OrderDetail;
@@ -67,6 +71,10 @@ public class OrderService {
     @Autowired
     @Lazy
     private PaymentService paymentService;
+
+    @Autowired
+    @Lazy
+    private RefundService refundService;
 
     @Autowired
     private GHNService ghnService;
@@ -457,7 +465,13 @@ public class OrderService {
         order.setCancelReason(request != null ? request.getReason() : null);
         orderRepository.save(order);
 
-        return mapToOrderResponse(order, details);
+        RefundDto.CancellationRefundResult cancellationRefund =
+                triggerPreDeliveryCancellationRefund(order, request != null ? request.getReason() : null);
+
+        order = orderRepository.findById(order.getId()).orElse(order);
+        OrderDto.OrderResponse response = mapToOrderResponse(order, details);
+        response.setCancellationRefund(cancellationRefund);
+        return response;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -590,6 +604,172 @@ public class OrderService {
     }
 
     /**
+     * Xử lý webhook GHN — cập nhật trạng thái vận chuyển tự động khi shipper/GHN đổi status.
+     * @return true nếu tìm thấy và xử lý đơn bán
+     */
+    public boolean applyGhnWebhookStatus(GHNDto.WebhookCallbackRequest payload) {
+        String ghnStatus = payload.getStatus().trim().toLowerCase();
+        Order order = resolveOrderFromGhnWebhook(payload);
+        if (order == null) {
+            return false;
+        }
+
+        order.setGhnShippingStatus(ghnStatus);
+        order.setGhnStatusUpdatedAt(parseGhnWebhookTime(payload.getTime()));
+
+        if (payload.getOrderCode() != null && !payload.getOrderCode().isBlank()) {
+            if (order.getGhnOrderCode() == null || order.getGhnOrderCode().isBlank()) {
+                order.setGhnOrderCode(payload.getOrderCode());
+            }
+            if (order.getTrackingCode() == null || order.getTrackingCode().isBlank()) {
+                order.setTrackingCode(payload.getOrderCode());
+            }
+        }
+
+        appendGhnWebhookNote(order, payload, ghnStatus);
+
+        switch (ghnStatus) {
+            case "delivered" -> applyDeliveredFromGhnWebhook(order);
+            case "cancel" -> applyCancelledFromGhnWebhook(order, payload);
+            case "delivery_fail" -> appendDeliveryFailNote(order, payload);
+            case "ready_to_pick", "picking", "money_collect_picking", "picked",
+                 "storing", "transporting", "sorting", "delivering", "money_collect_delivering"
+                    -> promoteToShippingIfNeeded(order);
+            case "waiting_to_return", "return", "return_transporting", "return_sorting",
+                 "returning", "return_fail", "returned"
+                    -> handleReturnFlowFromGhnWebhook(order, ghnStatus);
+            case "lost", "damage", "exception"
+                    -> handleShipmentExceptionFromGhnWebhook(order, payload, ghnStatus);
+            default -> log.debug("GHN webhook chỉ ghi log: {} — {}", order.getOrderCode(), ghnStatus);
+        }
+
+        orderRepository.save(order);
+        log.info("GHN webhook applied (order): order={}, ghnStatus={}, orderStatus={}",
+                order.getOrderCode(), ghnStatus, order.getStatus());
+        return true;
+    }
+
+    private void appendDeliveryFailNote(Order order, GHNDto.WebhookCallbackRequest payload) {
+        String reason = payload.getReason() != null ? payload.getReason() : "Giao hàng thất bại";
+        String existing = order.getAdminNote();
+        String line = "[GHN] Giao thất bại — " + reason;
+        order.setAdminNote(existing == null || existing.isBlank() ? line : existing + "\n" + line);
+    }
+
+    private void handleReturnFlowFromGhnWebhook(Order order, String ghnStatus) {
+        if ("returned".equals(ghnStatus)
+                && (order.getStatus() == Order.OrderStatus.DELIVERED
+                || order.getStatus() == Order.OrderStatus.SHIPPING)) {
+            order.setStatus(Order.OrderStatus.REFUNDED);
+            order.setPaymentStatus(Order.PaymentStatus.REFUNDED);
+            restoreStock(order.getId());
+        }
+    }
+
+    private void handleShipmentExceptionFromGhnWebhook(
+            Order order, GHNDto.WebhookCallbackRequest payload, String ghnStatus) {
+        String display = ghnService.translateGHNStatus(ghnStatus);
+        String line = "[GHN CẢNH BÁO] " + display;
+        if (payload.getReason() != null && !payload.getReason().isBlank()) {
+            line += " — " + payload.getReason();
+        }
+        String existing = order.getAdminNote();
+        order.setAdminNote(existing == null || existing.isBlank() ? line : existing + "\n" + line);
+    }
+
+    private Order resolveOrderFromGhnWebhook(GHNDto.WebhookCallbackRequest payload) {
+        if (payload.getClientOrderCode() != null && !payload.getClientOrderCode().isBlank()) {
+            var byClient = orderRepository.findByOrderCode(payload.getClientOrderCode().trim());
+            if (byClient.isPresent()) {
+                return byClient.get();
+            }
+        }
+        if (payload.getOrderCode() != null && !payload.getOrderCode().isBlank()) {
+            return orderRepository.findFirstByTrackingCodeIgnoreCase(payload.getOrderCode().trim())
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    private LocalDateTime parseGhnWebhookTime(String time) {
+        if (time == null || time.isBlank()) {
+            return LocalDateTime.now();
+        }
+        try {
+            return Instant.parse(time).atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDateTime();
+        } catch (Exception e) {
+            return LocalDateTime.now();
+        }
+    }
+
+    private void appendGhnWebhookNote(Order order, GHNDto.WebhookCallbackRequest payload, String ghnStatus) {
+        String display = ghnService.translateGHNStatus(ghnStatus);
+        String line = "[GHN " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"))
+                + "] " + display;
+        if (payload.getDescription() != null && !payload.getDescription().isBlank()) {
+            line += " — " + payload.getDescription();
+        }
+        if (payload.getReason() != null && !payload.getReason().isBlank()) {
+            line += " (Lý do: " + payload.getReason() + ")";
+        }
+        String existing = order.getAdminNote();
+        order.setAdminNote(existing == null || existing.isBlank() ? line : existing + "\n" + line);
+    }
+
+    private void promoteToShippingIfNeeded(Order order) {
+        if (order.getStatus() == Order.OrderStatus.PROCESSING) {
+            order.setStatus(Order.OrderStatus.SHIPPING);
+            if (order.getShippedAt() == null) {
+                order.setShippedAt(LocalDateTime.now());
+            }
+        }
+    }
+
+    private void applyDeliveredFromGhnWebhook(Order order) {
+        if (order.getStatus() == Order.OrderStatus.COMPLETED) {
+            return;
+        }
+        if (order.getStatus() != Order.OrderStatus.SHIPPING
+                && order.getStatus() != Order.OrderStatus.PROCESSING
+                && order.getStatus() != Order.OrderStatus.DELIVERED) {
+            log.warn("GHN delivered ignored for order {} in status {}", order.getOrderCode(), order.getStatus());
+            return;
+        }
+        order.setDeliveredAt(LocalDateTime.now());
+        if (order.getPaymentMethod() == Order.PaymentMethod.COD) {
+            order.setPaymentStatus(Order.PaymentStatus.PAID);
+            order.setCodReconciled(true);
+        }
+        activateWarrantyForOrder(order.getId());
+        // Luồng 2: GHN delivered → tự động Hoàn thành (khách thấy "Hoàn thành" ngay)
+        order.setStatus(Order.OrderStatus.COMPLETED);
+        String note = "[Tự động] Hoàn thành đơn sau GHN giao hàng thành công (delivered)";
+        String existing = order.getAdminNote();
+        order.setAdminNote(existing == null || existing.isBlank() ? note : existing + "\n" + note);
+        log.info("Order {} auto-completed via GHN delivered webhook", order.getOrderCode());
+    }
+
+    private void applyCancelledFromGhnWebhook(Order order, GHNDto.WebhookCallbackRequest payload) {
+        if (order.getStatus() == Order.OrderStatus.CANCELLED
+                || order.getStatus() == Order.OrderStatus.REFUNDED
+                || order.getStatus() == Order.OrderStatus.COMPLETED) {
+            return;
+        }
+        if (order.getStatus() != Order.OrderStatus.SHIPPING
+                && order.getStatus() != Order.OrderStatus.PROCESSING
+                && order.getStatus() != Order.OrderStatus.CONFIRMED) {
+            log.warn("GHN cancel ignored for order {} in status {}", order.getOrderCode(), order.getStatus());
+            return;
+        }
+        order.setStatus(Order.OrderStatus.CANCELLED);
+        order.setCancelledAt(LocalDateTime.now());
+        String reason = payload.getReason() != null ? payload.getReason() : "GHN hủy vận đơn";
+        order.setCancelReason(reason);
+        restoreStock(order.getId());
+        restoreCoupon(order);
+    }
+
+    /**
      * Admin cập nhật trạng thái đơn hàng
      * Flow hợp lệ: PENDING → CONFIRMED → PROCESSING → SHIPPING → DELIVERED → COMPLETED
      *               Bất kỳ (trừ COMPLETED) → CANCELLED
@@ -658,9 +838,10 @@ public class OrderService {
                 break;
             case DELIVERED:
                 order.setDeliveredAt(LocalDateTime.now());
-                // COD: tự động đánh dấu đã thanh toán
+                // COD: tự động đánh dấu đã thanh toán + đối soát shipper
                 if (order.getPaymentMethod() == Order.PaymentMethod.COD) {
                     order.setPaymentStatus(Order.PaymentStatus.PAID);
+                    order.setCodReconciled(true);
                 }
                 // Kích hoạt bảo hành cho tất cả máy đã gán IMEI trong đơn
                 activateWarrantyForOrder(order.getId());
@@ -703,7 +884,15 @@ public class OrderService {
         orderRepository.save(order);
 
         List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
-        return mapToAdminOrderResponse(order, details);
+        OrderDto.AdminOrderResponse response = mapToAdminOrderResponse(order, details);
+        if (newStatus == Order.OrderStatus.CANCELLED) {
+            RefundDto.CancellationRefundResult cancellationRefund = triggerPreDeliveryCancellationRefund(
+                    order, request.getCancelReason());
+            order = orderRepository.findById(order.getId()).orElse(order);
+            response = mapToAdminOrderResponse(order, details);
+            response.setCancellationRefund(cancellationRefund);
+        }
+        return response;
     }
 
     /**
@@ -803,8 +992,14 @@ public class OrderService {
         order.setCancelReason(request != null && request.getReason() != null ? request.getReason() : "Admin hủy đơn");
         orderRepository.save(order);
 
+        RefundDto.CancellationRefundResult cancellationRefund = triggerPreDeliveryCancellationRefund(
+                order, order.getCancelReason());
+
+        order = orderRepository.findById(order.getId()).orElse(order);
         List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
-        return mapToAdminOrderResponse(order, details);
+        OrderDto.AdminOrderResponse response = mapToAdminOrderResponse(order, details);
+        response.setCancellationRefund(cancellationRefund);
+        return response;
     }
 
     /**
@@ -941,12 +1136,15 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        // Chỉ cho gán khi đơn đang ở CONFIRMED hoặc PROCESSING
-        if (order.getStatus() != Order.OrderStatus.CONFIRMED
-                && order.getStatus() != Order.OrderStatus.PROCESSING) {
+        Order.OrderStatus orderStatus = order.getStatus();
+        boolean allowAssign = orderStatus == Order.OrderStatus.CONFIRMED
+                || orderStatus == Order.OrderStatus.PROCESSING
+                || orderStatus == Order.OrderStatus.SHIPPING
+                || orderStatus == Order.OrderStatus.DELIVERED
+                || orderStatus == Order.OrderStatus.COMPLETED;
+        if (!allowAssign) {
             throw new BadRequestException(
-                    "Chỉ có thể gán IMEI khi đơn hàng ở trạng thái CONFIRMED hoặc PROCESSING. "
-                            + "Trạng thái hiện tại: " + order.getStatus());
+                    "Không thể gán IMEI cho đơn hàng ở trạng thái " + orderStatus);
         }
 
         OrderDetail orderDetail = orderDetailRepository.findById(request.getOrderDetailId())
@@ -1004,6 +1202,11 @@ public class OrderService {
         log.info("Đã gán {} IMEI/Serial cho OrderDetail #{} (Order #{})",
                 request.getImeis().size(), orderDetail.getId(), orderId);
 
+        if (orderStatus == Order.OrderStatus.DELIVERED
+                || orderStatus == Order.OrderStatus.COMPLETED) {
+            activateWarrantyForOrder(order.getId());
+        }
+
         List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
         return mapToAdminOrderResponse(order, details);
     }
@@ -1050,6 +1253,31 @@ public class OrderService {
     }
 
     // ─── Admin helper: hoàn coupon ────────────────────────────────────────────
+    private RefundDto.CancellationRefundResult triggerPreDeliveryCancellationRefund(
+            Order order, String cancelReason) {
+        if (!refundService.isEligibleForPreDeliveryCancellation(order)) {
+            return RefundDto.CancellationRefundResult.builder()
+                    .attempted(false)
+                    .build();
+        }
+        try {
+            return refundService.processPreDeliveryCancellationRefund(
+                    order.getId(), cancelReason, resolveActorUsername());
+        } catch (Exception e) {
+            log.error("Pre-delivery cancellation refund failed for {}: {}",
+                    order.getOrderCode(), e.getMessage(), e);
+            return RefundDto.CancellationRefundResult.builder()
+                    .attempted(true)
+                    .message("Đã hủy đơn nhưng hoàn cổng thất bại: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    private String resolveActorUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getName() != null ? auth.getName() : "system";
+    }
+
     private void restoreCoupon(Order order) {
         if (order.getCoupon() != null) {
             Coupon coupon = order.getCoupon();
@@ -1081,6 +1309,9 @@ public class OrderService {
         r.setShippingWard(order.getShippingWard());
         r.setShippingFee(order.getShippingFee());
         r.setTrackingCode(order.getTrackingCode());
+        r.setGhnShippingStatus(order.getGhnShippingStatus());
+        r.setGhnShippingStatusDisplay(ghnService.translateGHNStatus(order.getGhnShippingStatus()));
+        r.setGhnStatusUpdatedAt(order.getGhnStatusUpdatedAt());
 
         // Thanh toán & trạng thái
         r.setPaymentMethod(order.getPaymentMethod().name());
@@ -1157,6 +1388,8 @@ public class OrderService {
         s.setShippingName(order.getShippingName());
         s.setShippingPhone(order.getShippingPhone());
         s.setTrackingCode(order.getTrackingCode());
+        s.setGhnShippingStatus(order.getGhnShippingStatus());
+        s.setGhnShippingStatusDisplay(ghnService.translateGHNStatus(order.getGhnShippingStatus()));
         s.setCarrierLabel(order.getTrackingCode() != null && !order.getTrackingCode().isBlank()
                 ? "Giao Hàng Nhanh (GHN)"
                 : "GHN — tạo khi xuất kho");

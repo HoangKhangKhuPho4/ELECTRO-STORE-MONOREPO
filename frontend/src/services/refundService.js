@@ -25,6 +25,13 @@ export const fetchRefundVoucher = async (id) => {
   return res.data;
 };
 
+export const updateRefundBankInfo = async (id, payload) => {
+  const res = await httpClient.put(`${REFUNDS_API}/${id}/bank-info`, payload, {
+    headers: { ...headers(), "Content-Type": "application/json" },
+  });
+  return res.data;
+};
+
 /** VNPay / MoMo / ZaloPay */
 export const approveRefundGateway = async (id, payload = {}) => {
   const res = await httpClient.put(`${REFUNDS_API}/${id}/approve`, payload, {
@@ -51,6 +58,23 @@ export const rejectRefund = async (id, reason) => {
 export const retryRefundGateway = async (id) => {
   const res = await httpClient.put(`${REFUNDS_API}/${id}/retry`, null, {
     headers: headers(),
+  });
+  return res.data;
+};
+
+export const fetchRefundAuditLogs = async (id) => {
+  const res = await httpClient.get(`${REFUNDS_API}/${id}/audit-logs`, { headers: headers() });
+  return res.data;
+};
+
+export const checkRefundGatewayBalance = async (id) => {
+  const res = await httpClient.get(`${REFUNDS_API}/${id}/gateway-balance`, { headers: headers() });
+  return res.data;
+};
+
+export const napasLookup = async (bankName, bankAccount) => {
+  const res = await httpClient.post(`${REFUNDS_API}/napas-lookup`, { bankName, bankAccount }, {
+    headers: { ...headers(), "Content-Type": "application/json" },
   });
   return res.data;
 };

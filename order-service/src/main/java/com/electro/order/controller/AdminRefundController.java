@@ -21,13 +21,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/refunds")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('REFUND_APPROVE', 'USER_MANAGE', 'ROLE_ADMIN', 'ADMIN')")
 public class AdminRefundController {
+
+    private static final String VIEW = "hasAnyAuthority('REFUND_VIEW','REFUND_BANK_INFO','REFUND_APPROVE','USER_MANAGE','ROLE_ADMIN','ADMIN')";
+    private static final String BANK_INFO = "hasAnyAuthority('REFUND_BANK_INFO','REFUND_APPROVE','USER_MANAGE','ROLE_ADMIN','ADMIN')";
+    private static final String APPROVE = "hasAnyAuthority('REFUND_APPROVE','USER_MANAGE','ROLE_ADMIN','ADMIN')";
 
     private final RefundService refundService;
     private final RefundReceiptStorageService receiptStorage;
 
     @GetMapping
+    @PreAuthorize(VIEW)
     public ResponseEntity<ApiResponse<List<RefundDto.Summary>>> list(
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "paymentMethod", required = false) String paymentMethod) {
@@ -35,20 +39,56 @@ public class AdminRefundController {
                 refundService.list(status, paymentMethod)));
     }
 
+    @GetMapping("/{id}/audit-logs")
+    @PreAuthorize(VIEW)
+    public ResponseEntity<ApiResponse<List<RefundDto.AuditLogEntry>>> auditLogs(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success("Nhật ký kiểm toán",
+                refundService.listAuditLogs(id)));
+    }
+
+    @GetMapping("/{id}/gateway-balance")
+    @PreAuthorize(APPROVE)
+    public ResponseEntity<ApiResponse<RefundDto.GatewayBalanceResponse>> gatewayBalance(
+            @PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success("Kiểm tra số dư cổng",
+                refundService.checkGatewayBalance(id)));
+    }
+
+    @PostMapping("/napas-lookup")
+    @PreAuthorize(BANK_INFO)
+    public ResponseEntity<ApiResponse<RefundDto.NapasLookupResponse>> napasLookup(
+            @RequestBody RefundDto.NapasLookupRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Tra cứu Napas",
+                refundService.napasLookup(request)));
+    }
+
     @GetMapping("/{id}")
+    @PreAuthorize(VIEW)
     public ResponseEntity<ApiResponse<RefundDto.Detail>> detail(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success("Chi tiết hoàn tiền",
                 refundService.getDetail(id)));
     }
 
     @GetMapping("/{id}/voucher")
+    @PreAuthorize(VIEW)
     public ResponseEntity<ApiResponse<RefundDto.Voucher>> voucher(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success("Phiếu chi",
                 refundService.getVoucher(id)));
     }
 
-    /** VNPay / MoMo / ZaloPay — một nút hoàn qua cổng */
+    /** Sales: lưu STK khách (COD) — chưa chi tiền */
+    @PutMapping("/{id}/bank-info")
+    @PreAuthorize(BANK_INFO)
+    public ResponseEntity<ApiResponse<RefundDto.Detail>> updateBankInfo(
+            @PathVariable Integer id,
+            @Valid @RequestBody RefundDto.UpdateBankInfoRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Đã lưu thông tin ngân hàng",
+                refundService.updateBankInfo(id, request)));
+    }
+
+    /** Admin: VNPay / MoMo / ZaloPay — hoàn qua cổng */
     @PutMapping("/{id}/approve")
+    @PreAuthorize(APPROVE)
     public ResponseEntity<ApiResponse<RefundDto.Detail>> approve(
             @PathVariable Integer id,
             @RequestBody(required = false) RefundDto.ApproveRequest request) {
@@ -57,8 +97,9 @@ public class AdminRefundController {
                 refundService.approve(id, req)));
     }
 
-    /** COD — chuyển khoản thủ công + biên lai + sinh phiếu chi */
+    /** Admin: COD — chuyển khoản thủ công + biên lai + sinh phiếu chi */
     @PostMapping(value = "/{id}/confirm-cod", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(APPROVE)
     public ResponseEntity<ApiResponse<RefundDto.Detail>> confirmCod(
             @PathVariable Integer id,
             @RequestParam String customerBankName,
@@ -76,6 +117,7 @@ public class AdminRefundController {
     }
 
     @PutMapping("/{id}/reject")
+    @PreAuthorize(APPROVE)
     public ResponseEntity<ApiResponse<RefundDto.Detail>> reject(
             @PathVariable Integer id,
             @Valid @RequestBody RefundDto.RejectRequest request) {
@@ -84,6 +126,7 @@ public class AdminRefundController {
     }
 
     @PutMapping("/{id}/confirm-transfer")
+    @PreAuthorize(APPROVE)
     public ResponseEntity<ApiResponse<RefundDto.Detail>> confirmTransfer(
             @PathVariable Integer id,
             @RequestBody(required = false) RefundDto.ConfirmManualTransferRequest request) {
@@ -94,12 +137,14 @@ public class AdminRefundController {
     }
 
     @PutMapping("/{id}/retry")
+    @PreAuthorize(APPROVE)
     public ResponseEntity<ApiResponse<RefundDto.Detail>> retry(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success("Thử lại hoàn tiền cổng",
                 refundService.retryGateway(id)));
     }
 
     @GetMapping("/receipts/{filename}")
+    @PreAuthorize(VIEW)
     public ResponseEntity<Resource> serveReceipt(@PathVariable String filename) throws Exception {
         Path file = receiptStorage.resolve(filename);
         Resource resource = new UrlResource(file.toUri());

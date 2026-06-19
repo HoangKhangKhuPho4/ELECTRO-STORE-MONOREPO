@@ -15,6 +15,8 @@ public interface WarrantyClaimRepository extends JpaRepository<WarrantyClaim, In
 
     Optional<WarrantyClaim> findByClaimNumber(String claimNumber);
 
+    Optional<WarrantyClaim> findFirstByReturnTrackingCodeIgnoreCase(String returnTrackingCode);
+
     @Query("""
             SELECT c FROM WarrantyClaim c
             WHERE c.status = :status

@@ -82,6 +82,7 @@ import ProducerManagementPage from "./pages/Admin-Producers/ProducerManagementPa
 import ReviewManagementPage from "./pages/Admin-Reviews/ReviewManagementPage.jsx";
 import SalesOmnichannelPage from "./pages/Admin-Sales/SalesOmnichannelPage.jsx";
 import SalesPipelinePage from "./pages/Admin-Sales/SalesPipelinePage.jsx";
+import CustomerReturnRequestListPage from "./pages/Admin-Sales/CustomerReturnRequestListPage.jsx";
 import SalesKpiConfigPage from "./pages/Admin-Sales/SalesKpiConfigPage.jsx";
 import SalesProductConsultationPage from "./pages/Admin-Sales/SalesProductConsultationPage.jsx";
 
@@ -223,17 +224,17 @@ function App() {
                       </ProtectedRoute>
                     } />
                     <Route path="refunds" element={
-                      <ProtectedRoute requiredAny={["REFUND_APPROVE", "USER_MANAGE"]}>
+                      <ProtectedRoute requiredAny={["REFUND_VIEW", "REFUND_BANK_INFO", "REFUND_APPROVE", "USER_MANAGE"]}>
                         <RefundListPage />
                       </ProtectedRoute>
                     } />
                     <Route path="refunds/:id" element={
-                      <ProtectedRoute requiredAny={["REFUND_APPROVE", "USER_MANAGE"]}>
+                      <ProtectedRoute requiredAny={["REFUND_VIEW", "REFUND_BANK_INFO", "REFUND_APPROVE", "USER_MANAGE"]}>
                         <RefundProcessPage />
                       </ProtectedRoute>
                     } />
                     <Route path="refunds/:id/voucher" element={
-                      <ProtectedRoute requiredAny={["REFUND_APPROVE", "USER_MANAGE"]}>
+                      <ProtectedRoute requiredAny={["REFUND_VIEW", "REFUND_BANK_INFO", "REFUND_APPROVE", "USER_MANAGE"]}>
                         <RefundVoucherPage />
                       </ProtectedRoute>
                     } />
@@ -310,6 +311,11 @@ function App() {
                     <Route path="sales/pipeline" element={
                       <ProtectedRoute requiredAny={["ORDER_VIEW_ALL", "REPORT_SALES"]}>
                         <SalesPipelinePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="sales/return-requests" element={
+                      <ProtectedRoute requiredAny={["RETURN_REQUEST_REVIEW", "ORDER_VIEW_ALL", "USER_MANAGE"]}>
+                        <CustomerReturnRequestListPage />
                       </ProtectedRoute>
                     } />
                     <Route path="sales/kpi-config" element={

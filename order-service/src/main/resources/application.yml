@@ -29,6 +29,8 @@ ghn:
   base-url: ${GHN_BASE_URL:https://dev-online-gateway.ghn.vn}
   token: ${GHN_TOKEN:44cb4919-203c-11f1-a973-aee5264794df}
   shop-id: ${GHN_SHOP_ID:199593}
+  # URL webhook đăng ký với GHN (qua ngrok khi dev local)
+  webhook-url: ${GHN_WEBHOOK_URL:https://uncallused-nongenetically-ervin.ngrok-free.dev/api/shipping/ghn/webhook}
   fallback-shipping-fee: 30000
   warehouse-name: ${GHN_WAREHOUSE_NAME:Electro Store - Kho Bảo Hành}
   warehouse-phone: ${GHN_WAREHOUSE_PHONE:0900000000}

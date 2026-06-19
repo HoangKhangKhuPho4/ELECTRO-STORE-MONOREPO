@@ -280,65 +280,75 @@ const Login = () => {
 
         {loginMethod === "password" && (
           <>
-            <TextField
-              label="Username / Email"
-              name="email"
-              variant="filled"
-              fullWidth
-              sx={{
-                mb: 2,
-                "& .MuiFilledInput-root": {
-                  backgroundColor: "white",
-                  "&:hover": { backgroundColor: "white" },
-                  "&.Mui-focused": { backgroundColor: "white" },
-                },
-                "& .MuiInputLabel-root.Mui-focused": { color: "black" },
-              }}
-              value={values.email}
-              onChange={handleChange}
-            />
-            <TextField
-              label="Password"
-              name="password"
-              type="password"
-              variant="filled"
-              fullWidth
-              sx={{
-                mb: 2,
-                "& .MuiFilledInput-root": {
-                  backgroundColor: "white",
-                  "&:hover": { backgroundColor: "white" },
-                  "&.Mui-focused": { backgroundColor: "white" },
-                },
-                "& .MuiInputLabel-root.Mui-focused": { color: "black" },
-              }}
-              value={values.password}
-              onChange={handleChange}
-            />
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  value="remember"
-                  sx={{ color: "white", "&.Mui-checked": { color: "#FFC312" } }}
-                />
-              }
-              label="Remember Me"
-            />
-
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{
-                mt: 2,
-                backgroundColor: "#FFC312",
-                color: "black",
-                "&:hover": { backgroundColor: "white" },
-              }}
-              onClick={handleSubmit}
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              noValidate
+              sx={{ display: "flex", flexDirection: "column" }}
             >
-              Login
-            </Button>
+              <TextField
+                label="Username / Email"
+                name="email"
+                type="text"
+                autoComplete="username"
+                variant="filled"
+                fullWidth
+                sx={{
+                  mb: 2,
+                  "& .MuiFilledInput-root": {
+                    backgroundColor: "white",
+                    "&:hover": { backgroundColor: "white" },
+                    "&.Mui-focused": { backgroundColor: "white" },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "black" },
+                }}
+                value={values.email}
+                onChange={handleChange}
+              />
+              <TextField
+                label="Password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                variant="filled"
+                fullWidth
+                sx={{
+                  mb: 2,
+                  "& .MuiFilledInput-root": {
+                    backgroundColor: "white",
+                    "&:hover": { backgroundColor: "white" },
+                    "&.Mui-focused": { backgroundColor: "white" },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "black" },
+                }}
+                value={values.password}
+                onChange={handleChange}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    value="remember"
+                    sx={{ color: "white", "&.Mui-checked": { color: "#FFC312" } }}
+                  />
+                }
+                label="Remember Me"
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                sx={{
+                  mt: 2,
+                  backgroundColor: "#FFC312",
+                  color: "black",
+                  "&:hover": { backgroundColor: "white" },
+                }}
+              >
+                Login
+              </Button>
+            </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", my: 2 }}>
               <Divider sx={{ flex: 1, borderColor: "rgba(255,255,255,0.2)" }} />

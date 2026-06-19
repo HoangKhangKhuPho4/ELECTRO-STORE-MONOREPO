@@ -130,6 +130,19 @@ public class PaymentDto {
         private String rawResponse;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class GatewayBalanceResult {
+        private String paymentMethod;
+        private BigDecimal merchantBalance;
+        private BigDecimal requiredAmount;
+        private boolean sufficient;
+        private String message;
+        private LocalDateTime checkedAt;
+    }
+
     /**
      * Response cho payment transaction history
      */

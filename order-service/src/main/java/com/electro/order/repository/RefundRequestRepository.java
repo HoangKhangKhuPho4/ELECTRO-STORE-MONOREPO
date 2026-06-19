@@ -16,6 +16,8 @@ public interface RefundRequestRepository extends JpaRepository<RefundRequest, In
 
     Optional<RefundRequest> findByReturnSlipId(Integer returnSlipId);
 
+    Optional<RefundRequest> findByWarrantyClaimId(Integer warrantyClaimId);
+
     Optional<RefundRequest> findByRefundCode(String refundCode);
 
     List<RefundRequest> findByOrderId(Integer orderId);

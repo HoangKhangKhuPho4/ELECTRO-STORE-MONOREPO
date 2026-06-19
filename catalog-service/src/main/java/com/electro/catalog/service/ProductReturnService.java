@@ -1,6 +1,7 @@
 package com.electro.catalog.service;
 
 import com.electro.catalog.client.OrderRefundClient;
+import com.electro.catalog.client.OrderReturnRequestClient;
 import com.electro.catalog.dto.ProductReturnDto;
 import com.electro.catalog.entity.ProductItem;
 import com.electro.catalog.entity.ProductItemStatus;
@@ -10,9 +11,11 @@ import com.electro.catalog.exception.BadRequestException;
 import com.electro.catalog.exception.ResourceNotFoundException;
 import com.electro.catalog.repository.ProductItemRepository;
 import com.electro.catalog.repository.ProductReturnSlipRepository;
+import com.electro.catalog.security.CatalogActorContext;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,8 @@ public class ProductReturnService {
     private final ProductItemRepository productItemRepository;
     private final InventoryService inventoryService;
     private final OrderRefundClient orderRefundClient;
+    private final OrderReturnRequestClient orderReturnRequestClient;
+    private final CatalogActorContext catalogActorContext;
 
     @Transactional(readOnly = true)
     public List<ProductReturnDto.Summary> list(String statusFilter) {
@@ -66,7 +71,7 @@ public class ProductReturnService {
         var pending = slipRepository.findFirstBySerialNumberAndStatus(
                 item.getSerialNumber(), ProductReturnSlip.SlipStatus.PENDING);
 
-        return ProductReturnDto.LookupResponse.builder()
+        var builder = ProductReturnDto.LookupResponse.builder()
                 .serialNumber(item.getSerialNumber())
                 .productItemId(item.getId())
                 .variantId(variant != null ? variant.getId() : null)
@@ -76,8 +81,25 @@ public class ProductReturnService {
                 .itemStatus(item.getStatus() != null ? item.getStatus().name() : null)
                 .itemStatusLabel(itemStatusLabel(item.getStatus()))
                 .hasPendingSlip(pending.isPresent())
-                .pendingSlipId(pending.map(ProductReturnSlip::getId).orElse(null))
-                .build();
+                .pendingSlipId(pending.map(ProductReturnSlip::getId).orElse(null));
+        enrichCustomerReturnRequest(builder, item.getSerialNumber());
+        return builder.build();
+    }
+
+    private void enrichCustomerReturnRequest(
+            ProductReturnDto.LookupResponse.LookupResponseBuilder builder, String serial) {
+        try {
+            var rr = orderReturnRequestClient.lookupBySerial(serial);
+            if (rr != null && rr.getReturnRequestId() != null) {
+                builder.customerReturnRequestId(rr.getReturnRequestId())
+                        .customerReturnRequestCode(rr.getRequestCode())
+                        .customerReturnRequestStatus(rr.getStatus())
+                        .customerReturnRequestStatusLabel(rr.getStatusLabel())
+                        .customerReturnReasonLabel(rr.getReasonTypeLabel());
+            }
+        } catch (Exception e) {
+            log.debug("No customer return request for serial {}: {}", serial, e.getMessage());
+        }
     }
 
     @Transactional
@@ -116,7 +138,13 @@ public class ProductReturnService {
                 .itemStatusBefore(item.getStatus() != null ? item.getStatus().name() : null)
                 .build();
 
-        return toDetail(slipRepository.save(slip));
+        Integer actorId = catalogActorContext.currentUserId();
+        if (actorId != null) {
+            slip.setCreatedByUserId(actorId);
+        }
+        ProductReturnSlip saved = slipRepository.save(slip);
+        linkCustomerReturnRequest(saved);
+        return toDetail(saved);
     }
 
     @Transactional
@@ -127,8 +155,22 @@ public class ProductReturnService {
         }
 
         boolean defective = Boolean.TRUE.equals(request.getIsDefective());
+        if (defective) {
+            if (request.getDefectiveReason() == null || request.getDefectiveReason().isBlank()) {
+                throw new BadRequestException(
+                        "Hàng lỗi — bắt buộc chọn lý do: DEFECTIVE_BY_CARRIER hoặc DEFECTIVE_BY_MANUFACTURER.");
+            }
+            try {
+                slip.setDefectiveReason(
+                        ProductReturnSlip.DefectiveReason.valueOf(request.getDefectiveReason().trim()));
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Lý do hàng lỗi không hợp lệ.");
+            }
+        }
+
+        Integer actorId = catalogActorContext.currentUserId();
         inventoryService.returnStockForSlip(slip.getSerialNumber(), defective,
-                request.getReason(), request.getWarehouseNotes());
+                request.getReason(), request.getWarehouseNotes(), actorId);
 
         slip.setStatus(ProductReturnSlip.SlipStatus.PROCESSED);
         slip.setIsDefective(defective);
@@ -138,10 +180,26 @@ public class ProductReturnService {
         slip.setReason(request.getReason());
         slip.setWarehouseNotes(request.getWarehouseNotes());
         slip.setProcessedAt(LocalDateTime.now());
+        slip.setProcessedByUserId(actorId);
 
         ProductReturnSlip saved = slipRepository.save(slip);
+        linkCustomerReturnRequest(saved);
         triggerRefundRequest(saved, request);
         return toDetail(saved);
+    }
+
+    private void linkCustomerReturnRequest(ProductReturnSlip slip) {
+        try {
+            var rr = orderReturnRequestClient.lookupBySerial(slip.getSerialNumber());
+            if (rr == null || rr.getReturnRequestId() == null) {
+                return;
+            }
+            orderReturnRequestClient.linkWarehouse(new OrderReturnRequestClient.WarehouseLinkRequest(
+                    rr.getReturnRequestId(), slip.getId(), slip.getSlipCode()));
+        } catch (Exception e) {
+            log.warn("Could not link customer return request for slip {}: {}",
+                    slip.getSlipCode(), e.getMessage());
+        }
     }
 
     private void triggerRefundRequest(ProductReturnSlip slip, ProductReturnDto.ProcessRequest request) {
@@ -150,6 +208,8 @@ public class ProductReturnService {
             return;
         }
         try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            String warehouseUser = auth != null && auth.getName() != null ? auth.getName() : "warehouse";
             var refundReq = new OrderRefundClient.CreateFromReturnRequest(
                     slip.getId(),
                     slip.getSlipCode(),
@@ -160,7 +220,9 @@ public class ProductReturnService {
                     slip.getCustomerPhone(),
                     slip.getProductName(),
                     slip.getIsDefective(),
-                    request.getReason()
+                    slip.getDefectiveReason() != null ? slip.getDefectiveReason().name() : null,
+                    request.getReason(),
+                    warehouseUser
             );
             var refund = orderRefundClient.createFromReturn(refundReq);
             log.info("Refund request {} created for slip {}", refund.getRefundCode(), slip.getSlipCode());
@@ -208,6 +270,19 @@ public class ProductReturnService {
         };
     }
 
+    private String defectiveReasonLabel(ProductReturnSlip.DefectiveReason reason, Boolean isDefective) {
+        if (!Boolean.TRUE.equals(isDefective)) {
+            return "Hàng tốt (AVAILABLE)";
+        }
+        if (reason == null) {
+            return "Hàng lỗi";
+        }
+        return switch (reason) {
+            case DEFECTIVE_BY_CARRIER -> "Hàng lỗi — Hãng vận chuyển";
+            case DEFECTIVE_BY_MANUFACTURER -> "Hàng lỗi — Lỗi sản xuất";
+        };
+    }
+
     private ProductReturnDto.Summary toSummary(ProductReturnSlip s) {
         return ProductReturnDto.Summary.builder()
                 .id(s.getId())
@@ -223,6 +298,8 @@ public class ProductReturnService {
                 .itemStatusBefore(s.getItemStatusBefore())
                 .conditionType(s.getConditionType() != null ? s.getConditionType().name() : null)
                 .isDefective(s.getIsDefective())
+                .defectiveReason(s.getDefectiveReason() != null ? s.getDefectiveReason().name() : null)
+                .defectiveReasonLabel(defectiveReasonLabel(s.getDefectiveReason(), s.getIsDefective()))
                 .createdAt(s.getCreatedAt())
                 .processedAt(s.getProcessedAt())
                 .build();
@@ -248,6 +325,8 @@ public class ProductReturnService {
                 .itemStatusBefore(s.getItemStatusBefore())
                 .conditionType(s.getConditionType() != null ? s.getConditionType().name() : null)
                 .isDefective(s.getIsDefective())
+                .defectiveReason(s.getDefectiveReason() != null ? s.getDefectiveReason().name() : null)
+                .defectiveReasonLabel(defectiveReasonLabel(s.getDefectiveReason(), s.getIsDefective()))
                 .reason(s.getReason())
                 .warehouseNotes(s.getWarehouseNotes())
                 .createdAt(s.getCreatedAt())

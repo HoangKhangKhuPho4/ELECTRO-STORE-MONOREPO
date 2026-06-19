@@ -25,6 +25,8 @@ public class ProductReturnDto {
         private String itemStatusBefore;
         private String conditionType;
         private Boolean isDefective;
+        private String defectiveReason;
+        private String defectiveReasonLabel;
         private LocalDateTime createdAt;
         private LocalDateTime processedAt;
     }
@@ -50,6 +52,8 @@ public class ProductReturnDto {
         private String itemStatusBefore;
         private String conditionType;
         private Boolean isDefective;
+        private String defectiveReason;
+        private String defectiveReasonLabel;
         private String reason;
         private String warehouseNotes;
         private LocalDateTime createdAt;
@@ -74,6 +78,11 @@ public class ProductReturnDto {
         private String trackingCode;
         private Boolean hasPendingSlip;
         private Integer pendingSlipId;
+        private Integer customerReturnRequestId;
+        private String customerReturnRequestCode;
+        private String customerReturnRequestStatus;
+        private String customerReturnRequestStatusLabel;
+        private String customerReturnReasonLabel;
     }
 
     @Data
@@ -91,6 +100,7 @@ public class ProductReturnDto {
     public static class ProcessRequest {
         @NotNull
         private Boolean isDefective;
+        private String defectiveReason;
         private String reason;
         private String warehouseNotes;
     }

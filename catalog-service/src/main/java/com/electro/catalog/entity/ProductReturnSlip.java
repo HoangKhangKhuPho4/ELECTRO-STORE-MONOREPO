@@ -22,6 +22,11 @@ public class ProductReturnSlip {
         INTACT, DEFECTIVE
     }
 
+    public enum DefectiveReason {
+        DEFECTIVE_BY_CARRIER,
+        DEFECTIVE_BY_MANUFACTURER
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -76,6 +81,10 @@ public class ProductReturnSlip {
     @Column(name = "is_defective")
     private Boolean isDefective;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "defective_reason", length = 40)
+    private DefectiveReason defectiveReason;
+
     @Column(name = "reason", columnDefinition = "TEXT")
     private String reason;
 
@@ -84,6 +93,9 @@ public class ProductReturnSlip {
 
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
+
+    @Column(name = "processed_by_user_id")
+    private Integer processedByUserId;
 
     @Column(name = "created_by_user_id")
     private Integer createdByUserId;

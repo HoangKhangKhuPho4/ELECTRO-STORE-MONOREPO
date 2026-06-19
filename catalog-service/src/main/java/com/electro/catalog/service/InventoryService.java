@@ -65,11 +65,12 @@ public class InventoryService {
     @Transactional
     public void returnStock(InventoryDto.ReturnStockRequest request) {
         returnStockForSlip(request.getImei(), Boolean.TRUE.equals(request.getIsDefective()),
-                request.getReason(), null);
+                request.getReason(), null, request.getUserId());
     }
 
     @Transactional
-    public void returnStockForSlip(String serialRaw, boolean defective, String reason, String notes) {
+    public void returnStockForSlip(String serialRaw, boolean defective, String reason, String notes,
+            Integer actorUserId) {
         String serial = serialRaw != null ? serialRaw.trim() : "";
         ProductItem productItem = productItemRepository
                 .findBySerialNumber(serial)
@@ -115,6 +116,7 @@ public class InventoryService {
         tx.setVariantId(productItem.getVariant() != null ? productItem.getVariant().getId() : null);
         tx.setProductItemId(productItem.getId());
         tx.setReason("Hàng hoàn trả: " + noteText);
+        tx.setUserId(requireTransactionUserId(actorUserId));
         inventoryTransactionRepository.save(tx);
     }
 
