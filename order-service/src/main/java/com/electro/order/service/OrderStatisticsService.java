@@ -173,6 +173,35 @@ public class OrderStatisticsService {
         }).collect(Collectors.toList());
     }
 
+    public List<Map<String, Object>> getTopSellingProductsByProduct(int limit) {
+        List<Object[]> results = orderDetailRepository.findTopSellingProductsByProductId(
+                COMPLETED_STATUSES, PageRequest.of(0, limit));
+        AtomicInteger rank = new AtomicInteger(1);
+        return results.stream().map(row -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("rank", rank.getAndIncrement());
+            item.put("productId", toInt(row[0]));
+            item.put("quantitySold", toLong(row[1]));
+            item.put("revenue", toBigDecimal(row[2]));
+            return item;
+        }).collect(Collectors.toList());
+    }
+
+    public long countSoldProducts() {
+        return orderDetailRepository.countDistinctSoldProducts(COMPLETED_STATUSES);
+    }
+
+    public Map<Integer, Long> getSoldQuantitiesByProductIds(List<Integer> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return Map.of();
+        }
+        return orderDetailRepository.sumQuantityByProductIds(COMPLETED_STATUSES, productIds).stream()
+                .collect(Collectors.toMap(
+                        row -> toInt(row[0]),
+                        row -> toLong(row[1]),
+                        Long::sum));
+    }
+
     public Map<String, Object> getRecentOrders(int limit) {
         List<Order> orders = orderRepository.findRecentOrders(PageRequest.of(0, limit));
         List<Map<String, Object>> summaries = orders.stream().map(o -> {

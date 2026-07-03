@@ -2,6 +2,7 @@ package com.electro.auth.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,4 +29,13 @@ public interface UserClient {
 
     @PostMapping("/api/internal/users/reset-password")
     Map<String, Object> resetPassword(@RequestBody Map<String, Object> request);
+
+    @PostMapping("/api/internal/users/qr/generate")
+    Map<String, Object> generateQrToken();
+
+    @GetMapping("/api/internal/users/qr/status/{token}")
+    Map<String, Object> getQrStatus(@PathVariable("token") String token);
+
+    @PostMapping("/api/internal/users/qr/verify")
+    Map<String, Object> verifyQrToken(@RequestParam("token") String token, @RequestParam("userId") Integer userId);
 }

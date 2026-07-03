@@ -38,6 +38,8 @@ const Login = () => {
   const [loginMethod, setLoginMethod] = useState("password"); // "password" or "qr"
   const [qrToken, setQrToken] = useState("");
   const [qrStatus, setQrStatus] = useState("PENDING");
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState("");
   const [isFbLoading, setIsFbLoading] = useState(false);
 
   const dispatch = useDispatch();
@@ -45,14 +47,24 @@ const Login = () => {
 
   // ----- Logic sinh QR Token -----
   const fetchQrToken = async () => {
+    setQrLoading(true);
+    setQrError("");
     try {
       const response = await httpClient.get(`${API_PREFIX}/auth/qr/generate`);
       if (response.data.success) {
         setQrToken(response.data.data.qrToken);
         setQrStatus("PENDING");
+      } else {
+        setQrError(response.data.message || "Không tạo được mã QR. Vui lòng thử lại.");
       }
     } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        "Không thể tạo mã QR. Kiểm tra API Gateway (8080) và auth-service đã chạy chưa.";
+      setQrError(msg);
       console.error("Lỗi khi tạo mã QR:", err);
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -405,11 +417,17 @@ const Login = () => {
               Mở camera hoặc ứng dụng Zalo trên điện thoại quét mã này để đăng nhập nhanh.
             </Typography>
 
-            <Box sx={{ p: 2, backgroundColor: "white", borderRadius: 2 }}>
-              {qrToken ? (
+            <Box sx={{ p: 2, backgroundColor: "white", borderRadius: 2, minWidth: 180, minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {qrLoading ? (
+                <CircularProgress size={48} sx={{ color: "#ee4d2d" }} />
+              ) : qrToken ? (
                 <QRCodeCanvas value={qrUrl} size={180} />
+              ) : qrError ? (
+                <Typography sx={{ color: "#d32f2f", width: 180, textAlign: "center", fontSize: 13, px: 1 }}>
+                  {qrError}
+                </Typography>
               ) : (
-                <Typography sx={{ color: "black", width: 180, height: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: "black", width: 180, textAlign: "center" }}>
                   Đang tạo mã...
                 </Typography>
               )}

@@ -39,6 +39,21 @@ public class InternalStatisticsController {
         return orderStatisticsService.getTopSellingProducts(limit);
     }
 
+    @GetMapping("/top-products-by-product")
+    public List<Map<String, Object>> topProductsByProduct(@RequestParam(defaultValue = "10") int limit) {
+        return orderStatisticsService.getTopSellingProductsByProduct(limit);
+    }
+
+    @GetMapping("/sold-quantities")
+    public Map<Integer, Long> soldQuantities(@RequestParam List<Integer> productIds) {
+        return orderStatisticsService.getSoldQuantitiesByProductIds(productIds);
+    }
+
+    @GetMapping("/sold-products/count")
+    public Map<String, Long> soldProductsCount() {
+        return Map.of("count", orderStatisticsService.countSoldProducts());
+    }
+
     @GetMapping("/orders/recent")
     public Map<String, Object> recentOrders(@RequestParam(defaultValue = "10") int limit) {
         return orderStatisticsService.getRecentOrders(limit);

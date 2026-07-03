@@ -50,7 +50,8 @@ httpClient.interceptors.response.use(
         url.includes("/api/auth/login") ||
         url.includes("/api/auth/register") ||
         url.includes("/api/auth/forgot-password") ||
-        url.includes("/api/auth/reset-password");
+        url.includes("/api/auth/reset-password") ||
+        url.includes("/api/auth/qr/");
       if (!isAuthEndpoint) {
         clearAuthSession();
       }

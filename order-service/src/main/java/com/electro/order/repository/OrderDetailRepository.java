@@ -34,6 +34,25 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Intege
             "ORDER BY SUM(od.quantity) DESC")
     List<Object[]> findTopSellingProducts(@Param("statuses") List<Order.OrderStatus> statuses, Pageable pageable);
 
+    @Query("SELECT od.productId, SUM(od.quantity), SUM(od.totalPrice) " +
+            "FROM OrderDetail od JOIN od.order o " +
+            "WHERE o.status IN :statuses AND od.productId IS NOT NULL " +
+            "GROUP BY od.productId " +
+            "ORDER BY SUM(od.quantity) DESC")
+    List<Object[]> findTopSellingProductsByProductId(
+            @Param("statuses") List<Order.OrderStatus> statuses, Pageable pageable);
+
+    @Query("SELECT COUNT(DISTINCT od.productId) FROM OrderDetail od JOIN od.order o " +
+            "WHERE o.status IN :statuses AND od.productId IS NOT NULL")
+    long countDistinctSoldProducts(@Param("statuses") List<Order.OrderStatus> statuses);
+
+    @Query("SELECT od.productId, COALESCE(SUM(od.quantity), 0) FROM OrderDetail od JOIN od.order o " +
+            "WHERE o.status IN :statuses AND od.productId IN :productIds " +
+            "GROUP BY od.productId")
+    List<Object[]> sumQuantityByProductIds(
+            @Param("statuses") List<Order.OrderStatus> statuses,
+            @Param("productIds") Collection<Integer> productIds);
+
     @Query("SELECT CASE WHEN COUNT(od) > 0 THEN true ELSE false END FROM OrderDetail od JOIN od.order o " +
             "WHERE o.userId = :userId AND od.productId = :productId " +
             "AND o.status IN ('DELIVERED', 'COMPLETED')")

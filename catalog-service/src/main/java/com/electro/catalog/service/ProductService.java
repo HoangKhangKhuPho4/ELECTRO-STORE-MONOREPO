@@ -1,5 +1,6 @@
 package com.electro.catalog.service;
 
+import com.electro.catalog.client.OrderStatisticsClient;
 import com.electro.catalog.dto.ProductDto;
 import com.electro.catalog.entity.Product;
 import com.electro.catalog.entity.ProductType;
@@ -16,10 +17,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -52,6 +59,9 @@ public class ProductService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private OrderStatisticsClient orderStatisticsClient;
+
     @org.springframework.beans.factory.annotation.Value("${app.server.url:http://localhost:8080}")
     private String serverUrl;
 
@@ -63,7 +73,8 @@ public class ProductService {
     public ProductDto.Response getProductById(Long id) {
         Product product = productRepository.findById(id.intValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
-        return mapToResponse(product);
+        Long soldQuantity = fetchSoldQuantity(product.getId());
+        return mapToResponse(product, soldQuantity);
     }
 
     public ProductDto.Response getProductBySku(String sku) {
@@ -178,8 +189,51 @@ public class ProductService {
     }
 
     public Page<ProductDto.Response> getBestSellingProducts(Pageable pageable) {
-        return productRepository.findBestSellingProductsPage(pageable)
-                .map(this::mapToResponse);
+        int page = pageable.getPageNumber();
+        int size = pageable.getPageSize();
+        int fetchLimit = Math.max((page + 1) * size * 2, 100);
+
+        List<Map<String, Object>> topRows;
+        long totalSoldProducts;
+        try {
+            topRows = orderStatisticsClient.getTopProductsByProduct(fetchLimit);
+            Map<String, Long> countResponse = orderStatisticsClient.getSoldProductsCount();
+            totalSoldProducts = countResponse != null && countResponse.get("count") != null
+                    ? countResponse.get("count") : 0L;
+        } catch (Exception e) {
+            return Page.empty(pageable);
+        }
+
+        if (topRows == null || topRows.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Integer> orderedIds = new ArrayList<>();
+        Map<Integer, Long> soldByProduct = new LinkedHashMap<>();
+        for (Map<String, Object> row : topRows) {
+            Integer productId = toInt(row.get("productId"));
+            Long quantitySold = toLong(row.get("quantitySold"));
+            if (productId != null && !soldByProduct.containsKey(productId)) {
+                orderedIds.add(productId);
+                soldByProduct.put(productId, quantitySold != null ? quantitySold : 0L);
+            }
+        }
+
+        Map<Integer, Product> productMap = productRepository.findActiveProductsByIds(orderedIds).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a, HashMap::new));
+
+        List<ProductDto.Response> ranked = orderedIds.stream()
+                .filter(productMap::containsKey)
+                .map(id -> mapToResponse(productMap.get(id), soldByProduct.get(id)))
+                .collect(Collectors.toList());
+
+        int fromIndex = page * size;
+        if (fromIndex >= ranked.size()) {
+            return new PageImpl<>(List.of(), pageable, totalSoldProducts);
+        }
+        int toIndex = Math.min(fromIndex + size, ranked.size());
+        List<ProductDto.Response> pageContent = ranked.subList(fromIndex, toIndex);
+        return new PageImpl<>(pageContent, pageable, totalSoldProducts);
     }
 
     public Page<ProductDto.Response> searchProducts(ProductDto.SearchRequest searchRequest) {
@@ -190,6 +244,38 @@ public class ProductService {
                 com.electro.catalog.repository.ProductSearchSpecification.buildSearchSpec(searchRequest);
         return productRepository.findAll(spec, pageable)
                 .map(this::mapToResponse);
+    }
+
+    public List<ProductDto.AutocompleteItem> suggestProducts(String keyword, Integer productTypeId, int limit) {
+        if (keyword == null || keyword.trim().length() < 2) {
+            return List.of();
+        }
+        int capped = Math.min(Math.max(limit, 1), 20);
+        ProductDto.SearchRequest searchRequest = new ProductDto.SearchRequest();
+        searchRequest.setKeyword(keyword.trim());
+        searchRequest.setProductTypeId(productTypeId);
+        searchRequest.setPage(0);
+        searchRequest.setSize(capped);
+        searchRequest.setSortBy("name");
+        searchRequest.setSortDir("asc");
+
+        return searchProducts(searchRequest).getContent().stream()
+                .map(this::mapToAutocompleteItem)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private ProductDto.AutocompleteItem mapToAutocompleteItem(ProductDto.Response product) {
+        String imageUrl = null;
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            imageUrl = product.getImages().get(0).getLinkImage();
+        }
+        String categoryName = product.getProductType() != null ? product.getProductType().getName() : null;
+        return new ProductDto.AutocompleteItem(
+                product.getId(),
+                product.getName(),
+                product.getPrice(),
+                imageUrl,
+                categoryName);
     }
 
     public Page<ProductDto.Response> getProductsByCategory(Long categoryId, Pageable pageable) {
@@ -329,6 +415,10 @@ public class ProductService {
     }
 
     private ProductDto.Response mapToResponse(Product product) {
+        return mapToResponse(product, null);
+    }
+
+    private ProductDto.Response mapToResponse(Product product, Long soldQuantity) {
         ProductDto.Response response = modelMapper.map(product, ProductDto.Response.class);
         
         response.setPrice(product.getBasePrice() != null ? product.getBasePrice().doubleValue() : 0.0);
@@ -337,8 +427,7 @@ public class ProductService {
         response.setActive(product.getIsActive() != null && product.getIsActive() ? 1 : 0);
         response.setImportDate(product.getCreatedAt() != null ? product.getCreatedAt().toLocalDate() : null);
         
-        // Tính số lượng đã bán hiển thị cho User Card
-        response.setSoldQuantity(0);
+        response.setSoldQuantity(soldQuantity != null ? soldQuantity.intValue() : 0);
         
         // Lọc chỉ lấy variant đang active (Public API không hiển thị variant đã bị vô hiệu hóa)
         java.util.Set<Integer> activeVariantIds = new java.util.HashSet<>();
@@ -719,5 +808,41 @@ public class ProductService {
             return stored.trim();
         }
         return serverUrl + "/img/" + img.getId();
+    }
+
+    private Long fetchSoldQuantity(Integer productId) {
+        try {
+            Map<String, Long> quantities = orderStatisticsClient.getSoldQuantities(List.of(productId));
+            if (quantities == null || quantities.isEmpty()) {
+                return 0L;
+            }
+            Long qty = quantities.get(String.valueOf(productId));
+            if (qty == null) {
+                qty = quantities.get(productId.toString());
+            }
+            return qty != null ? qty : 0L;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private Integer toInt(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.parseInt(value.toString());
+    }
+
+    private Long toLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(value.toString());
     }
 }
