@@ -55,4 +55,14 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Intege
     @Query("SELECT DISTINCT o.userId, od.productId FROM OrderDetail od JOIN od.order o " +
             "WHERE o.status IN :statuses AND o.userId IS NOT NULL AND od.productId IS NOT NULL")
     List<Object[]> findAllPurchasedUserProducts(@Param("statuses") List<Order.OrderStatus> statuses);
+
+    @Query("SELECT od.productId, SUM(od.totalPrice), SUM(od.quantity) " +
+            "FROM OrderDetail od JOIN od.order o " +
+            "WHERE o.status IN :statuses AND od.productId IS NOT NULL " +
+            "AND o.orderDate BETWEEN :start AND :end " +
+            "GROUP BY od.productId")
+    List<Object[]> findRevenueByProductInDateRange(
+            @Param("statuses") List<Order.OrderStatus> statuses,
+            @Param("start") java.time.LocalDateTime start,
+            @Param("end") java.time.LocalDateTime end);
 }

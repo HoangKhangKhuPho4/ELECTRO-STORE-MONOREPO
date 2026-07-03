@@ -40,6 +40,10 @@ public class InternalProductController {
         res.setName(product.getName());
         res.setIsActive(product.getIsActive());
         res.setRequiresImei(product.getRequiresImei());
+        if (product.getProductType() != null) {
+            res.setProductTypeId(product.getProductType().getId());
+            res.setProductTypeName(product.getProductType().getName());
+        }
         return res;
     }
 
@@ -122,6 +126,8 @@ public class InternalProductController {
         private String name;
         private Boolean isActive;
         private Boolean requiresImei;
+        private Integer productTypeId;
+        private String productTypeName;
     }
 
     @Data

@@ -46,6 +46,11 @@ public class PaymentConfig {
         private String orderType = "other";
         private String locale = "vn";
         private String currCode = "VND";
+        /**
+         * Dev local only: bỏ qua PKIX khi gọi API refund/querydr (Java HttpClient → VNPay).
+         * Production phải để false.
+         */
+        private boolean trustAllSsl = false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

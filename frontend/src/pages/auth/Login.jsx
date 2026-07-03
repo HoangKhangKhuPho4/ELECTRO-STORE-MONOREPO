@@ -434,7 +434,7 @@ const Login = () => {
           </Typography>
           <Typography variant="body2" sx={{ mt: 1 }}>
             <Link to="/forgot-password" style={{ color: "white", textDecoration: "none" }}>
-              Forgot your password?
+              Quên mật khẩu?
             </Link>
           </Typography>
         </Box>

@@ -29,6 +29,8 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
             "/api/auth/refresh",
             "/api/auth/logout",
             "/api/auth/google",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password",
             "/api/chatbot/chat",
             "/api/chatbot/rag-status",
             "/api/live-chat/guest/**",

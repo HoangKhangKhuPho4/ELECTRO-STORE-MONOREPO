@@ -17,6 +17,7 @@ import {
   ViewKanban as KanbanIcon,
   QrCode2 as QrCodeIcon,
   AccountBalance as BankIcon,
+  Savings as FinanceIcon,
   AssignmentReturn as ReturnIcon,
   ReceiptLong as PoIcon,
   Style as StyleIcon,
@@ -95,9 +96,9 @@ const AdminSidebar = ({ currentPage, collapsed = false }) => {
     { text: "Quản lý mua hàng", icon: <PoIcon />, path: "/admin/procurement", req: ["PRODUCT_MANAGE"] },
     { text: "Duyệt chứng từ", icon: <PoIcon />, path: "/admin/po-management", req: ["PRODUCT_MANAGE"] },
     { text: "Đơn mua hàng", icon: <PoIcon />, path: "/admin/purchase-orders", req: ["STOCK_IMPORT"], badgeKey: "warehousePo" },
-    { text: "Đơn hàng cần xuất", icon: <OrdersIcon />, path: "/admin/warehouse-fulfillment", req: ["ORDER_ASSIGN_SHIPPING", "ORDER_VIEW_ALL"] },
+    { text: "Đơn hàng cần xuất", icon: <OrdersIcon />, path: "/admin/warehouse-fulfillment", req: ["ORDER_ASSIGN_SHIPPING"] },
     { text: "Tồn kho", icon: <WarehouseIcon />, path: "/admin/inventory", req: ["INVENTORY_STAT"] },
-    { text: "Kiểm kê kho", icon: <WarehouseIcon />, path: "/admin/inventory-audit", req: ["INVENTORY_STAT", "STOCK_IMPORT"] },
+    { text: "Kiểm kê kho", icon: <WarehouseIcon />, path: "/admin/inventory-audit", req: ["STOCK_IMPORT"] },
     { text: "Duyệt phiếu kiểm kê", icon: <FactCheckIcon />, path: "/admin/inventory-audit-approval", req: ["PRODUCT_MANAGE", "USER_MANAGE"] },
     { text: "Quản lý hoàn tiền", icon: <BankIcon />, path: "/admin/refunds", req: ["REFUND_VIEW", "REFUND_BANK_INFO", "REFUND_APPROVE", "USER_MANAGE"] },
     { text: "Hồ sơ khách hàng", icon: <CustomerProfileIcon />, path: "/admin/customers", req: ["CUSTOMER_VIEW"] },
@@ -114,6 +115,7 @@ const AdminSidebar = ({ currentPage, collapsed = false }) => {
     { text: "Đánh giá", icon: <ReviewIcon />, path: "/admin/reviews", req: ["PRODUCT_MANAGE"] },
 
     { text: "Thống kê", icon: <AnalyticsIcon />, path: "/admin/analytics", req: ["REPORT_REVENUE"] },
+    { text: "Sổ cái", icon: <FinanceIcon />, path: "/admin/finance", req: ["REPORT_REVENUE"] },
 
     { text: "Cài đặt", icon: <SettingsIcon />, path: "/admin/settings", req: ["ROLE_PERM_EDIT"] },
   ];

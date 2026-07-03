@@ -45,6 +45,9 @@ public class InternalUserController {
     @Autowired
     private com.electro.user.service.GoogleAuthService googleAuthService;
 
+    @Autowired
+    private com.electro.user.service.PasswordResetService passwordResetService;
+
     @PostMapping("/login")
     public Map<String, Object> verifyLogin(@RequestBody Map<String, String> request) {
         String usernameOrEmail = request.get("username");
@@ -115,5 +118,36 @@ public class InternalUserController {
     @GetMapping("/username/{username}")
     public UserDto.Response getUserByUsername(@PathVariable("username") String username) {
         return userService.getUserByUsername(username);
+    }
+
+    @PostMapping("/forgot-password")
+    public Map<String, Object> forgotPassword(@Valid @RequestBody UserDto.ForgotPasswordRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String message = passwordResetService.requestPasswordReset(request.getEmail());
+            response.put("success", true);
+            response.put("message", message);
+        } catch (IllegalStateException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Không thể gửi email. Vui lòng thử lại sau.");
+        }
+        return response;
+    }
+
+    @PostMapping("/reset-password")
+    public Map<String, Object> resetPassword(@Valid @RequestBody UserDto.ResetPasswordRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String message = passwordResetService.resetPassword(request);
+            response.put("success", true);
+            response.put("message", message);
+        } catch (BadRequestException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+        return response;
     }
 }

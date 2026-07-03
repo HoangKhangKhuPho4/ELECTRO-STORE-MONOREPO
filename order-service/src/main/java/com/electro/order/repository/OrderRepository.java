@@ -55,6 +55,14 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     Long countByStatus(@Param("status") Order.OrderStatus status);
 
+    @Query("""
+            SELECT COUNT(DISTINCT o.id) FROM Order o
+            JOIN o.orderDetails od
+            WHERE o.isHidden = false
+            AND o.status IN :statuses
+            AND (SELECT COUNT(oi) FROM OrderItem oi WHERE oi.orderDetail.id = od.id) < od.quantity""")
+    Long countOrdersWithIncompleteImei(@Param("statuses") List<Order.OrderStatus> statuses);
+
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE " +
            "o.status = 'DELIVERED' AND o.orderDate BETWEEN :startDate AND :endDate")
     Double getTotalRevenueByDateRange(@Param("startDate") LocalDateTime startDate,

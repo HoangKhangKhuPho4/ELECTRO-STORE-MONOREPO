@@ -76,6 +76,7 @@ import InventoryAuditApprovalPage from "./pages/Admin-Warehouse/InventoryAuditAp
 import RefundListPage from "./pages/Admin-Finance/RefundListPage.jsx";
 import RefundProcessPage from "./pages/Admin-Finance/RefundProcessPage.jsx";
 import RefundVoucherPage from "./pages/Admin-Finance/RefundVoucherPage.jsx";
+import AdminFinancePage from "./pages/Admin-Finance/AdminFinancePage.jsx";
 import AttributeManagementPage from "./pages/Admin-Attributes/AttributeManagementPage.jsx";
 import CouponManagementPage from "./pages/Admin-Coupons/CouponManagementPage.jsx";
 import ProducerManagementPage from "./pages/Admin-Producers/ProducerManagementPage.jsx";
@@ -204,17 +205,17 @@ function App() {
                       </ProtectedRoute>
                     } />
                     <Route path="warehouse-fulfillment" element={
-                      <ProtectedRoute requiredAny={["ORDER_ASSIGN_SHIPPING", "ORDER_VIEW_ALL"]}>
+                      <ProtectedRoute requiredPermission="ORDER_ASSIGN_SHIPPING">
                         <WarehouseFulfillmentPage />
                       </ProtectedRoute>
                     } />
                     <Route path="warehouse-fulfillment/:orderId" element={
-                      <ProtectedRoute requiredAny={["ORDER_ASSIGN_SHIPPING", "ORDER_VIEW_ALL"]}>
+                      <ProtectedRoute requiredPermission="ORDER_ASSIGN_SHIPPING">
                         <WarehouseOrderFulfillmentPage />
                       </ProtectedRoute>
                     } />
                     <Route path="inventory-audit" element={
-                      <ProtectedRoute requiredAny={["INVENTORY_STAT", "STOCK_IMPORT"]}>
+                      <ProtectedRoute requiredPermission="STOCK_IMPORT">
                         <InventoryAuditPage />
                       </ProtectedRoute>
                     } />
@@ -261,6 +262,11 @@ function App() {
                     <Route path="analytics" element={
                       <ProtectedRoute requiredAny={["REPORT_REVENUE", "REPORT_SALES"]}>
                         <AnalyticsPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="finance" element={
+                      <ProtectedRoute requiredPermission="REPORT_REVENUE">
+                        <AdminFinancePage />
                       </ProtectedRoute>
                     } />
                     <Route path="warranty" element={

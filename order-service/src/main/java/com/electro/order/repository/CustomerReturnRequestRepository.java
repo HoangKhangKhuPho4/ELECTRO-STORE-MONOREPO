@@ -23,4 +23,8 @@ public interface CustomerReturnRequestRepository extends JpaRepository<CustomerR
             String serialNumber, List<CustomerReturnRequest.RequestStatus> statuses);
 
     List<CustomerReturnRequest> findByOrderIdOrderByCreatedAtDesc(Integer orderId);
+
+    long countByStatus(CustomerReturnRequest.RequestStatus status);
+
+    long countByStatusIn(java.util.Collection<CustomerReturnRequest.RequestStatus> statuses);
 }

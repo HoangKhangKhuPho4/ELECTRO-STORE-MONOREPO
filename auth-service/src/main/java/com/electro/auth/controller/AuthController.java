@@ -162,6 +162,61 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Logged out", null));
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody Map<String, String> body) {
+        String email = body != null ? body.get("email") : null;
+        if (!StringUtils.hasText(email)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, "Email is required"));
+        }
+        try {
+            Map<String, Object> result = userClient.forgotPassword(Map.of("email", email.trim()));
+            if (result != null && Boolean.TRUE.equals(result.get("success"))) {
+                String message = result.get("message") != null
+                        ? result.get("message").toString()
+                        : "Email đã được gửi";
+                return ResponseEntity.ok(ApiResponse.success(message, null));
+            }
+            String message = result != null && result.get("message") != null
+                    ? result.get("message").toString()
+                    : "Không thể gửi email";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, message));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "Forgot password failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody Map<String, String> body) {
+        if (body == null || !StringUtils.hasText(body.get("token"))
+                || !StringUtils.hasText(body.get("newPassword"))
+                || !StringUtils.hasText(body.get("confirmPassword"))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, "token, newPassword and confirmPassword are required"));
+        }
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("token", body.get("token").trim());
+            payload.put("newPassword", body.get("newPassword"));
+            payload.put("confirmPassword", body.get("confirmPassword"));
+            Map<String, Object> result = userClient.resetPassword(payload);
+            if (result != null && Boolean.TRUE.equals(result.get("success"))) {
+                String message = result.get("message") != null
+                        ? result.get("message").toString()
+                        : "Đặt lại mật khẩu thành công";
+                return ResponseEntity.ok(ApiResponse.success(message, null));
+            }
+            String message = result != null && result.get("message") != null
+                    ? result.get("message").toString()
+                    : "Đặt lại mật khẩu thất bại";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(400, message));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "Reset password failed: " + e.getMessage()));
+        }
+    }
+
     private Map<String, Object> buildAuthData(Map<String, Object> userServiceResponse) {
         String username = (String) userServiceResponse.get("username");
         List<String> roles = extractStringList(userServiceResponse.get("roles"));

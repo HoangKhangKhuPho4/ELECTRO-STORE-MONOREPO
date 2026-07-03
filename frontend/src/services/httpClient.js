@@ -46,7 +46,11 @@ httpClient.interceptors.response.use(
 
     if (status === 401) {
       const url = config?.url || "";
-      const isAuthEndpoint = url.includes("/api/auth/login") || url.includes("/api/auth/register");
+      const isAuthEndpoint =
+        url.includes("/api/auth/login") ||
+        url.includes("/api/auth/register") ||
+        url.includes("/api/auth/forgot-password") ||
+        url.includes("/api/auth/reset-password");
       if (!isAuthEndpoint) {
         clearAuthSession();
       }

@@ -22,4 +22,10 @@ public interface UserClient {
 
     @GetMapping("/api/internal/users/details")
     Map<String, Object> getUserDetails(@RequestParam("username") String username);
+
+    @PostMapping("/api/internal/users/forgot-password")
+    Map<String, Object> forgotPassword(@RequestBody Map<String, String> request);
+
+    @PostMapping("/api/internal/users/reset-password")
+    Map<String, Object> resetPassword(@RequestBody Map<String, Object> request);
 }

@@ -55,4 +55,6 @@ public interface WarrantyClaimRepository extends JpaRepository<WarrantyClaim, In
             Pageable pageable);
 
     Page<WarrantyClaim> findByUserIdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
+
+    long countByStatusIn(java.util.Collection<WarrantyClaim.ClaimStatus> statuses);
 }

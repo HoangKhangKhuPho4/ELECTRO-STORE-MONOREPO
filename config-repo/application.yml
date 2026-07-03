@@ -3,11 +3,11 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Ho_Chi_Minh
-  # Aiven MySQL (goi nho ~20 connection): 5 service x 3 pool = 15 (du cho dev)
+  # Local Docker MySQL (dev) — pool lon hon cloud vi khong bi gioi han connection
   datasource:
     hikari:
-      maximum-pool-size: 3
-      minimum-idle: 1
+      maximum-pool-size: 10
+      minimum-idle: 2
       connection-timeout: 20000
       max-lifetime: 280000
       idle-timeout: 120000
@@ -78,6 +78,7 @@ payment:
     pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
     api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
     return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/payment/vnpay/return}
+    trust-all-ssl: ${PAYMENT_VNPAY_TRUST_ALL_SSL:false}
     version: "2.1.0"
     command: pay
     order-type: other

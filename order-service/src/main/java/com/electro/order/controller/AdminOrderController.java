@@ -57,7 +57,7 @@ public class AdminOrderController {
     }
 
     @GetMapping("/warehouse/fulfillment-queue")
-    @PreAuthorize("hasAnyAuthority('ORDER_ASSIGN_SHIPPING', 'ORDER_VIEW_ALL', 'ROLE_ADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ORDER_ASSIGN_SHIPPING', 'ORDER_TRACKING_UPDATE', 'IMEI_MANAGE', 'ROLE_ADMIN', 'ADMIN')")
     public ResponseEntity<ApiResponse<Page<OrderDto.AdminOrderSummaryResponse>>> warehouseFulfillmentQueue(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {

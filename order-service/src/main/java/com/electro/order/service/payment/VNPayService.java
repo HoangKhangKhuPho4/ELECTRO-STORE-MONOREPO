@@ -6,11 +6,15 @@ import com.electro.order.entity.Order;
 import com.electro.order.entity.PaymentTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -18,6 +22,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -42,7 +48,18 @@ public class VNPayService {
     private PaymentConfig paymentConfig;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private HttpClient httpClient;
+
+    @PostConstruct
+    void initHttpClient() {
+        if (paymentConfig.getVnpay().isTrustAllSsl()) {
+            log.warn("VNPay trust-all-SSL is ENABLED (payment.vnpay.trust-all-ssl=true). "
+                    + "Chỉ dùng dev local — không bật trên production.");
+            httpClient = createTrustAllSslHttpClient();
+        } else {
+            httpClient = HttpClient.newHttpClient();
+        }
+    }
 
     /**
      * Tạo URL thanh toán VNPay
@@ -387,6 +404,37 @@ public class VNPayService {
             return sb.toString();
         } catch (Exception e) {
             throw new RuntimeException("Error computing HMAC-SHA512", e);
+        }
+    }
+
+    /**
+     * Bỏ qua PKIX cho outbound HttpClient (refund API). Dev/sandbox only.
+     */
+    private static HttpClient createTrustAllSslHttpClient() {
+        try {
+            TrustManager[] trustAll = new TrustManager[]{
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                    }
+            };
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAll, new SecureRandom());
+            return HttpClient.newBuilder()
+                    .sslContext(sslContext)
+                    .build();
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot create VNPay trust-all SSL HttpClient", e);
         }
     }
 }

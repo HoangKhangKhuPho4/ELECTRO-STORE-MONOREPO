@@ -61,12 +61,12 @@ import { usePermissions } from "../../hooks/usePermissions";
 import {
   importImeis,
   searchVariants,
-  uploadImeiExcel,
   getLowStockStats,
 } from "../../services/inventoryService";
 import { fetchPoImeiQueue, fetchPoDetail, fetchPoStockLots } from "../../services/purchaseOrderService";
 import { isApiSuccess } from "../../utils/apiResponse";
 import { getStoredUserId } from "../../utils/authSession";
+import { parseSerialsFromExcelFile } from "../../utils/parseSerialsFromExcel";
 
 // ─── DEBOUNCE HOOK ───────────────────────────────────────────────────────────
 function useDebounce(value, delay) {
@@ -410,14 +410,67 @@ const ImeiManagementPage = () => {
       showToast("Vui lòng chọn file Excel (.xlsx) để upload.", "warning");
       return;
     }
+    if (warehousePoRequired && !selectedPo) {
+      showToast("Vui lòng chọn Đơn mua hàng (PO) ở tab Nhập thủ công trước khi import Excel.", "warning");
+      return;
+    }
+    if (warehousePoRequired && !selectedPoItem) {
+      showToast("Vui lòng chọn dòng sản phẩm trong PO (tab Nhập thủ công).", "warning");
+      return;
+    }
+    if (warehousePoRequired && selectedPo && !selectedLot) {
+      showToast("Vui lòng chọn Mã lô hàng (tab Nhập thủ công).", "warning");
+      return;
+    }
+    if (!selectedVariant && !selectedPoItem) {
+      showToast("Chọn PO + dòng sản phẩm ở tab Nhập thủ công, hoặc chọn Variant (Admin).", "warning");
+      return;
+    }
 
     setUploadLoading(true);
     try {
-      const res = await uploadImeiExcel(excelFile);
+      const codes = await parseSerialsFromExcelFile(excelFile);
+      if (!codes.length) {
+        showToast("Không tìm thấy mã Serial/IMEI hợp lệ trong file Excel.", "warning");
+        return;
+      }
+      const uniqueCodes = [...new Set(codes)];
+      const remaining = poImeiRemaining;
+      if (remaining != null && uniqueCodes.length > remaining) {
+        showToast(`File có ${uniqueCodes.length} mã nhưng PO chỉ cần thêm ${remaining} Serial.`, "warning");
+        return;
+      }
+
+      const actorUserId = getStoredUserId();
+      if (!actorUserId) {
+        showToast("Không xác định được tài khoản. Vui lòng đăng xuất và đăng nhập lại.", "error");
+        return;
+      }
+
+      const variantId = selectedVariant?.id ?? selectedPoItem?.variantId;
+      const payload = {
+        variantId,
+        imeis: uniqueCodes,
+        batchNumber: batchNumber || undefined,
+        note: note || `Import Excel ${excelFile.name}`,
+        userId: actorUserId,
+        ...(selectedPo && selectedPoItem
+          ? {
+              purchaseOrderId: selectedPo.id,
+              purchaseOrderItemId: selectedPoItem.id,
+              stockLotId: selectedLot?.id,
+            }
+          : {}),
+      };
+      const res = await importImeis(payload);
       if (res.success) {
-        showToast(res.message || "Import IMEI từ file Excel thành công! 🎉", "success");
+        showToast(res.message || `Import thành công ${uniqueCodes.length} mã Serial từ Excel!`, "success");
         setExcelFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
+        if (selectedPo) {
+          await loadPoDetail(selectedPo.id);
+          await loadPoImeiQueue();
+        }
       } else {
         showToast(res.message || "Lỗi khi import file Excel.", "error");
       }
@@ -1018,8 +1071,9 @@ const ImeiManagementPage = () => {
                   <ExcelIcon sx={{ color: "#16a34a" }} /> Upload File Excel Nhập IMEI Hàng Loạt
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Upload file <code>.xlsx</code> chứa 2 cột: <strong>SKU</strong> (cột A) và{" "}
-                  <strong>IMEI</strong> (cột B). Dòng 1 là Header sẽ tự động bỏ qua.
+                  Upload file <code>.xlsx</code> — cột <strong>Serial</strong> (hoặc SKU + Serial).
+                  Chọn PO + dòng SP + mã lô ở tab <strong>Nhập thủ công</strong> trước khi import.
+                  File mẫu: <code>test-data/PO-3542D9D5-Dong-ho-25-serial.xlsx</code>
                 </Typography>
 
                 {/* ── Drag & Drop Zone ── */}
@@ -1084,7 +1138,7 @@ const ImeiManagementPage = () => {
                     <thead>
                       <tr>
                         <th>Cột A (SKU)</th>
-                        <th>Cột B (IMEI)</th>
+                        <th>Cột B (Serial)</th>
                       </tr>
                     </thead>
                     <tbody>
