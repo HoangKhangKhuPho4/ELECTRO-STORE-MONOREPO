@@ -13,6 +13,8 @@ import com.electro.catalog.repository.ProducerRepository;
 import com.electro.catalog.repository.ProductVariantRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -65,9 +67,9 @@ public class ProductService {
     @org.springframework.beans.factory.annotation.Value("${app.server.url:http://localhost:8080}")
     private String serverUrl;
 
+    @Cacheable(value = "productListPages", key = "'all:' + #pageable.pageNumber + ':' + #pageable.pageSize")
     public Page<ProductDto.Response> getAllProducts(Pageable pageable) {
-        return productRepository.findActiveProductsPage(pageable)
-                .map(this::mapToResponse);
+        return mapProductPage(productRepository.findActiveProductsPage(pageable));
     }
 
     public ProductDto.Response getProductById(Long id) {
@@ -90,6 +92,7 @@ public class ProductService {
         return mapToResponse(product);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.Response createProduct(ProductDto.CreateRequest createRequest) {
         ProductType productType = productTypeRepository.findById(createRequest.getProductTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", createRequest.getProductTypeId()));
@@ -127,6 +130,7 @@ public class ProductService {
         return mapToResponse(savedProduct);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.Response updateProduct(Long id, ProductDto.UpdateRequest updateRequest) {
         Product product = productRepository.findById(id.intValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -176,6 +180,7 @@ public class ProductService {
         return mapToResponse(updatedProduct);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id.intValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -184,8 +189,7 @@ public class ProductService {
     }
 
     public Page<ProductDto.Response> getFeaturedProducts(Pageable pageable) {
-        return productRepository.findFeaturedProductsPage(pageable)
-                .map(this::mapToResponse);
+        return mapProductPage(productRepository.findFeaturedProductsPage(pageable));
     }
 
     public Page<ProductDto.Response> getBestSellingProducts(Pageable pageable) {
@@ -222,9 +226,19 @@ public class ProductService {
         Map<Integer, Product> productMap = productRepository.findActiveProductsByIds(orderedIds).stream()
                 .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a, HashMap::new));
 
+        List<Integer> activeIds = orderedIds.stream().filter(productMap::containsKey).toList();
+        Map<Integer, List<com.electro.catalog.entity.ProductVariant>> variantsByProduct =
+                groupVariantsByProductId(productVariantRepository.findActiveByProductIds(activeIds));
+        Map<Integer, List<com.electro.catalog.entity.Image>> imagesByProduct =
+                groupImagesByProductId(imageRepository.findByProductIdIn(activeIds));
+
         List<ProductDto.Response> ranked = orderedIds.stream()
                 .filter(productMap::containsKey)
-                .map(id -> mapToResponse(productMap.get(id), soldByProduct.get(id)))
+                .map(id -> mapToResponse(
+                        productMap.get(id),
+                        variantsByProduct.getOrDefault(id, List.of()),
+                        imagesByProduct.getOrDefault(id, List.of()),
+                        soldByProduct.get(id)))
                 .collect(Collectors.toList());
 
         int fromIndex = page * size;
@@ -242,8 +256,7 @@ public class ProductService {
 
         org.springframework.data.jpa.domain.Specification<Product> spec =
                 com.electro.catalog.repository.ProductSearchSpecification.buildSearchSpec(searchRequest);
-        return productRepository.findAll(spec, pageable)
-                .map(this::mapToResponse);
+        return mapProductPage(productRepository.findAll(spec, pageable));
     }
 
     public List<ProductDto.AutocompleteItem> suggestProducts(String keyword, Integer productTypeId, int limit) {
@@ -279,8 +292,7 @@ public class ProductService {
     }
 
     public Page<ProductDto.Response> getProductsByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findByProductTypeIdAndIsActiveTrue(categoryId.intValue(), pageable)
-                .map(this::mapToResponse);
+        return mapProductPage(productRepository.findByProductTypeIdAndIsActiveTrue(categoryId.intValue(), pageable));
     }
 
     public List<ProductDto.VariantDto> getVariantsByProductId(Long productId) {
@@ -381,11 +393,9 @@ public class ProductService {
         try {
             Integer producerId = Integer.parseInt(brand);
             List<Product> products = productRepository.findByProducerId(producerId);
-            return productRepository.findActiveProductsPage(pageable)
-                    .map(this::mapToResponse);
+            return mapProductPage(productRepository.findActiveProductsPage(pageable));
         } catch (NumberFormatException e) {
-            return productRepository.findActiveProductsPage(pageable)
-                    .map(this::mapToResponse);
+            return mapProductPage(productRepository.findActiveProductsPage(pageable));
         }
     }
 
@@ -414,11 +424,58 @@ public class ProductService {
         }
     }
 
+    private Page<ProductDto.Response> mapProductPage(Page<Product> page) {
+        if (page.isEmpty()) {
+            return new PageImpl<>(List.of(), page.getPageable(), page.getTotalElements());
+        }
+
+        List<Integer> productIds = page.getContent().stream().map(Product::getId).toList();
+        Map<Integer, List<com.electro.catalog.entity.ProductVariant>> variantsByProduct =
+                groupVariantsByProductId(productVariantRepository.findActiveByProductIds(productIds));
+        Map<Integer, List<com.electro.catalog.entity.Image>> imagesByProduct =
+                groupImagesByProductId(imageRepository.findByProductIdIn(productIds));
+
+        List<ProductDto.Response> content = page.getContent().stream()
+                .map(product -> mapToResponse(
+                        product,
+                        variantsByProduct.getOrDefault(product.getId(), List.of()),
+                        imagesByProduct.getOrDefault(product.getId(), List.of()),
+                        null))
+                .toList();
+        return new PageImpl<>(content, page.getPageable(), page.getTotalElements());
+    }
+
+    private Map<Integer, List<com.electro.catalog.entity.ProductVariant>> groupVariantsByProductId(
+            List<com.electro.catalog.entity.ProductVariant> variants) {
+        if (variants == null || variants.isEmpty()) {
+            return Map.of();
+        }
+        return variants.stream()
+                .collect(Collectors.groupingBy(v -> v.getProduct().getId()));
+    }
+
+    private Map<Integer, List<com.electro.catalog.entity.Image>> groupImagesByProductId(
+            List<com.electro.catalog.entity.Image> images) {
+        if (images == null || images.isEmpty()) {
+            return Map.of();
+        }
+        return images.stream()
+                .collect(Collectors.groupingBy(img -> img.getProduct().getId()));
+    }
+
     private ProductDto.Response mapToResponse(Product product) {
         return mapToResponse(product, null);
     }
 
     private ProductDto.Response mapToResponse(Product product, Long soldQuantity) {
+        return mapToResponse(product, null, null, soldQuantity);
+    }
+
+    private ProductDto.Response mapToResponse(
+            Product product,
+            List<com.electro.catalog.entity.ProductVariant> preloadedVariants,
+            List<com.electro.catalog.entity.Image> preloadedImages,
+            Long soldQuantity) {
         ProductDto.Response response = modelMapper.map(product, ProductDto.Response.class);
         
         response.setPrice(product.getBasePrice() != null ? product.getBasePrice().doubleValue() : 0.0);
@@ -429,10 +486,15 @@ public class ProductService {
         
         response.setSoldQuantity(soldQuantity != null ? soldQuantity.intValue() : 0);
         
+        java.util.List<com.electro.catalog.entity.ProductVariant> variantSource =
+                preloadedVariants != null ? preloadedVariants : product.getVariants();
+        java.util.List<com.electro.catalog.entity.Image> imageSource =
+                preloadedImages != null ? preloadedImages : product.getImages();
+
         // Lọc chỉ lấy variant đang active (Public API không hiển thị variant đã bị vô hiệu hóa)
         java.util.Set<Integer> activeVariantIds = new java.util.HashSet<>();
-        if (product.getVariants() != null && !product.getVariants().isEmpty()) {
-            for (var variant : product.getVariants()) {
+        if (variantSource != null && !variantSource.isEmpty()) {
+            for (var variant : variantSource) {
                 if (variant.getIsActive() != null && variant.getIsActive()) {
                     activeVariantIds.add(variant.getId());
                 }
@@ -440,8 +502,8 @@ public class ProductService {
         }
 
         int totalQuantity = 0;
-        if (product.getVariants() != null && !product.getVariants().isEmpty()) {
-            totalQuantity = product.getVariants().stream()
+        if (variantSource != null && !variantSource.isEmpty()) {
+            totalQuantity = variantSource.stream()
                     .filter(v -> v.getIsActive() != null && v.getIsActive())
                     .mapToInt(v -> v.getStockQuantity() != null ? v.getStockQuantity() : 0)
                     .sum();
@@ -454,9 +516,9 @@ public class ProductService {
         response.setReviewCount(0);
         
         // Map images: CHỈ trả ảnh chung (variant_id = null) hoặc ảnh thuộc variant ACTIVE
-        if (product.getImages() != null && !product.getImages().isEmpty()) {
+        if (imageSource != null && !imageSource.isEmpty()) {
             java.util.List<ProductDto.ImageDto> imgs = new java.util.ArrayList<>();
-            for (var img : product.getImages()) {
+            for (var img : imageSource) {
                 Integer imgVariantId = img.getVariant() != null ? img.getVariant().getId() : null;
                 
                 // Chỉ trả ảnh nếu: (1) ảnh chung (variant_id = null) hoặc (2) variant đang active
@@ -472,9 +534,9 @@ public class ProductService {
         }
         
         // Map variants — CHỈ trả variant ACTIVE cho Public API
-        if (product.getVariants() != null && !product.getVariants().isEmpty()) {
+        if (variantSource != null && !variantSource.isEmpty()) {
             java.util.List<ProductDto.VariantDto> variantDtos = new java.util.ArrayList<>();
-            for (var variant : product.getVariants()) {
+            for (var variant : variantSource) {
                 // Lọc variant inactive — khách hàng KHÔNG thấy variant đã ngưng bán
                 if (variant.getIsActive() == null || !variant.getIsActive()) {
                     continue;
@@ -625,6 +687,7 @@ public class ProductService {
         return response;
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminCreateProduct(ProductDto.AdminCreateRequest request) {
         ProductType productType = productTypeRepository.findById(request.getProductTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getProductTypeId()));
@@ -658,6 +721,7 @@ public class ProductService {
         return adminGetProductById(savedProduct.getId());
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminUpdateProduct(Integer id, ProductDto.AdminUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -681,6 +745,7 @@ public class ProductService {
         return adminGetProductById(savedProduct.getId());
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public void adminDeleteProduct(Integer id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -688,6 +753,7 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminToggleStatus(Integer id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -696,6 +762,7 @@ public class ProductService {
         return adminGetProductById(id);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminAddVariant(Integer id, ProductDto.AdminVariantRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -718,6 +785,7 @@ public class ProductService {
         return adminGetProductById(id);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminUpdateVariant(Integer productId, Integer variantId, ProductDto.AdminVariantRequest request) {
         com.electro.catalog.entity.ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Variant", "id", variantId));
@@ -738,6 +806,7 @@ public class ProductService {
         return adminGetProductById(productId);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminDeleteVariant(Integer productId, Integer variantId) {
         com.electro.catalog.entity.ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Variant", "id", variantId));
@@ -749,6 +818,7 @@ public class ProductService {
         return adminGetProductById(productId);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminAddImage(Integer id, ProductDto.AdminImageRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -767,6 +837,7 @@ public class ProductService {
         return adminGetProductById(id);
     }
 
+    @CacheEvict(value = "productListPages", allEntries = true)
     public ProductDto.AdminProductResponse adminDeleteImage(Integer productId, Integer imageId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));

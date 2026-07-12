@@ -6,11 +6,13 @@ spring:
   # Local Docker MySQL (dev) — pool lon hon cloud vi khong bi gioi han connection
   datasource:
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 50
+      minimum-idle: 10
       connection-timeout: 20000
       max-lifetime: 280000
       idle-timeout: 120000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
   cloud:
     openfeign:
       micrometer:
