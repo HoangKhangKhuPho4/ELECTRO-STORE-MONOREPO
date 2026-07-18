@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
@@ -17,12 +18,13 @@ import ProfileMenu from "../../components/Profile-Menu/ProfileMenu";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../redux/appSlice";
 import { getMyWarrantyClaimDetail } from "../../services/warrantyService";
-import { CLAIM_STATUS_COLORS, CLAIM_STATUS_LABELS } from "../../utils/warrantyClaimStatus";
+import { CLAIM_STATUS_COLORS } from "../../utils/warrantyClaimStatus";
 import { isApiSuccess } from "../../utils/apiResponse";
 
 const TRACKING_STATUSES = ["APPROVED", "RECEIVED", "INSPECTING", "REPAIRING", "COMPLETED"];
 
 const UserWarrantyClaimDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useSelector(selectUser);
@@ -48,11 +50,11 @@ const UserWarrantyClaimDetailPage = () => {
     <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, bgcolor: "#f9f9f9", minHeight: "100vh", display: "flex", justifyContent: "center" }}>
       <Box sx={{ width: "100%", maxWidth: 1200, display: "flex", flexDirection: { xs: "column", md: "row" }, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#fff", overflow: "hidden" }}>
         <Box sx={{ width: { xs: "100%", md: 260 } }}>
-          <ProfileMenu activePage="Bảo Hành" user={user} />
+          <ProfileMenu activePage={t("profile.warranty")} user={user} />
         </Box>
         <Box sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
           <Button startIcon={<BackIcon />} onClick={() => navigate("/user/warranty")} sx={{ mb: 2 }}>
-            Danh sách yêu cầu
+            {t("userWarranty.claimList")}
           </Button>
 
           {loading ? (
@@ -60,7 +62,7 @@ const UserWarrantyClaimDetailPage = () => {
               <CircularProgress />
             </Box>
           ) : !claim ? (
-            <Typography>Không tìm thấy yêu cầu bảo hành.</Typography>
+            <Typography>{t("userWarranty.notFound")}</Typography>
           ) : (
             <>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
@@ -69,32 +71,32 @@ const UserWarrantyClaimDetailPage = () => {
                 </Typography>
                 <Chip
                   size="small"
-                  label={CLAIM_STATUS_LABELS[claim.status] || claim.statusDisplay}
+                  label={t(`userWarranty.status.${claim.status}`, { defaultValue: claim.statusDisplay || claim.status })}
                   sx={{ bgcolor: CLAIM_STATUS_COLORS[claim.status] || "#94a3b8", color: "#fff" }}
                 />
               </Box>
 
               <Typography variant="body2" gutterBottom>
-                <strong>Sản phẩm:</strong> {claim.productName}
+                <strong>{t("userWarranty.product")}</strong> {claim.productName}
               </Typography>
               <Typography variant="body2" gutterBottom>
-                <strong>IMEI:</strong> {claim.submittedImei}
+                <strong>{t("userWarranty.imei")}</strong> {claim.submittedImei}
               </Typography>
               <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
-                <strong>Mô tả lỗi:</strong> {claim.issueDescription}
+                <strong>{t("userWarranty.issueDesc")}</strong> {claim.issueDescription}
               </Typography>
 
               {showTracking && (
                 <Paper sx={{ p: 2.5, mb: 2, border: "2px solid #3b82f6", bgcolor: "#eff6ff" }}>
                   <Typography variant="subtitle1" fontWeight="bold" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                     <ShipIcon color="primary" />
-                    Thu hồi máy lỗi
+                    {t("userWarranty.returnPickup")}
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Đơn vị VC:</strong> {claim.returnCarrier || "—"}
+                    <strong>{t("userWarranty.carrier")}</strong> {claim.returnCarrier || "—"}
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 1, fontFamily: "monospace" }}>
-                    <strong>Mã vận đơn:</strong>{" "}
+                    <strong>{t("userWarranty.trackingCode")}</strong>{" "}
                     {claim.returnTrackingCode ? `#${claim.returnTrackingCode.replace(/^#/, "")}` : "—"}
                   </Typography>
                   {claim.returnInstruction && (
@@ -107,12 +109,13 @@ const UserWarrantyClaimDetailPage = () => {
 
               {claim.status === "PENDING" && (
                 <Alert severity="warning">
-                  Yêu cầu đang chờ Sales xác minh. Sau khi duyệt, bạn sẽ thấy mã vận đơn thu hồi tại đây.
+                  {t("userWarranty.pendingAlert")}
                 </Alert>
               )}
               {claim.status === "REJECTED" && (
                 <Alert severity="error">
-                  Yêu cầu đã bị từ chối. {claim.staffNotes ? `Lý do: ${claim.staffNotes}` : ""}
+                  {t("userWarranty.rejectedAlert")}{" "}
+                  {claim.staffNotes ? t("userWarranty.rejectedReason", { reason: claim.staffNotes }) : ""}
                 </Alert>
               )}
             </>

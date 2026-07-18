@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../redux/appSlice";
 import {
@@ -26,9 +27,6 @@ import {
   startLiveChatSession,
 } from "../../services/liveChatService";
 import "../Chatbot/StoreChatbot.css";
-
-const WELCOME =
-  "Xin chào! Bạn đang chat trực tiếp với nhân viên tư vấn Electro Store. Vui lòng gửi câu hỏi, chúng tôi sẽ phản hồi sớm nhất.";
 
 const mapLiveMessages = (apiMessages) =>
   (apiMessages || []).map((m) => ({
@@ -60,16 +58,27 @@ const ChatBubble = ({ msg }) => (
 );
 
 const StoreLiveChatPanel = () => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
+  const welcome = t("liveChat.welcome");
   const [liveSessionToken, setLiveToken] = useState(() => getGuestSessionToken());
   const [lastLiveMsgId, setLastLiveMsgId] = useState(0);
-  const [messages, setMessages] = useState([{ role: "assistant", text: WELCOME }]);
+  const [messages, setMessages] = useState([{ role: "assistant", text: welcome }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(true);
   const [error, setError] = useState("");
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].role === "assistant" && !prev[0].id) {
+        return [{ role: "assistant", text: welcome }];
+      }
+      return prev;
+    });
+  }, [welcome]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,7 +115,7 @@ const StoreLiveChatPanel = () => {
           setLastLiveMsgId(Math.max(...all.map((m) => m.id)));
         }
       } catch (e) {
-        if (!cancelled) setError(e.message || "Không kết nối được chat nhân viên");
+        if (!cancelled) setError(e.message || t("liveChat.connectError"));
       } finally {
         if (!cancelled) setConnecting(false);
       }
@@ -138,15 +147,15 @@ const StoreLiveChatPanel = () => {
       }
     };
     poll();
-    const t = setInterval(poll, 3500);
-    return () => clearInterval(t);
+    const interval = setInterval(poll, 3500);
+    return () => clearInterval(interval);
   }, [liveSessionToken, lastLiveMsgId]);
 
   const handleNewChat = async () => {
     setGuestSessionToken(null);
     setLiveToken(null);
     setLastLiveMsgId(0);
-    setMessages([{ role: "assistant", text: WELCOME }]);
+    setMessages([{ role: "assistant", text: welcome }]);
     setConnecting(true);
     setError("");
     try {
@@ -180,11 +189,15 @@ const StoreLiveChatPanel = () => {
       if (all.length) setLastLiveMsgId(Math.max(...all.map((m) => m.id)));
       setError("");
     } catch (err) {
-      setError(err.message || "Gửi tin thất bại");
+      setError(err.message || t("liveChat.sendFail"));
     } finally {
       setLoading(false);
     }
   };
+
+  const guestStatus = user?.id
+    ? ` · KH#${user.id}`
+    : ` · ${t("liveChat.guestNotLoggedIn")}`;
 
   return (
     <Paper
@@ -211,14 +224,20 @@ const StoreLiveChatPanel = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <SupportAgentIcon />
           <Box>
-            <Typography fontWeight="bold">Chat với nhân viên</Typography>
+            <Typography fontWeight="bold">{t("liveChat.title")}</Typography>
             <Typography variant="caption" sx={{ opacity: 0.9 }}>
               {customerProfile.guestName}
-              {user?.id ? ` · KH#${user.id}` : " · chưa đăng nhập"} · cập nhật ~3s
+              {guestStatus} · {t("liveChat.updateInterval")}
             </Typography>
           </Box>
         </Box>
-        <IconButton size="small" onClick={handleNewChat} sx={{ color: "#fff" }} title="Cuộc trò chuyện mới">
+        <IconButton
+          size="small"
+          onClick={handleNewChat}
+          sx={{ color: "#fff" }}
+          title={t("liveChat.newChat")}
+          aria-label={t("liveChat.newChat")}
+        >
           <RefreshIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -242,7 +261,7 @@ const StoreLiveChatPanel = () => {
           <Box sx={{ textAlign: "center", py: 6 }}>
             <CircularProgress size={32} sx={{ color: "#ff7a00" }} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Đang kết nối nhân viên...
+              {t("liveChat.connecting")}
             </Typography>
           </Box>
         ) : (
@@ -270,7 +289,7 @@ const StoreLiveChatPanel = () => {
           inputRef={inputRef}
           fullWidth
           size="small"
-          placeholder="Nhập tin nhắn cho nhân viên..."
+          placeholder={t("liveChat.placeholder")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={connecting || loading}

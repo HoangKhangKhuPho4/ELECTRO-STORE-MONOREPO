@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation, Trans } from "react-i18next";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../redux/appSlice";
 import { submitWarrantyClaim } from "../../services/warrantyService";
 import { isApiSuccess } from "../../utils/apiResponse";
 import { useGHNShipping } from "../../hooks/useGHNShipping";
 
-/**
- * Khách đã đăng nhập — gửi yêu cầu bảo hành online (kèm địa chỉ lấy hàng GHN)
- */
 const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
   const {
     provinces,
@@ -42,23 +41,26 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
   if (!user) {
     return (
       <div className="warranty-claim-submit-login-hint">
-        <p style={{ margin: 0, marginBottom: 8, fontWeight: 600 }}>
-          Muốn gửi yêu cầu bảo hành kèm link ảnh / video?
+        <p style={{ fontWeight: 600, color: "#111827" }}>
+          {t("warranty.claim.loginTitle")}
         </p>
-        <p style={{ margin: 0, fontSize: 14 }}>
-          Vui lòng <Link to="/login">đăng nhập</Link> để hiện form gửi ticket cho Sales.
+        <p>
+          <Trans
+            i18nKey="warranty.claim.loginHint"
+            components={{ 1: <Link to="/login" /> }}
+          />
         </p>
       </div>
     );
   }
 
   const validatePickup = () => {
-    if (!form.contactName.trim()) return "Vui lòng nhập họ tên người nhận shipper.";
-    if (!form.contactPhone.trim()) return "Vui lòng nhập số điện thoại liên hệ.";
-    if (!selectedProvince) return "Vui lòng chọn Tỉnh/Thành phố lấy hàng.";
-    if (!selectedDistrict) return "Vui lòng chọn Quận/Huyện lấy hàng.";
-    if (!selectedWard) return "Vui lòng chọn Phường/Xã lấy hàng.";
-    if (!form.contactAddress.trim()) return "Vui lòng nhập số nhà, tên đường lấy hàng.";
+    if (!form.contactName.trim()) return t("warranty.claim.errName");
+    if (!form.contactPhone.trim()) return t("warranty.claim.errPhone");
+    if (!selectedProvince) return t("warranty.claim.errProvince");
+    if (!selectedDistrict) return t("warranty.claim.errDistrict");
+    if (!selectedWard) return t("warranty.claim.errWard");
+    if (!form.contactAddress.trim()) return t("warranty.claim.errStreet");
     return null;
   };
 
@@ -91,12 +93,12 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
         customerRequest: "REPAIR",
       });
       if (isApiSuccess(res)) {
-        setSuccess(res.data?.claimNumber || "Đã gửi");
+        setSuccess(res.data?.claimNumber || t("warranty.claim.submitted"));
       } else {
-        setError(res.message || "Gửi thất bại");
+        setError(res.message || t("warranty.claim.submitFail"));
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Gửi yêu cầu thất bại");
+      setError(err.response?.data?.message || t("warranty.claim.submitError"));
     } finally {
       setLoading(false);
     }
@@ -116,49 +118,47 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
   return (
     <div className="warranty-claim-submit-wrap">
       <div className="warranty-claim-submit">
-        <h3>Gửi yêu cầu bảo hành online</h3>
-        <p style={{ fontSize: 14, marginBottom: 16 }}>
-          Điền IMEI, mô tả lỗi và <strong>địa chỉ lấy hàng</strong> (GHN/GHTK sẽ đến địa chỉ này khi Sales
-          duyệt thu hồi). Có thể dán link ảnh / video minh chứng.
-        </p>
+        <h3>{t("warranty.claim.title")}</h3>
+        <p>{t("warranty.claim.desc")}</p>
         {success && (
-          <div style={{ padding: 12, background: "#ecfdf5", color: "#065f46", borderRadius: 8, marginBottom: 16 }}>
-            Đã tạo ticket <strong>#{success}</strong>. Chúng tôi sẽ liên hệ trong 24–48h.
+          <div className="warranty-alert warranty-alert--success" role="status">
+            {t("warranty.claim.success", { number: success })}
           </div>
         )}
         {error && (
-          <div style={{ padding: 12, background: "#fef2f2", color: "#991b1b", borderRadius: 8, marginBottom: 16 }}>
+          <div className="warranty-alert warranty-alert--error" role="alert">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit}>
-          <p className="warranty-form-section-title">Thiết bị &amp; lỗi</p>
-          <label htmlFor="warranty-claim-imei">IMEI / Serial *</label>
+          <p className="warranty-form-section-title">{t("warranty.claim.sectionDevice")}</p>
+          <label htmlFor="warranty-claim-imei">{t("warranty.claim.imeiLabel")}</label>
           <input
             id="warranty-claim-imei"
+            className="warranty-detail-value--code"
             required
             value={form.submittedImei}
             onChange={(e) => setForm({ ...form, submittedImei: e.target.value })}
           />
-          <label htmlFor="warranty-claim-issue">Mô tả lỗi *</label>
+          <label htmlFor="warranty-claim-issue">{t("warranty.claim.issueLabel")}</label>
           <textarea
             id="warranty-claim-issue"
             required
             rows={3}
             value={form.issueDescription}
             onChange={(e) => setForm({ ...form, issueDescription: e.target.value })}
-            placeholder='VD: "Máy tự sập nguồn khi sạc"'
+            placeholder={t("warranty.claim.issuePlaceholder")}
           />
 
-          <p className="warranty-form-section-title">Liên hệ &amp; địa chỉ lấy hàng *</p>
-          <label htmlFor="warranty-claim-name">Họ tên người nhận shipper *</label>
+          <p className="warranty-form-section-title">{t("warranty.claim.sectionContact")}</p>
+          <label htmlFor="warranty-claim-name">{t("warranty.claim.nameLabel")}</label>
           <input
             id="warranty-claim-name"
             required
             value={form.contactName}
             onChange={(e) => setForm({ ...form, contactName: e.target.value })}
           />
-          <label htmlFor="warranty-claim-phone">Số điện thoại *</label>
+          <label htmlFor="warranty-claim-phone">{t("warranty.claim.phoneLabel")}</label>
           <input
             id="warranty-claim-phone"
             required
@@ -166,7 +166,7 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
             onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
             placeholder="0901234567"
           />
-          <label htmlFor="warranty-claim-province">Tỉnh / Thành phố *</label>
+          <label htmlFor="warranty-claim-province">{t("warranty.claim.provinceLabel")}</label>
           <select
             id="warranty-claim-province"
             required
@@ -176,14 +176,14 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
               onProvinceChange(prov?.provinceId || null, prov?.provinceName || "");
             }}
           >
-            <option value="">-- Chọn tỉnh/thành --</option>
+            <option value="">{t("warranty.claim.selectProvince")}</option>
             {provinces.map((p) => (
               <option key={p.provinceId} value={p.provinceId}>
                 {p.provinceName}
               </option>
             ))}
           </select>
-          <label htmlFor="warranty-claim-district">Quận / Huyện *</label>
+          <label htmlFor="warranty-claim-district">{t("warranty.claim.districtLabel")}</label>
           <select
             id="warranty-claim-district"
             required
@@ -194,14 +194,16 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
               onDistrictChange(dist?.districtId || null, dist?.districtName || "");
             }}
           >
-            <option value="">{loadingDistricts ? "Đang tải..." : "-- Chọn quận/huyện --"}</option>
+            <option value="">
+              {loadingDistricts ? t("common.loading") : t("warranty.claim.selectDistrict")}
+            </option>
             {districts.map((d) => (
               <option key={d.districtId} value={d.districtId}>
                 {d.districtName}
               </option>
             ))}
           </select>
-          <label htmlFor="warranty-claim-ward">Phường / Xã *</label>
+          <label htmlFor="warranty-claim-ward">{t("warranty.claim.wardLabel")}</label>
           <select
             id="warranty-claim-ward"
             required
@@ -212,58 +214,48 @@ const WarrantyClaimSubmitForm = ({ defaultImei = "" }) => {
               onWardChange(ward?.wardCode || null, ward?.wardName || "");
             }}
           >
-            <option value="">{loadingWards ? "Đang tải..." : "-- Chọn phường/xã --"}</option>
+            <option value="">
+              {loadingWards ? t("common.loading") : t("warranty.claim.selectWard")}
+            </option>
             {wards.map((w) => (
               <option key={w.wardCode} value={w.wardCode}>
                 {w.wardName}
               </option>
             ))}
           </select>
-          <label htmlFor="warranty-claim-street">Số nhà, tên đường *</label>
+          <label htmlFor="warranty-claim-street">{t("warranty.claim.streetLabel")}</label>
           <input
             id="warranty-claim-street"
             required
             value={form.contactAddress}
             onChange={(e) => setForm({ ...form, contactAddress: e.target.value })}
-            placeholder="VD: 15 Lê Văn Sỹ, Phường 12"
+            placeholder={t("warranty.claim.streetPlaceholder")}
           />
           {formatPickupPreview() && (
             <p className="warranty-pickup-preview">
-              <strong>Địa chỉ lấy hàng:</strong> {formatPickupPreview()}
+              <strong>{t("warranty.claim.pickupPreview")}</strong> {formatPickupPreview()}
             </p>
           )}
 
-          <p className="warranty-form-section-title">Minh chứng (tuỳ chọn)</p>
-          <label htmlFor="warranty-claim-image">Link ảnh hóa đơn / vỏ hộp</label>
+          <p className="warranty-form-section-title">{t("warranty.claim.sectionProof")}</p>
+          <label htmlFor="warranty-claim-image">{t("warranty.claim.imageLabel")}</label>
           <input
             id="warranty-claim-image"
             type="url"
             value={form.imageUrl1}
             onChange={(e) => setForm({ ...form, imageUrl1: e.target.value })}
-            placeholder="https://drive.google.com/... hoặc https://i.imgur.com/..."
+            placeholder={t("warranty.claim.imagePlaceholder")}
           />
-          <label htmlFor="warranty-claim-video">Link video lỗi</label>
+          <label htmlFor="warranty-claim-video">{t("warranty.claim.videoLabel")}</label>
           <input
             id="warranty-claim-video"
             type="url"
             value={form.videoUrl}
             onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
-            placeholder="https://youtu.be/... hoặc link Drive video"
+            placeholder={t("warranty.claim.videoPlaceholder")}
           />
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              background: "#ff9f1a",
-              color: "#fff",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: 8,
-              fontWeight: 700,
-              cursor: loading ? "wait" : "pointer",
-            }}
-          >
-            {loading ? "Đang gửi..." : "Gửi yêu cầu bảo hành"}
+          <button type="submit" className="warranty-btn-primary" disabled={loading}>
+            {loading ? t("warranty.claim.submitting") : t("warranty.claim.submit")}
           </button>
         </form>
       </div>

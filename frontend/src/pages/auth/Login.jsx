@@ -17,19 +17,41 @@ import { applyLoginResponse, isCustomerUser } from "../../utils/authSession";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { QRCodeCanvas } from "qrcode.react";
 import { useForm } from "../../hooks/useForm";
 import { loginSuccess, setCart } from "../../redux/appSlice";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import FacebookLogin from "@greatsumini/react-facebook-login";
 import FacebookIcon from "@mui/icons-material/Facebook";
+import { fetchCart } from "../../services/cartService";
+import "./Login.css";
 
 const GOOGLE_CLIENT_ID = "805948950640-eaq86ak8dt5qngqks1knbmpvpua77n78.apps.googleusercontent.com";
 const FACEBOOK_APP_ID = "1295828555747879";
 
-import { fetchCart } from "../../services/cartService";
+const BRAND = "#ff7a00";
+
+const BrandMark = () => (
+  <a href="/" className="login-brand-mark" aria-label="Electro">
+    <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="8" fill="#fff" />
+      <path d="M10 15H30L28.5 27H11.5L10 15Z" fill={BRAND} />
+      <path
+        d="M14 12C14 10.9 14.9 10 16 10H24C25.1 10 26 10.9 26 12V15H14V12Z"
+        fill="none"
+        stroke={BRAND}
+        strokeWidth="2"
+      />
+      <circle cx="16" cy="31" r="2" fill={BRAND} />
+      <circle cx="24" cy="31" r="2" fill={BRAND} />
+    </svg>
+    <span className="login-brand-name">Electro</span>
+  </a>
+);
 
 const Login = () => {
+  const { t } = useTranslation();
   const { values, handleChange } = useForm({
     email: "",
     password: "",
@@ -55,12 +77,12 @@ const Login = () => {
         setQrToken(response.data.data.qrToken);
         setQrStatus("PENDING");
       } else {
-        setQrError(response.data.message || "Không tạo được mã QR. Vui lòng thử lại.");
+        setQrError(response.data.message || t("auth.qrGenerateFail"));
       }
     } catch (err) {
       const msg =
         err.response?.data?.message ||
-        "Không thể tạo mã QR. Kiểm tra API Gateway (8080) và auth-service đã chạy chưa.";
+        t("auth.qrServiceFail");
       setQrError(msg);
       console.error("Lỗi khi tạo mã QR:", err);
     } finally {
@@ -129,7 +151,7 @@ const Login = () => {
     e.preventDefault();
 
     if (values.email === "" || values.password === "") {
-      alert("Vui Lòng Nhập Đầy Đủ Thông Tin");
+      alert(t("auth.fillAllFields"));
       return;
     }
 
@@ -162,7 +184,7 @@ const Login = () => {
       if (error.response) {
         alert(error.response.data.message);
       } else {
-        alert("Lỗi kết nối máy chủ. Vui lòng thử lại.");
+        alert(t("auth.serverError"));
       }
     }
   };
@@ -193,15 +215,15 @@ const Login = () => {
 
     } catch (error) {
       if (error.response) {
-        alert("Đăng nhập bằng Google thất bại: " + (error.response.data.message || "Unknown error"));
+        alert(t("auth.googleFail") + ": " + (error.response.data.message || "Unknown error"));
       } else {
-        alert("Cố gắng kết nối Google thất bại. Vui lòng thử lại.");
+        alert(t("auth.googleConnectFail"));
       }
     }
   };
 
   const handleGoogleError = () => {
-    alert("Đăng nhập bằng Google thất bại, vui lòng thử lại!");
+    alert(t("auth.googleFail"));
   };
 
   const handleFacebookSuccess = async (response) => {
@@ -234,9 +256,9 @@ const Login = () => {
         }
       } catch (error) {
         if (error.response) {
-          alert("Đăng nhập bằng Facebook thất bại: " + (error.response.data.message || "Unknown error"));
+          alert(t("auth.facebookFail") + ": " + (error.response.data.message || "Unknown error"));
         } else {
-          alert("Cố gắng kết nối Facebook thất bại. Vui lòng thử lại.");
+          alert(t("auth.facebookConnectFail"));
         }
       } finally {
         setIsFbLoading(false);
@@ -248,216 +270,238 @@ const Login = () => {
   // Để điện thoại có thể truy cập qua cùng mạng WiFi
   const qrUrl = `http://${window.location.hostname}:${window.location.port}/scan-qr?token=${qrToken}`;
 
+  const fieldSx = {
+    mb: 2,
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: "#fff",
+      "&.Mui-focused fieldset": { borderColor: BRAND },
+    },
+    "& .MuiInputLabel-root.Mui-focused": { color: BRAND },
+  };
+
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <Box
-        sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        backgroundImage:
-          "url('http://getwallpapers.com/wallpaper/full/a/5/d/544750.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Card
-        sx={{
-          p: 4,
-          width: 400,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          color: "white",
-        }}
-      >
-        <Typography variant="h5" sx={{ mb: 1, textAlign: "center" }}>
-          Welcome back
-        </Typography>
+      <Box className="login-page">
+        {/* Trái — nền cam brand Electro (kiểu Shopee) */}
+        <aside className="login-brand" aria-hidden={false}>
+          <div className="login-brand-content">
+            <BrandMark />
+            <h1 className="login-brand-title">{t("auth.loginBrandTitle")}</h1>
+            <p className="login-brand-desc">{t("auth.loginBrandDesc")}</p>
+          </div>
+          <svg
+            className="login-brand-bag"
+            viewBox="0 0 200 220"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden
+          >
+            <rect x="30" y="70" width="140" height="130" rx="16" fill="#fff" />
+            <path
+              d="M70 70V52c0-16.5 13.5-30 30-30s30 13.5 30 30v18"
+              stroke="#fff"
+              strokeWidth="12"
+              strokeLinecap="round"
+            />
+            <circle cx="75" cy="175" r="10" fill="#fff" />
+            <circle cx="125" cy="175" r="10" fill="#fff" />
+          </svg>
+        </aside>
 
-        <Tabs
-          value={loginMethod}
-          onChange={(e, newValue) => {
-            setLoginMethod(newValue);
-            if (newValue === "qr") {
-              fetchQrToken(); // Vừa bấm tab QR là gọi API xin mã liền
-            }
-          }}
-          centered
-          textColor="inherit"
-          sx={{ mb: 3, "& .MuiTabs-indicator": { backgroundColor: "#FFC312" } }}
-        >
-          <Tab value="password" label="Mật Khẩu" />
-          <Tab value="qr" label="Mã QR" />
-        </Tabs>
-
-        {loginMethod === "password" && (
-          <>
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              noValidate
-              sx={{ display: "flex", flexDirection: "column" }}
-            >
-              <TextField
-                label="Username / Email"
-                name="email"
-                type="text"
-                autoComplete="username"
-                variant="filled"
-                fullWidth
-                sx={{
-                  mb: 2,
-                  "& .MuiFilledInput-root": {
-                    backgroundColor: "white",
-                    "&:hover": { backgroundColor: "white" },
-                    "&.Mui-focused": { backgroundColor: "white" },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": { color: "black" },
-                }}
-                value={values.email}
-                onChange={handleChange}
-              />
-              <TextField
-                label="Password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                variant="filled"
-                fullWidth
-                sx={{
-                  mb: 2,
-                  "& .MuiFilledInput-root": {
-                    backgroundColor: "white",
-                    "&:hover": { backgroundColor: "white" },
-                    "&.Mui-focused": { backgroundColor: "white" },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": { color: "black" },
-                }}
-                value={values.password}
-                onChange={handleChange}
-              />
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    value="remember"
-                    sx={{ color: "white", "&.Mui-checked": { color: "#FFC312" } }}
-                  />
-                }
-                label="Remember Me"
-              />
-
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                sx={{
-                  mt: 2,
-                  backgroundColor: "#FFC312",
-                  color: "black",
-                  "&:hover": { backgroundColor: "white" },
-                }}
-              >
-                Login
-              </Button>
-            </Box>
-
-            <Box sx={{ display: "flex", alignItems: "center", my: 2 }}>
-              <Divider sx={{ flex: 1, borderColor: "rgba(255,255,255,0.2)" }} />
-              <Typography variant="body2" sx={{ mx: 2, color: "rgba(255,255,255,0.6)" }}>
-                Hoặc
-              </Typography>
-              <Divider sx={{ flex: 1, borderColor: "rgba(255,255,255,0.2)" }} />
-            </Box>
-
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, width: "100%", alignItems: "center" }}>
-              <Box sx={{ width: "100%" }}>
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  width="100%"
-                  theme="filled_blue"
-                  text="signin"
-                  shape="rectangular"
-                />
-              </Box>
-
-              <Box sx={{ width: "100%" }}>
-                <FacebookLogin
-                  appId={FACEBOOK_APP_ID}
-                  onSuccess={handleFacebookSuccess}
-                  onFail={(error) => console.log("Facebook Login Fail:", error)}
-                  render={({ onClick }) => (
-                    <Button
-                      onClick={onClick}
-                      variant="contained"
-                      fullWidth
-                      disabled={isFbLoading}
-                      startIcon={isFbLoading ? <CircularProgress size={18} color="inherit" /> : <FacebookIcon />}
-                      sx={{
-                        backgroundColor: "#1877F2",
-                        color: "white",
-                        "&:hover": { backgroundColor: "#115293" },
-                        textTransform: "none",
-                        height: "40px",
-                      }}
-                    >
-                      {isFbLoading ? "..." : "Facebook"}
-                    </Button>
-                  )}
-                />
-              </Box>
-            </Box>
-          </>
-        )}
-
-        {loginMethod === "qr" && (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <Typography variant="body2" sx={{ mb: 2, textAlign: "center", color: "#ccc" }}>
-              Mở camera hoặc ứng dụng Zalo trên điện thoại quét mã này để đăng nhập nhanh.
+        {/* Phải — form đăng nhập */}
+        <main className="login-form-panel">
+          <Card elevation={0} className="login-form-card">
+            <Typography className="login-form-title" component="h2">
+              {t("auth.loginTitle")}
+            </Typography>
+            <Typography className="login-form-subtitle">
+              {t("auth.loginSubtitle")}
             </Typography>
 
-            <Box sx={{ p: 2, backgroundColor: "white", borderRadius: 2, minWidth: 180, minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {qrLoading ? (
-                <CircularProgress size={48} sx={{ color: "#ee4d2d" }} />
-              ) : qrToken ? (
-                <QRCodeCanvas value={qrUrl} size={180} />
-              ) : qrError ? (
-                <Typography sx={{ color: "#d32f2f", width: 180, textAlign: "center", fontSize: 13, px: 1 }}>
-                  {qrError}
-                </Typography>
-              ) : (
-                <Typography sx={{ color: "black", width: 180, textAlign: "center" }}>
-                  Đang tạo mã...
-                </Typography>
-              )}
-            </Box>
-
-            <Button
-              variant="text"
-              sx={{ mt: 2, color: "#FFC312" }}
-              onClick={fetchQrToken}
+            <Tabs
+              className="login-tabs"
+              value={loginMethod}
+              onChange={(e, newValue) => {
+                setLoginMethod(newValue);
+                if (newValue === "qr") {
+                  fetchQrToken();
+                }
+              }}
+              centered
+              sx={{ mb: 3 }}
             >
-              Lấy MÃ mới
-            </Button>
-          </Box>
-        )}
+              <Tab value="password" label={t("auth.tabPassword")} />
+              <Tab value="qr" label={t("auth.tabQr")} />
+            </Tabs>
 
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Typography variant="body2">
-            Don't have an account?{" "}
-            <Link to="/register" style={{ color: "#FFC312", textDecoration: "none" }}>
-              Sign Up
-            </Link>
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            <Link to="/forgot-password" style={{ color: "white", textDecoration: "none" }}>
-              Quên mật khẩu?
-            </Link>
-          </Typography>
-        </Box>
-      </Card>
-    </Box>
+            {loginMethod === "password" && (
+              <>
+                <Box
+                  component="form"
+                  onSubmit={handleSubmit}
+                  noValidate
+                  sx={{ display: "flex", flexDirection: "column" }}
+                >
+                  <TextField
+                    label={t("auth.email")}
+                    name="email"
+                    type="text"
+                    autoComplete="username"
+                    variant="outlined"
+                    fullWidth
+                    sx={fieldSx}
+                    value={values.email}
+                    onChange={handleChange}
+                  />
+                  <TextField
+                    label={t("auth.password")}
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    variant="outlined"
+                    fullWidth
+                    sx={fieldSx}
+                    value={values.password}
+                    onChange={handleChange}
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        value="remember"
+                        sx={{ color: "#94a3b8", "&.Mui-checked": { color: BRAND } }}
+                      />
+                    }
+                    label={<Typography variant="body2" color="text.secondary">{t("auth.rememberMe")}</Typography>}
+                  />
+
+                  <Button type="submit" variant="contained" fullWidth className="login-submit-btn">
+                    {t("auth.loginNow")}
+                  </Button>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", my: 2 }}>
+                  <Divider sx={{ flex: 1 }} />
+                  <Typography variant="body2" sx={{ mx: 2, color: "#94a3b8" }}>
+                    {t("chatbot.or")}
+                  </Typography>
+                  <Divider sx={{ flex: 1 }} />
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 1.5,
+                    width: "100%",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box sx={{ width: "100%" }}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      width="100%"
+                      theme="outline"
+                      text="signin"
+                      shape="rectangular"
+                    />
+                  </Box>
+
+                  <Box sx={{ width: "100%" }}>
+                    <FacebookLogin
+                      appId={FACEBOOK_APP_ID}
+                      onSuccess={handleFacebookSuccess}
+                      onFail={(error) => console.log("Facebook Login Fail:", error)}
+                      render={({ onClick }) => (
+                        <Button
+                          onClick={onClick}
+                          variant="contained"
+                          fullWidth
+                          disabled={isFbLoading}
+                          startIcon={
+                            isFbLoading ? (
+                              <CircularProgress size={18} color="inherit" />
+                            ) : (
+                              <FacebookIcon />
+                            )
+                          }
+                          sx={{
+                            backgroundColor: "#1877F2",
+                            color: "white",
+                            "&:hover": { backgroundColor: "#115293" },
+                            textTransform: "none",
+                            height: "40px",
+                          }}
+                        >
+                          {isFbLoading ? "..." : "Facebook"}
+                        </Button>
+                      )}
+                    />
+                  </Box>
+                </Box>
+              </>
+            )}
+
+            {loginMethod === "qr" && (
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 2, textAlign: "center", color: "#64748b" }}
+                >
+                  {t("auth.qrScanHint")}
+                </Typography>
+
+                <Box
+                  sx={{
+                    p: 2,
+                    backgroundColor: "#fff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 2,
+                    minWidth: 180,
+                    minHeight: 180,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {qrLoading ? (
+                    <CircularProgress size={48} sx={{ color: BRAND }} />
+                  ) : qrToken ? (
+                    <QRCodeCanvas value={qrUrl} size={180} />
+                  ) : qrError ? (
+                    <Typography
+                      sx={{ color: "#d32f2f", width: 180, textAlign: "center", fontSize: 13, px: 1 }}
+                    >
+                      {qrError}
+                    </Typography>
+                  ) : (
+                    <Typography sx={{ color: "#64748b", width: 180, textAlign: "center" }}>
+                      {t("auth.qrGenerating")}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Button variant="text" sx={{ mt: 2, color: BRAND }} onClick={fetchQrToken}>
+                  {t("auth.refreshQr")}
+                </Button>
+              </Box>
+            )}
+
+            <Box className="login-footer-links">
+              <Typography variant="body2" color="text.secondary">
+                {t("auth.noAccount")}{" "}
+                <Link to="/register">{t("auth.registerNow")}</Link>
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <Link to="/forgot-password" className="login-muted-link">
+                  {t("auth.forgotPassword")}
+                </Link>
+              </Typography>
+            </Box>
+          </Card>
+        </main>
+      </Box>
     </GoogleOAuthProvider>
   );
 };

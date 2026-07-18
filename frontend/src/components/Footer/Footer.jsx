@@ -6,9 +6,15 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import SecurityIcon from "@mui/icons-material/Security";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
-import { Box, Button, Grid, TextField, Typography } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import TrustSignals from "./TrustSignals";
+import { FOOTER_COLS, FOOTER_SECTION_PX } from "./footerLayout";
 
-// Component con cho các mục thông tin nhanh ở trên cùng
+const BRAND = "#ff7a00";
+const BRAND_DEEP = "#e86a00";
+
 const QuickItem = ({ icon, title, subtitle }) => (
   <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", justifyContent: "flex-start" }}>
     <Box
@@ -19,39 +25,62 @@ const QuickItem = ({ icon, title, subtitle }) => (
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#ff3f3f",
-        color: "#fff",
-        flexShrink: 0
+        bgcolor: "rgba(255, 122, 0, 0.12)",
+        color: BRAND,
+        flexShrink: 0,
       }}
     >
       {icon}
     </Box>
     <Box>
-      <Typography sx={{ fontWeight: 700, color: "#fff", fontSize: 13, whiteSpace: "nowrap" }}>{title}</Typography>
-      <Typography sx={{ color: "#bdbdbd", fontSize: 11, whiteSpace: "nowrap" }}>
+      <Typography
+        sx={{
+          fontWeight: 700,
+          color: "#0f172a",
+          fontSize: { xs: 14, md: 13 },
+          whiteSpace: "nowrap",
+        }}
+      >
+        {title}
+      </Typography>
+      <Typography
+        sx={{
+          color: "#334155",
+          fontSize: { xs: 13, md: 12 },
+          whiteSpace: "nowrap",
+        }}
+      >
         {subtitle}
       </Typography>
     </Box>
   </Box>
 );
 
-// Component con cho mỗi link ở các cột
 const LinkItem = ({ label, href = "#" }) => (
   <Typography
     component="a"
     href={href}
     sx={{
-      color: "#e9e9e9",
+      color: "#1e293b",
       textDecoration: "none",
-      fontSize: 14,
+      fontSize: { xs: 16, md: 15 },
+      lineHeight: 1.5,
+      display: "block",
       position: "relative",
       pl: "14px",
-      "&:hover": { color: "#ffffff" },
+      py: { xs: 0.75, md: 0.25 },
+      transition: "color 0.15s ease",
+      "&:hover": { color: "#c2410c" },
+      "&:focus-visible": {
+        outline: `2px solid ${BRAND}`,
+        outlineOffset: 2,
+        borderRadius: 1,
+      },
       "&::before": {
         content: '"›"',
         position: "absolute",
         left: 0,
-        color: "#ff8a00",
+        color: BRAND,
       },
     }}
   >
@@ -59,181 +88,12 @@ const LinkItem = ({ label, href = "#" }) => (
   </Typography>
 );
 
-const Footer = () => {
-  return (
-    <Box component="footer">
-      {/* Top quick info bar */}
-      <Box sx={{ bgcolor: "#3a3d40", py: 4, px: { xs: 2, md: 6, lg: 10 } }}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)", lg: "repeat(8, 1fr)" },
-            gap: 2
-          }}
-        >
-          <QuickItem
-            icon={<PlaceIcon fontSize="small" />}
-            title="Địa Chỉ"
-            subtitle="Q4, Hồ Chí Minh"
-          />
-          <QuickItem
-            icon={<MailOutlineIcon fontSize="small" />}
-            title="Gửi Email"
-            subtitle="hotro@electro.vn"
-          />
-          <QuickItem
-            icon={<PhoneIcon fontSize="small" />}
-            title="Điện Thoại"
-            subtitle="1900 1234 5678"
-          />
-          <QuickItem
-            icon={<SupportAgentIcon fontSize="small" />}
-            title="Zalo / Tư Vấn"
-            subtitle="0909 123 456"
-          />
-          <QuickItem
-            icon={<AccessTimeIcon fontSize="small" />}
-            title="Giờ Hoạt Động"
-            subtitle="08:00 - 22:00"
-          />
-          <QuickItem
-            icon={<SecurityIcon fontSize="small" />}
-            title="Bảo Hành"
-            subtitle="12 Tháng Đổi Trả"
-          />
-          <QuickItem
-            icon={<LocalShippingIcon fontSize="small" />}
-            title="Giao Hàng"
-            subtitle="Miễn Phí Toàn Quốc"
-          />
-          <QuickItem
-            icon={<PaymentIcon fontSize="small" />}
-            title="Thanh Toán"
-            subtitle="An Toàn, Góp 0%"
-          />
-        </Box>
-      </Box>
-
-      {/* Main footer columns */}
-      <Box sx={{ bgcolor: "#2f3234", py: 7, px: { xs: 2, md: 6, lg: 10 } }}>
-        <Grid container spacing={4} justifyContent="space-between">
-          {/* Newsletter Column */}
-          <Grid item xs={12} md={3}>
-            <Typography
-              sx={{ fontWeight: 800, mb: 2, color: "#ff8a00", fontSize: 18 }}
-            >
-              Đăng Ký Nhận Tin
-            </Typography>
-            <Typography
-              sx={{
-                color: "#bdbdbd",
-                mb: 3,
-                fontSize: 14,
-                maxWidth: "100%",
-              }}
-            >
-              Đăng ký nhận bản tin để cập nhật những sản phẩm mới nhất và các chương trình khuyến mãi hấp dẫn từ Electro Store.
-            </Typography>
-            <Box
-              component="form"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                background: "#fff",
-                borderRadius: "999px",
-                p: "4px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                maxWidth: "100%",
-                overflow: "hidden"
-              }}
-            >
-              <TextField
-                variant="standard"
-                placeholder="Nhập email của bạn"
-                sx={{
-                  flex: 1,
-                  "& .MuiInput-underline:before": { borderBottom: "none" },
-                  "& .MuiInput-underline:after": { borderBottom: "none" },
-                  "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
-                    borderBottom: "none",
-                  },
-                  "& .MuiInputBase-input": { p: "8px 16px" },
-                }}
-              />
-              <Button
-                sx={{
-                  bgcolor: "#ff9800",
-                  color: "#fff",
-                  fontWeight: "bold",
-                  borderRadius: "999px",
-                  px: 2.5,
-                  py: 1,
-                  textTransform: "none",
-                  whiteSpace: "nowrap",
-                  "&:hover": { bgcolor: "#f57c00" },
-                  ml: "auto"
-                }}
-              >
-                Đăng Ký
-              </Button>
-            </Box>
-          </Grid>
-
-          {/* Other Link Columns */}
-          <Grid item xs={12} sm={4} md={3}>
-            <LinkColumn
-              title="Chăm Sóc Khách Hàng"
-              links={[
-                "Liên Hệ",
-                "Đổi Trả Hàng",
-                "Bản Đồ Trang Web",
-                "Đánh Giá Khách Hàng",
-                "Tài Khoản Của Tôi",
-                "Trung Tâm Hỗ Trợ"
-              ]}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4} md={3}>
-            <LinkColumn
-              title="Thông Tin"
-              links={[
-                { label: "Về Chúng Tôi", href: "/about" },
-                { label: "Thông Tin Giao Hàng" },
-                { label: "Chính Sách Bảo Mật" },
-                { label: "Điều Khoản & Điều Kiện" },
-                { label: "Tra Cứu Bảo Hành", href: "/warranty-check" },
-                { label: "Chat Với Nhân Viên", href: "/chat-nhan-vien" },
-                { label: "Câu Hỏi Thường Gặp", href: "/faq" },
-              ]}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4} md={3}>
-            <LinkColumn
-              title="Tiện Ích Khác"
-              links={[
-                "Thương Hiệu",
-                "Thẻ Quà Tặng",
-                "Đối Tác Liên Kết",
-                "Lịch Sử Đơn Hàng",
-                "Theo Dõi Đơn Hàng",
-              ]}
-            />
-          </Grid>
-        </Grid>
-      </Box>
-    </Box>
-  );
-};
-
-// Component con để tái sử dụng cho các cột link
 const LinkColumn = ({ title, links }) => (
   <Box sx={{ display: "flex", flexDirection: "column" }}>
-    <Typography
-      sx={{ fontWeight: 800, mb: 2, color: "#ff8a00", fontSize: 18 }}
-    >
+    <Typography sx={{ fontWeight: 800, mb: 2, color: "#9a3412", fontSize: 18 }}>
       {title}
     </Typography>
-    <Box sx={{ display: "grid", gap: 1.5 }}>
+    <Box sx={{ display: "grid", gap: { xs: 0.5, md: 1.5 } }}>
       {links.map((link) => {
         if (typeof link === "string") {
           return <LinkItem key={link} label={link} />;
@@ -243,5 +103,227 @@ const LinkColumn = ({ title, links }) => (
     </Box>
   </Box>
 );
+
+const Footer = () => {
+  const { t, i18n } = useTranslation();
+
+  const customerCareLinks = useMemo(
+    () => [
+      t("footer.contactLink"),
+      t("footer.returns"),
+      t("footer.sitemap"),
+      t("footer.reviews"),
+      t("footer.myAccountLink"),
+      t("footer.supportCenter"),
+    ],
+    [t, i18n.language],
+  );
+
+  const infoLinks = useMemo(
+    () => [
+      { label: t("nav.about"), href: "/about" },
+      { label: t("footer.shippingInfo") },
+      { label: t("footer.privacy") },
+      { label: t("footer.termsConditions") },
+      { label: t("nav.warrantyCheck"), href: "/warranty-check" },
+      { label: t("nav.liveChat"), href: "/chat-nhan-vien" },
+      { label: t("nav.faq"), href: "/faq" },
+    ],
+    [t, i18n.language],
+  );
+
+  const utilityLinks = useMemo(
+    () => [
+      t("footer.brands"),
+      t("footer.giftCard"),
+      t("footer.affiliate"),
+      t("footer.orderHistory"),
+      t("footer.trackOrder"),
+    ],
+    [t, i18n.language],
+  );
+
+  return (
+    <Box
+      component="footer"
+      sx={{
+        bgcolor: "#f8fafc",
+        borderTop: "2px solid #e2e8f0",
+        boxShadow: "0 -6px 24px rgba(15, 23, 42, 0.04)",
+      }}
+    >
+      {/* Thanh dịch vụ — nền trung tính để chữ đạt contrast AA */}
+      <Box
+        sx={{
+          bgcolor: "transparent",
+          py: 3.5,
+          px: FOOTER_SECTION_PX,
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(1, 1fr)",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(4, 1fr)",
+              lg: "repeat(8, 1fr)",
+            },
+            gap: 2,
+          }}
+        >
+          <QuickItem
+            icon={<PlaceIcon fontSize="small" />}
+            title={t("footer.address")}
+            subtitle={t("footer.addressValue")}
+          />
+          <QuickItem
+            icon={<MailOutlineIcon fontSize="small" />}
+            title={t("footer.email")}
+            subtitle="hotro@electro.vn"
+          />
+          <QuickItem
+            icon={<PhoneIcon fontSize="small" />}
+            title={t("footer.phone")}
+            subtitle="1900 1234 5678"
+          />
+          <QuickItem
+            icon={<SupportAgentIcon fontSize="small" />}
+            title={t("footer.support")}
+            subtitle="0909 123 456"
+          />
+          <QuickItem
+            icon={<AccessTimeIcon fontSize="small" />}
+            title={t("footer.hours")}
+            subtitle={t("footer.hoursValue")}
+          />
+          <QuickItem
+            icon={<SecurityIcon fontSize="small" />}
+            title={t("footer.warranty")}
+            subtitle={t("footer.warrantyValue")}
+          />
+          <QuickItem
+            icon={<LocalShippingIcon fontSize="small" />}
+            title={t("footer.shipping")}
+            subtitle={t("footer.shippingValue")}
+          />
+          <QuickItem
+            icon={<PaymentIcon fontSize="small" />}
+            title={t("footer.payment")}
+            subtitle={t("footer.paymentValue")}
+          />
+        </Box>
+      </Box>
+
+      {/* Cột link + newsletter — cùng FOOTER_COLS với TrustSignals */}
+      <Box sx={{ bgcolor: "transparent", py: 7, px: FOOTER_SECTION_PX }}>
+        <Box sx={FOOTER_COLS}>
+          <Box sx={{ gridColumn: { xs: "1 / -1", md: "auto" }, minWidth: 0 }}>
+            <Typography sx={{ fontWeight: 800, mb: 2, color: "#9a3412", fontSize: 18 }}>
+              {t("footer.newsletter")}
+            </Typography>
+            <Typography
+              sx={{
+                color: "#334155",
+                mb: 3,
+                fontSize: { xs: 14, md: 13 },
+                maxWidth: "100%",
+              }}
+            >
+              {t("footer.newsletterDesc")}
+            </Typography>
+            <Box
+              component="form"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                background: "#fff",
+                borderRadius: "999px",
+                p: "4px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+                maxWidth: "100%",
+                overflow: "hidden",
+                "&:focus-within": {
+                  borderColor: BRAND,
+                  boxShadow: "0 0 0 3px rgba(255, 122, 0, 0.15)",
+                },
+              }}
+            >
+              <TextField
+                variant="standard"
+                placeholder={t("footer.emailPlaceholder")}
+                sx={{
+                  flex: 1,
+                  "& .MuiInput-underline:before": { borderBottom: "none" },
+                  "& .MuiInput-underline:after": { borderBottom: "none" },
+                  "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                    borderBottom: "none",
+                  },
+                  "& .MuiInputBase-input": { p: "8px 16px", color: "#1e293b" },
+                }}
+              />
+              <Button
+                sx={{
+                  bgcolor: BRAND,
+                  color: "#fff",
+                  fontWeight: "bold",
+                  borderRadius: "999px",
+                  px: 2.5,
+                  py: 1,
+                  textTransform: "none",
+                  whiteSpace: "nowrap",
+                  "&:hover": { bgcolor: BRAND_DEEP },
+                  ml: "auto",
+                }}
+              >
+                {t("footer.subscribe")}
+              </Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ minWidth: 0 }}>
+            <LinkColumn title={t("footer.customerCare")} links={customerCareLinks} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <LinkColumn title={t("footer.infoSection")} links={infoLinks} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <LinkColumn title={t("footer.utilities")} links={utilityLinks} />
+          </Box>
+        </Box>
+      </Box>
+
+      <TrustSignals />
+
+      {/* Thanh copyright */}
+      <Box
+        sx={{
+          bgcolor: "transparent",
+          py: 2.25,
+          px: FOOTER_SECTION_PX,
+          textAlign: "center",
+        }}
+      >
+        <Typography sx={{ color: "#475569", fontSize: { xs: 14, md: 13 } }}>
+          © {new Date().getFullYear()} Electro Store. {t("footer.allRights")}
+        </Typography>
+        <Typography
+          sx={{
+            color: "#64748b",
+            fontSize: { xs: 13, md: 12 },
+            mt: 0.75,
+            lineHeight: 1.6,
+          }}
+        >
+          {t("footer.copyrightAddress")}
+        </Typography>
+        <Typography sx={{ color: "#64748b", fontSize: { xs: 13, md: 12 }, mt: 0.25 }}>
+          {t("footer.copyrightContact")}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
 
 export default Footer;

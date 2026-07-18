@@ -18,6 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import ProfileMenu from "../../components/Profile-Menu/ProfileMenu.jsx";
 import { loginSuccess, selectUser } from "../../redux/appSlice.js";
@@ -25,6 +26,7 @@ import { getMyProfile, updateMyProfile } from "../../services/userService.js";
 
 // --- Component 2: Form ở giữa ---
 const ProfileForm = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ const ProfileForm = () => {
         console.error("Lỗi khi lấy profile:", error);
         setSnackbar({
           open: true,
-          message: error.response?.data?.message || "Không thể tải thông tin profile",
+          message: error.response?.data?.message || t("profile.loadFail"),
           severity: "error",
         });
       } finally {
@@ -135,12 +137,12 @@ const ProfileForm = () => {
 
       setSnackbar({
         open: true,
-        message: res.message || "Cập nhật hồ sơ thành công!",
+        message: res.message || t("profile.saveSuccess"),
         severity: "success",
       });
     } catch (error) {
       console.error("Lỗi khi cập nhật profile:", error);
-      const msg = error.response?.data?.message || "Cập nhật thất bại. Vui lòng thử lại.";
+      const msg = error.response?.data?.message || t("profile.saveFail");
       setSnackbar({ open: true, message: msg, severity: "error" });
     } finally {
       setSaving(false);
@@ -174,25 +176,23 @@ const ProfileForm = () => {
   return (
     <Paper sx={{ p: 4, height: "100%" }}>
       <Typography variant="h5" component="h1" gutterBottom>
-        Hồ Sơ Của Tôi
+        {t("profile.myProfile")}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-        Quản lý thông tin hồ sơ để bảo mật tài khoản
+        {t("profile.profileDesc")}
       </Typography>
 
-      {/* Tên đăng nhập - chỉ đọc */}
       <TextField
-        label="Tên đăng nhập"
+        label={t("profile.username")}
         value={username}
         disabled
-        helperText="Tên đăng nhập chỉ có thể thay đổi một lần."
+        helperText={t("profile.usernameHint")}
         fullWidth
         margin="normal"
       />
 
-      {/* Họ tên */}
       <TextField
-        label="Họ tên"
+        label={t("profile.fullName")}
         name="fullName"
         value={formData.fullName}
         onChange={handleChange}
@@ -202,12 +202,11 @@ const ProfileForm = () => {
 
       {/* Email - chỉ hiển thị masked */}
       <Box sx={{ display: "flex", alignItems: "center", my: "16px" }}>
-        <Typography sx={{ flexGrow: 1 }}>Email: {maskEmail(email)}</Typography>
+        <Typography sx={{ flexGrow: 1 }}>{t("profile.emailLabel")} {maskEmail(email)}</Typography>
       </Box>
 
-      {/* Số điện thoại */}
       <TextField
-        label="Số điện thoại"
+        label={t("profile.phone")}
         name="phone"
         value={formData.phone}
         onChange={handleChange}
@@ -215,9 +214,8 @@ const ProfileForm = () => {
         margin="normal"
       />
 
-      {/* Địa chỉ */}
       <TextField
-        label="Địa chỉ"
+        label={t("profile.addressLabel")}
         name="address"
         value={formData.address}
         onChange={handleChange}
@@ -225,27 +223,25 @@ const ProfileForm = () => {
         margin="normal"
       />
 
-      {/* Giới tính */}
       <FormControl margin="normal">
-        <FormLabel>Giới tính</FormLabel>
+        <FormLabel>{t("profile.gender")}</FormLabel>
         <RadioGroup
           row
           name="gender"
           value={formData.gender}
           onChange={handleChange}
         >
-          <FormControlLabel value="Nam" control={<Radio />} label="Nam" />
-          <FormControlLabel value="Nữ" control={<Radio />} label="Nữ" />
-          <FormControlLabel value="Khác" control={<Radio />} label="Khác" />
+          <FormControlLabel value="Nam" control={<Radio />} label={t("profile.male")} />
+          <FormControlLabel value="Nữ" control={<Radio />} label={t("profile.female")} />
+          <FormControlLabel value="Khác" control={<Radio />} label={t("profile.other")} />
         </RadioGroup>
       </FormControl>
 
-      {/* Ngày sinh */}
       <Box sx={{ display: "flex", gap: 2, mt: 2, mb: 4 }}>
         <FormControl fullWidth>
-          <InputLabel>Ngày</InputLabel>
+          <InputLabel>{t("profile.day")}</InputLabel>
           <Select
-            label="Ngày"
+            label={t("profile.day")}
             name="day"
             value={formData.day}
             onChange={handleChange}
@@ -258,24 +254,24 @@ const ProfileForm = () => {
           </Select>
         </FormControl>
         <FormControl fullWidth>
-          <InputLabel>Tháng</InputLabel>
+          <InputLabel>{t("profile.month")}</InputLabel>
           <Select
-            label="Tháng"
+            label={t("profile.month")}
             name="month"
             value={formData.month}
             onChange={handleChange}
           >
             {months.map((month) => (
               <MenuItem key={month} value={month}>
-                {`Tháng ${month}`}
+                {t("profile.monthOption", { month })}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
         <FormControl fullWidth>
-          <InputLabel>Năm</InputLabel>
+          <InputLabel>{t("profile.year")}</InputLabel>
           <Select
-            label="Năm"
+            label={t("profile.year")}
             name="year"
             value={formData.year}
             onChange={handleChange}
@@ -301,7 +297,7 @@ const ProfileForm = () => {
             px: 5,
           }}
         >
-          {saving ? <CircularProgress size={24} color="inherit" /> : "Lưu"}
+          {saving ? <CircularProgress size={24} color="inherit" /> : t("profile.save")}
         </Button>
       </Box>
 
@@ -327,6 +323,7 @@ const ProfileForm = () => {
 
 // --- Component chính: Sắp xếp 3 component vào Grid ---
 const ProfilePage = () => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
 
   return (
@@ -342,7 +339,7 @@ const ProfilePage = () => {
       <Grid container spacing={0} sx={{ maxWidth: 1200 }}>
         {/* Cột 1: Menu */}
         <Grid item xs={12} md={3}>
-          <ProfileMenu activePage="Hồ Sơ" user={user} />
+          <ProfileMenu activePage={t("profile.profile")} user={user} />
         </Grid>
         {/* Cột 2: Form */}
         <Grid item xs={12} md={9}>

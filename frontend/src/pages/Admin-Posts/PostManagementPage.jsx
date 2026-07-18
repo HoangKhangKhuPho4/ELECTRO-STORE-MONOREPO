@@ -210,7 +210,7 @@ const PostManagementPage = () => {
       <Box sx={{ p: 3 }}>
         <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>📝 Quản Lý Bài Viết</Typography>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>Quản Lý Bài Viết</Typography>
             <Typography variant="body1" color="text.secondary">Quản lý các bài viết, tin tức và blog trên website</Typography>
           </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}

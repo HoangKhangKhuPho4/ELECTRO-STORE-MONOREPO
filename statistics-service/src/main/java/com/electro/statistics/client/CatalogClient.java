@@ -26,6 +26,7 @@ public interface CatalogClient {
         private String name;
         private Integer productTypeId;
         private String productTypeName;
+        private String imageUrl;
     }
 
     @Data
@@ -36,5 +37,6 @@ public interface CatalogClient {
         private String variantName;
         private Integer stockQuantity;
         private Integer lowStockThreshold;
+        private String imageUrl;
     }
 }

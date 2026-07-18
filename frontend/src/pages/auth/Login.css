@@ -1,0 +1,257 @@
+/* Login — nền cam full trang kiểu Shopee; form trắng nổi bên phải */
+
+.login-page {
+  --login-brand: #ff7a00;
+  --login-brand-deep: #e86a00;
+  --login-brand-soft: #ff9a33;
+
+  /* Phá padding của .main-content để cam full chiều ngang/dọc vùng nội dung */
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  min-height: calc(100vh - 140px);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 560px);
+  align-items: stretch;
+  gap: 0;
+  box-sizing: border-box;
+
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 85%, rgba(255, 255, 255, 0.16), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 88% 12%, rgba(0, 0, 0, 0.1), transparent 50%),
+    linear-gradient(145deg, var(--login-brand-soft) 0%, var(--login-brand) 45%, var(--login-brand-deep) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.12) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.1) 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 88%, rgba(255, 255, 255, 0.08) 0 1.5px, transparent 2.5px);
+  background-size: 120px 120px, 160px 160px, 90px 90px;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* —— Brand trái (trong nền cam chung) —— */
+.login-brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(2rem, 6vw, 4.5rem) clamp(2rem, 5vw, 4rem);
+  color: #fff;
+  background: transparent;
+  overflow: hidden;
+}
+
+.login-brand-content {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+}
+
+.login-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: #fff;
+  margin-bottom: 2rem;
+}
+
+.login-brand-mark:hover {
+  opacity: 0.92;
+}
+
+.login-brand-mark svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+.login-brand-name {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.login-brand-title {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.85rem;
+}
+
+.login-brand-desc {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 22rem;
+}
+
+.login-brand-bag {
+  position: absolute;
+  right: -2%;
+  bottom: -8%;
+  width: min(52%, 380px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* —— Form phải: cùng nền cam, chỉ card trắng nổi —— */
+.login-form-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  /* Đẩy form vào phía giữa (xê vô), tránh sát mép phải */
+  justify-content: flex-start;
+  padding: clamp(1.75rem, 4vw, 3rem) clamp(3rem, 9vw, 6.5rem) clamp(1.75rem, 4vw, 3rem) 0.5rem;
+  background: transparent;
+}
+
+.login-form-card {
+  width: 100%;
+  max-width: 480px;
+  margin-right: auto;
+  transform: translateX(-1.25rem);
+  padding: clamp(2rem, 3.5vw, 2.85rem) clamp(1.75rem, 3.2vw, 2.6rem);
+  background: #fff;
+  border-radius: 6px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.18);
+  border: none;
+}
+
+.login-form-card .MuiTextField-root .MuiInputBase-root {
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.login-form-card .MuiInputLabel-root {
+  font-size: 1rem;
+}
+
+.login-form-title {
+  margin: 0 0 0.35rem;
+  text-align: center;
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 1.75rem;
+}
+
+.login-form-subtitle {
+  margin: 0 0 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.98rem;
+}
+
+.login-tabs .MuiTabs-indicator {
+  background-color: var(--login-brand) !important;
+}
+
+.login-tabs .MuiTab-root {
+  text-transform: none;
+  font-weight: 600;
+  font-size: 0.98rem;
+  min-height: 48px;
+  color: #64748b;
+}
+
+.login-tabs .MuiTab-root.Mui-selected {
+  color: var(--login-brand);
+}
+
+.login-submit-btn {
+  margin-top: 0.75rem !important;
+  background-color: var(--login-brand) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  height: 50px;
+  font-size: 1.05rem !important;
+}
+
+.login-submit-btn:hover {
+  background-color: var(--login-brand-deep) !important;
+}
+
+.login-footer-links {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.login-footer-links a {
+  color: var(--login-brand);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-footer-links a:hover {
+  text-decoration: underline;
+}
+
+.login-muted-link {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+@media (max-width: 900px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .login-brand {
+    min-height: 200px;
+    padding: 1.75rem 1.5rem 1.25rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .login-brand-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .login-brand-desc {
+    max-width: 26rem;
+  }
+
+  .login-brand-bag {
+    display: none;
+  }
+
+  .login-form-panel {
+    padding: 0.75rem 1.25rem 2.5rem;
+    justify-content: center;
+  }
+
+  .login-form-card {
+    transform: none;
+    margin-right: 0;
+  }
+
+  .login-form-card {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      0 12px 32px rgba(0, 0, 0, 0.16);
+  }
+}

@@ -2,8 +2,10 @@ import { Box, Button, Typography } from "@mui/material";
 import SecurityIcon from "@mui/icons-material/Security";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const AccessDenied = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     return (
@@ -51,7 +53,7 @@ const AccessDenied = () => {
                     color="#333"
                     gutterBottom
                 >
-                    Trọng Địa Bảo Mật!
+                    {t("accessDenied.title")}
                 </Typography>
 
                 <Typography
@@ -59,7 +61,7 @@ const AccessDenied = () => {
                     color="#666"
                     sx={{ mb: 4, mt: 1, lineHeight: 1.6 }}
                 >
-                    Bạn đang cố gắng truy cập vào khu vực không thuộc thẩm quyền của bộ phận mình. Hãy liên hệ với Quản trị viên (Admin) nếu bạn tin rằng đây là một sự nhầm lẫn.
+                    {t("accessDenied.desc")}
                 </Typography>
 
                 <Box sx={{ display: "flex", gap: 2 }}>
@@ -76,7 +78,7 @@ const AccessDenied = () => {
                             py: 1,
                         }}
                     >
-                        Quay lại
+                        {t("accessDenied.back")}
                     </Button>
                     <Button
                         variant="outlined"
@@ -89,7 +91,7 @@ const AccessDenied = () => {
                             py: 1,
                         }}
                     >
-                        Về Dashboard
+                        {t("accessDenied.dashboard")}
                     </Button>
                 </Box>
             </Box>

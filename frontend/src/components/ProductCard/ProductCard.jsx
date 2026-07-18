@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   addToWishlist,
@@ -27,6 +28,7 @@ import { formatMoney } from "../../utils/formatters";
 import { trackView, trackAddToCart } from "../../services/interactionService";
 
 const ProductCard = ({ product }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const wishlist = useSelector(selectWishlist);
@@ -54,7 +56,7 @@ const ProductCard = ({ product }) => {
     : product.price;
 
   const displayPriceText = hasMultipleVariants
-    ? `Từ ${formatMoney(minPrice)}`
+    ? t("product.fromPrice", { price: formatMoney(minPrice) })
     : formatMoney(product.price);
 
   // Xử lý nút Hành Động chính (Thêm vào Giỏ hoặc Chọn Loại)
@@ -69,7 +71,7 @@ const ProductCard = ({ product }) => {
     } else {
       // Chỉ có duy nhất 1 Variante -> Cho phép Add nhanh vô Giỏ (Quick Add)
       if (!isLoggedIn) {
-        alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+        alert(t("product.loginToCart"));
         navigate("/login");
         return;
       }
@@ -79,10 +81,10 @@ const ProductCard = ({ product }) => {
         if (currentUser?.id) {
           trackAddToCart(currentUser.id, Number(product.id));
         }
-        alert("Đã thêm " + product.name + " vào giỏ hàng!");
+        alert(t("product.addedToCart", { name: product.name }));
       } catch (err) {
         console.error("Quick Add to cart failed:", err);
-        alert(err.response?.data?.message || "Không thể thêm vào giỏ hàng");
+        alert(err.response?.data?.message || t("product.addCartFail"));
       }
     }
   };
@@ -214,7 +216,7 @@ const ProductCard = ({ product }) => {
                   border: "1px solid #fee2e2"
                 }}
               >
-                Đã bán {product.soldCount}
+                {t("product.soldCount", { count: product.soldCount })}
               </Typography>
             )}
           </Box>
@@ -301,7 +303,7 @@ const ProductCard = ({ product }) => {
           }}
           onClick={handlePrimaryAction}
         >
-          {hasMultipleVariants ? "Chọn Loại" : "Thêm"}
+          {hasMultipleVariants ? t("product.chooseVariant") : t("product.add")}
         </Button>
 
         <IconButton

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Typography,
@@ -12,6 +13,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import { getTrackingInfo } from "../../services/shippingService";
 
 const TrackingTimeline = ({ trackingCode }) => {
+  const { t } = useTranslation();
   const [trackingData, setTrackingData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,10 +31,10 @@ const TrackingTimeline = ({ trackingCode }) => {
       if (res.status === "success") {
         setTrackingData(res.data);
       } else {
-        setError(res.message || "Không thể lấy thông tin vận đơn");
+        setError(res.message || t("tracking.fetchError"));
       }
     } catch (err) {
-      setError("Lỗi khi tải lịch sử giao hàng");
+      setError(t("tracking.loadError"));
       console.error(err);
     } finally {
       setLoading(false);
@@ -58,7 +60,7 @@ const TrackingTimeline = ({ trackingCode }) => {
   if (!trackingData || !trackingData.logs || trackingData.logs.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", mt: 1 }}>
-        Chưa có lịch sử di chuyển cho kiện hàng này.
+        {t("tracking.noHistory")}
       </Typography>
     );
   }
@@ -68,7 +70,7 @@ const TrackingTimeline = ({ trackingCode }) => {
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
         <LocalShippingIcon sx={{ color: "#f28900" }} />
         <Typography variant="subtitle2" fontWeight="bold" color="primary.main">
-          Hành trình đơn hàng - Vận đơn: {trackingCode}
+          {t("tracking.journeyTitle", { code: trackingCode })}
         </Typography>
       </Box>
       <Stepper orientation="vertical" activeStep={0} sx={{ mt: 1 }}>

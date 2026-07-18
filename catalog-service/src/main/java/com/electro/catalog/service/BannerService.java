@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +25,29 @@ public class BannerService {
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BannerDto.Response> getActivePublic(String position) {
+        List<Banner> rows = (position != null && !position.isBlank())
+                ? bannerRepository.findByStatusAndPositionOrderByPriorityAscIdAsc("active", position.trim())
+                : bannerRepository.findByStatusOrderByPriorityAscIdAsc("active");
+
+        LocalDate today = LocalDate.now();
+        return rows.stream()
+                .filter(b -> isWithinSchedule(b, today))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isWithinSchedule(Banner banner, LocalDate today) {
+        if (banner.getStartDate() != null && today.isBefore(banner.getStartDate())) {
+            return false;
+        }
+        if (banner.getEndDate() != null && today.isAfter(banner.getEndDate())) {
+            return false;
+        }
+        return true;
     }
 
     public BannerDto.Response create(BannerDto.Request request) {

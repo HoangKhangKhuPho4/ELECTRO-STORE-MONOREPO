@@ -13,6 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
@@ -28,26 +29,26 @@ import { getProductDetail } from "../../services/productService";
 import { trackInteraction } from "../../utils/analytics";
 import ReviewList from "../Review/ReviewList";
 
-const DUMMY = {
-  title: "Sản phẩm",
-  description: "Đang tải thông tin sản phẩm...",
+const DUMMY = (t) => ({
+  title: t("common.product"),
+  description: t("product.loading"),
   price: 0,
   rating: 0,
   reviews: 0,
   images: ["https://placehold.co/800x504?text=Loading..."],
-};
+});
 
 // Determine variant section label based on variant values
-function getVariantLabel(variantNames) {
-  if (!variantNames || variantNames.length === 0) return "PHIÊN BẢN:";
+function getVariantLabel(variantNames, t) {
+  if (!variantNames || variantNames.length === 0) return t("product.variant");
   const allSizes = variantNames.every((n) => /^\d+(GB|TB)$/i.test(n));
   if (allSizes) {
     const hasLarge = variantNames.some(
       (n) => parseInt(n) >= 128 || /TB/i.test(n),
     );
-    return hasLarge ? "DUNG LƯỢNG BỘ NHỚ:" : "RAM:";
+    return hasLarge ? t("product.storage") : t("product.ram");
   }
-  return "PHIÊN BẢN:";
+  return t("product.variant");
 }
 
 function extractImages(data, currentVariantId) {
@@ -75,6 +76,7 @@ function extractImages(data, currentVariantId) {
 }
 
 export default function ProductDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -114,7 +116,7 @@ export default function ProductDetail() {
     if (!source) {
       return {
         id,
-        ...DUMMY,
+        ...DUMMY(t),
         variants: [],
         options: [],
         hasRealVariants: false,
@@ -136,11 +138,11 @@ export default function ProductDetail() {
       variants.find((v) => v.isDefault) || variants[0] || null;
 
     const mapped = {
-      title: source.name || DUMMY.title,
-      description: source.description || source.detail || DUMMY.description,
-      price: typeof source.price === "number" ? source.price : DUMMY.price,
-      rating: source.averageRating || DUMMY.rating,
-      reviews: source.reviewCount || DUMMY.reviews,
+      title: source.name || DUMMY(t).title,
+      description: source.description || source.detail || DUMMY(t).description,
+      price: typeof source.price === "number" ? source.price : DUMMY(t).price,
+      rating: source.averageRating || DUMMY(t).rating,
+      reviews: source.reviewCount || DUMMY(t).reviews,
       variants,
       options,
       hasRealVariants,
@@ -150,7 +152,7 @@ export default function ProductDetail() {
       producer: source.producer || source.originalData?.producer,
     };
     return { id, sourceData: source, ...mapped };
-  }, [id, location.state, apiProduct]);
+  }, [id, location.state, apiProduct, t]);
 
   const [active, setActive] = useState(0);
   const [currentVariant, setCurrentVariant] = useState(null);
@@ -242,12 +244,12 @@ export default function ProductDetail() {
     <Box sx={{ px: { xs: 2, md: 3 }, py: 3, maxWidth: 1400, mx: "auto" }}>
       <Breadcrumbs sx={{ mb: 2 }}>
         <MLink color="inherit" href="/">
-          Home
+          {t("product.home")}
         </MLink>
         <MLink color="inherit" href="/shop">
-          Shop
+          {t("product.shop")}
         </MLink>
-        <Typography color="text.primary">Product Detail</Typography>
+        <Typography color="text.primary">{t("product.detail")}</Typography>
       </Breadcrumbs>
 
       {/* Main flexbox container */}
@@ -315,7 +317,7 @@ export default function ProductDetail() {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, my: 1 }}>
               <Rating value={product.rating} precision={0.5} readOnly />
               <Typography variant="body2" sx={{ color: "#666" }}>
-                {product.reviews} reviews
+                {product.reviews} {t("product.reviews")}
               </Typography>
             </Box>
             {product.description && (
@@ -330,7 +332,7 @@ export default function ProductDetail() {
                 variant="h6"
                 sx={{ textTransform: "uppercase", fontWeight: 700 }}
               >
-                Giá sản phẩm:{" "}
+                {t("product.price")}{" "}
                 <Box component="span" sx={{ color: "#ff9f1a" }}>
                   {new Intl.NumberFormat("vi-VN", {
                     style: "currency",
@@ -428,7 +430,7 @@ export default function ProductDetail() {
                             {/* Chữ in đè khi hết hàng */}
                             {disabled && (
                               <Typography variant="caption" sx={{ ml: 1, color: '#e53935', fontSize: '10px', fontWeight: 'bold' }}>
-                                Hết hàng
+                                {t("product.outOfStock")}
                               </Typography>
                             )}
                           </Paper>
@@ -446,39 +448,37 @@ export default function ProductDetail() {
                 color="warning"
                 onClick={async () => {
                   if (!isLoggedIn) {
-                    alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+                    alert(t("product.loginToCart"));
                     navigate("/login");
                     return;
                   }
                   if (!currentVariant?.id) {
-                    alert("Phiên bản bạn đang chọn không khả dụng, vui lòng chọn lại!");
+                    alert(t("product.variantUnavailable"));
                     return;
                   }
                   if (currentVariant.stockQuantity === 0) {
-                    alert("Sản phẩm tạm thời hết hàng, vui lòng thử lại sau!");
+                    alert(t("product.tempOutOfStock"));
                     return;
                   }
                   try {
-                    // Truyền chuẩn productId và variantId
                     const cart = await addItemToCart(currentVariant.id, 1);
                     dispatch(setCart(cart.items || []));
-                    // 🧠 AI Tracking: Ghi lại ADD_TO_CART (3.0 điểm)
                     trackInteraction({
                       userId: currentUser?.id || null,
                       productId: Number(id),
                       actionType: 'ADD_TO_CART'
                     });
-                    alert("Đã thêm " + product.title + " vào giỏ hàng!");
+                    alert(t("product.addedToCart", { name: product.title }));
                   } catch (err) {
                     console.error("Add to cart failed:", err);
                     alert(
                       err.response?.data?.message ||
-                      "Không thể thêm vào giỏ hàng",
+                      t("product.addCartFail"),
                     );
                   }
                 }}
               >
-                Thêm vào giỏ
+                {t("product.addToCart")}
               </Button>
               <IconButton
                 sx={{

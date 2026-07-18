@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Avatar,
@@ -24,19 +25,14 @@ import { formatDate } from "../../utils/formatters";
 import { useGHNShipping } from "../../hooks/useGHNShipping";
 import { resolveGhnFromOrderContext } from "../../utils/warrantyFromOrder";
 
-const WARRANTY_STATUS_LABELS = {
-  AVAILABLE: "Còn hàng",
-  RESERVED: "Đã đặt cọc",
-  SOLD: "Đã bán",
-  IN_REPAIR: "Đang sửa chữa",
-  RETURNED: "Đã trả khách",
-  DEFECTIVE: "Lỗi NSX",
-};
+const ISSUE_TYPES = ["NOT_WORKING", "DEFECTIVE", "DAMAGED", "MISSING_PARTS", "OTHER"];
+const REQUEST_TYPES = ["REPAIR", "REPLACE", "REFUND"];
 
 /**
  * Gửi yêu cầu BH từ Đơn hàng của tôi — tự tra cứu BH, điền liên hệ & địa chỉ lấy hàng GHN.
  */
 const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
   const {
     provinces,
@@ -113,13 +109,13 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
         if (json.success && json.data) {
           setWarrantyInfo(json.data);
         } else {
-          setWarrantyError(json.message || "Không tra cứu được thông tin bảo hành.");
+          setWarrantyError(json.message || t("warranty.claim.lookupFail"));
         }
       })
       .catch((err) => {
         if (!cancelled) {
           setWarrantyError(
-            err.response?.data?.message || "Không tra cứu được thông tin bảo hành."
+            err.response?.data?.message || t("warranty.claim.lookupFail")
           );
         }
       })
@@ -150,17 +146,17 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
             if (ghn.ward) {
               await onWardChange(ghn.ward.code, ghn.ward.name);
             } else {
-              setAddressPrefillNote("Chưa khớp phường/xã — vui lòng chọn lại.");
+              setAddressPrefillNote(t("warranty.claim.prefillWard"));
             }
           } else {
-            setAddressPrefillNote("Chưa khớp quận/huyện — vui lòng chọn lại.");
+            setAddressPrefillNote(t("warranty.claim.prefillDistrict"));
           }
         } else if (context.shippingProvince) {
-          setAddressPrefillNote("Chưa khớp tỉnh/thành — vui lòng chọn lại địa chỉ lấy hàng.");
+          setAddressPrefillNote(t("warranty.claim.prefillProvince"));
         }
       } catch {
         if (!cancelled) {
-          setAddressPrefillNote("Không tải được địa chỉ GHN — vui lòng chọn thủ công.");
+          setAddressPrefillNote(t("warranty.claim.prefillGhnFail"));
         }
       }
     })();
@@ -172,14 +168,14 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
   }, [open, context, provinces.length]);
 
   const validatePickup = () => {
-    if (!form.submittedImei?.trim()) return "Thiếu IMEI/Serial máy cần bảo hành.";
-    if (!form.issueDescription?.trim()) return "Vui lòng mô tả lỗi.";
-    if (!form.contactName?.trim()) return "Vui lòng nhập họ tên người nhận shipper.";
-    if (!form.contactPhone?.trim()) return "Vui lòng nhập số điện thoại liên hệ.";
-    if (!selectedProvince) return "Vui lòng chọn Tỉnh/Thành phố lấy hàng.";
-    if (!selectedDistrict) return "Vui lòng chọn Quận/Huyện lấy hàng.";
-    if (!selectedWard) return "Vui lòng chọn Phường/Xã lấy hàng.";
-    if (!form.contactAddress?.trim()) return "Vui lòng nhập số nhà, tên đường lấy hàng.";
+    if (!form.submittedImei?.trim()) return t("warranty.claim.errImei");
+    if (!form.issueDescription?.trim()) return t("warranty.claim.errIssue");
+    if (!form.contactName?.trim()) return t("warranty.claim.errName");
+    if (!form.contactPhone?.trim()) return t("warranty.claim.errPhone");
+    if (!selectedProvince) return t("warranty.claim.errProvince");
+    if (!selectedDistrict) return t("warranty.claim.errDistrict");
+    if (!selectedWard) return t("warranty.claim.errWard");
+    if (!form.contactAddress?.trim()) return t("warranty.claim.errStreet");
     return null;
   };
 
@@ -226,10 +222,10 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
       if (isApiSuccess(res)) {
         setSuccessClaim(res.data?.claimNumber || "OK");
       } else {
-        setError(res.message || "Gửi thất bại");
+        setError(res.message || t("warranty.claim.submitFail"));
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Gửi yêu cầu thất bại");
+      setError(err.response?.data?.message || t("warranty.claim.submitError"));
     } finally {
       setLoading(false);
     }
@@ -242,12 +238,12 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
       warrantyInfo.warrantyEndDate === null &&
       warrantyInfo.valid
     ) {
-      return <Chip size="small" label="Chưa kích hoạt BH" color="warning" />;
+      return <Chip size="small" label={t("warranty.claim.badgeNotActivated")} color="warning" />;
     }
     return (
       <Chip
         size="small"
-        label={warrantyInfo.valid ? "Còn bảo hành" : "Hết bảo hành"}
+        label={warrantyInfo.valid ? t("warranty.claim.badgeValid") : t("warranty.claim.badgeExpired")}
         color={warrantyInfo.valid ? "success" : "error"}
       />
     );
@@ -255,25 +251,30 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
 
   if (!context) return null;
 
+  const productSuffix = context.variantName
+    ? ` · ${context.variantName}`
+    : ` · ${context.productName}`;
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth scroll="paper">
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <RepairIcon color="primary" />
-        Yêu cầu bảo hành / Sửa chữa
+        {t("order.warrantyRequest")}
       </DialogTitle>
       <DialogContent dividers>
         <Alert severity="info" sx={{ mb: 2 }}>
-          Đơn <strong>#{context.orderCode}</strong>
-          {context.variantName ? ` · ${context.variantName}` : ` · ${context.productName}`}
+          {t("warranty.claim.orderAlert", {
+            code: context.orderCode,
+            product: productSuffix,
+          })}
         </Alert>
 
         {successClaim ? (
           <Alert severity="success">
-            Đã tạo ticket <strong>#{successClaim}</strong>. Sales sẽ liên hệ bạn trong 24–48 giờ.
+            {t("warranty.claim.success", { number: successClaim })}
           </Alert>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Thông tin bảo hành tự tra cứu */}
             <Box
               sx={{
                 p: 2,
@@ -284,12 +285,12 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
               }}
             >
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                Thông tin bảo hành
+                {t("warranty.claim.warrantyInfoTitle")}
               </Typography>
               {warrantyLoading && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <CircularProgress size={18} />
-                  <Typography variant="body2">Đang tra cứu IMEI...</Typography>
+                  <Typography variant="body2">{t("warranty.claim.lookingUpImei")}</Typography>
                 </Box>
               )}
               {!warrantyLoading && warrantyError && (
@@ -325,24 +326,30 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
                         size="small"
                         variant="outlined"
                         label={
-                          WARRANTY_STATUS_LABELS[warrantyInfo.status] || warrantyInfo.status
+                          t(`warranty.status.${warrantyInfo.status}`, {
+                            defaultValue: warrantyInfo.status,
+                          })
                         }
                       />
                     </Box>
                     <Typography variant="body2" sx={{ mt: 1 }}>
-                      IMEI: <strong>{warrantyInfo.imei || form.submittedImei}</strong>
+                      {t("order.imeiSerial")} <strong>{warrantyInfo.imei || form.submittedImei}</strong>
                     </Typography>
                     {warrantyInfo.warrantyStartDate ? (
                       <Typography variant="body2" color="text.secondary">
-                        BH: {formatDate(warrantyInfo.warrantyStartDate)} →{" "}
-                        {warrantyInfo.warrantyEndDate
-                          ? formatDate(warrantyInfo.warrantyEndDate)
-                          : "N/A"}{" "}
-                        ({warrantyInfo.warrantyMonths} tháng)
+                        {t("warranty.claim.warrantyPeriodRange", {
+                          start: formatDate(warrantyInfo.warrantyStartDate),
+                          end: warrantyInfo.warrantyEndDate
+                            ? formatDate(warrantyInfo.warrantyEndDate)
+                            : "N/A",
+                          months: warrantyInfo.warrantyMonths,
+                        })}
                       </Typography>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
-                        Thời hạn: {warrantyInfo.warrantyMonths} tháng — kích hoạt khi giao máy
+                        {t("warranty.claim.warrantyNotActivatedPeriod", {
+                          months: warrantyInfo.warrantyMonths,
+                        })}
                       </Typography>
                     )}
                   </Box>
@@ -351,60 +358,62 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
             </Box>
 
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Thiết bị &amp; lỗi
+              {t("warranty.claim.sectionDevice")}
             </Typography>
             <TextField
-              label="IMEI / Serial máy cần bảo hành"
+              label={t("warranty.claim.imeiOrderLabel")}
               required
               fullWidth
               size="small"
               value={form.submittedImei}
               onChange={(e) => setForm({ ...form, submittedImei: e.target.value })}
-              helperText="Lấy từ đơn hàng — có thể sửa nếu nhập nhầm"
+              helperText={t("warranty.claim.imeiHelper")}
             />
             <TextField
-              label="Mô tả lỗi"
+              label={t("warranty.claim.issueLabel")}
               required
               fullWidth
               multiline
               rows={3}
               value={form.issueDescription}
               onChange={(e) => setForm({ ...form, issueDescription: e.target.value })}
-              placeholder='VD: "Máy tự sập nguồn khi sạc"'
+              placeholder={t("warranty.claim.issuePlaceholder")}
             />
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               <TextField
                 select
-                label="Loại sự cố"
+                label={t("warranty.claim.issueTypeLabel")}
                 size="small"
                 sx={{ flex: 1, minWidth: 180 }}
                 value={form.issueType}
                 onChange={(e) => setForm({ ...form, issueType: e.target.value })}
               >
-                <MenuItem value="NOT_WORKING">Không hoạt động</MenuItem>
-                <MenuItem value="DEFECTIVE">Lỗi kỹ thuật</MenuItem>
-                <MenuItem value="DAMAGED">Hư hỏng vật lý</MenuItem>
-                <MenuItem value="MISSING_PARTS">Thiếu phụ kiện</MenuItem>
-                <MenuItem value="OTHER">Khác</MenuItem>
+                {ISSUE_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {t(`warranty.claim.issueType.${type}`)}
+                  </MenuItem>
+                ))}
               </TextField>
               <TextField
                 select
-                label="Yêu cầu xử lý"
+                label={t("warranty.claim.requestTypeLabel")}
                 size="small"
                 sx={{ flex: 1, minWidth: 180 }}
                 value={form.customerRequest}
                 onChange={(e) => setForm({ ...form, customerRequest: e.target.value })}
               >
-                <MenuItem value="REPAIR">Sửa chữa</MenuItem>
-                <MenuItem value="REPLACE">Đổi máy mới</MenuItem>
-                <MenuItem value="REFUND">Hoàn tiền</MenuItem>
+                {REQUEST_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {t(`warranty.claim.requestType.${type}`)}
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
 
             <Divider />
 
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Liên hệ &amp; địa chỉ lấy hàng
+              {t("warranty.claim.sectionContact")}
             </Typography>
             {addressPrefillNote && (
               <Alert severity="info" sx={{ py: 0.5 }}>
@@ -413,7 +422,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
             )}
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               <TextField
-                label="Họ tên người nhận shipper"
+                label={t("warranty.claim.nameLabel")}
                 required
                 fullWidth
                 size="small"
@@ -422,7 +431,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
                 onChange={(e) => setForm({ ...form, contactName: e.target.value })}
               />
               <TextField
-                label="Số điện thoại"
+                label={t("warranty.claim.phoneLabel")}
                 required
                 fullWidth
                 size="small"
@@ -433,7 +442,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
               />
             </Box>
             <TextField
-              label="Email"
+              label={t("warranty.claim.emailLabel")}
               fullWidth
               size="small"
               type="email"
@@ -442,7 +451,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
             />
             <TextField
               select
-              label="Tỉnh / Thành phố"
+              label={t("warranty.claim.provinceLabel")}
               required
               fullWidth
               size="small"
@@ -452,7 +461,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
                 onProvinceChange(prov?.provinceId || null, prov?.provinceName || "");
               }}
             >
-              <MenuItem value="">-- Chọn tỉnh/thành --</MenuItem>
+              <MenuItem value="">{t("warranty.claim.selectProvince")}</MenuItem>
               {provinces.map((p) => (
                 <MenuItem key={p.provinceId} value={p.provinceId}>
                   {p.provinceName}
@@ -461,7 +470,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
             </TextField>
             <TextField
               select
-              label="Quận / Huyện"
+              label={t("warranty.claim.districtLabel")}
               required
               fullWidth
               size="small"
@@ -473,7 +482,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
               }}
             >
               <MenuItem value="">
-                {loadingDistricts ? "Đang tải..." : "-- Chọn quận/huyện --"}
+                {loadingDistricts ? t("common.loading") : t("warranty.claim.selectDistrict")}
               </MenuItem>
               {districts.map((d) => (
                 <MenuItem key={d.districtId} value={d.districtId}>
@@ -483,7 +492,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
             </TextField>
             <TextField
               select
-              label="Phường / Xã"
+              label={t("warranty.claim.wardLabel")}
               required
               fullWidth
               size="small"
@@ -495,7 +504,7 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
               }}
             >
               <MenuItem value="">
-                {loadingWards ? "Đang tải..." : "-- Chọn phường/xã --"}
+                {loadingWards ? t("common.loading") : t("warranty.claim.selectWard")}
               </MenuItem>
               {wards.map((w) => (
                 <MenuItem key={w.wardCode} value={w.wardCode}>
@@ -504,38 +513,40 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
               ))}
             </TextField>
             <TextField
-              label="Số nhà, tên đường"
+              label={t("warranty.claim.streetLabel")}
               required
               fullWidth
               size="small"
               value={form.contactAddress}
               onChange={(e) => setForm({ ...form, contactAddress: e.target.value })}
-              placeholder="VD: 15 Lê Văn Sỹ"
+              placeholder={t("warranty.claim.streetPlaceholder")}
             />
             {formatPickupPreview() && (
               <Typography variant="body2" color="text.secondary">
-                <strong>Địa chỉ lấy hàng:</strong> {formatPickupPreview()}
+                <strong>{t("warranty.claim.pickupPreview")}</strong> {formatPickupPreview()}
               </Typography>
             )}
 
             <Divider />
 
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Minh chứng (tuỳ chọn)
+              {t("warranty.claim.sectionProof")}
             </Typography>
             <TextField
-              label="Link ảnh hóa đơn / vỏ hộp"
+              label={t("warranty.claim.imageLabel")}
               fullWidth
               size="small"
               value={form.imageUrl1}
               onChange={(e) => setForm({ ...form, imageUrl1: e.target.value })}
+              placeholder={t("warranty.claim.imagePlaceholder")}
             />
             <TextField
-              label="Link video quay lỗi"
+              label={t("warranty.claim.videoIssueLabel")}
               fullWidth
               size="small"
               value={form.videoUrl}
               onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+              placeholder={t("warranty.claim.videoPlaceholder")}
             />
 
             {error && (
@@ -547,10 +558,12 @@ const WarrantyClaimFromOrderDialog = ({ open, onClose, context }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{successClaim ? "Đóng" : "Hủy"}</Button>
+        <Button onClick={onClose}>
+          {successClaim ? t("order.close") : t("profile.cancel")}
+        </Button>
         {!successClaim && (
           <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-            {loading ? "Đang gửi..." : "Gửi yêu cầu"}
+            {loading ? t("warranty.claim.submitting") : t("warranty.claim.submit")}
           </Button>
         )}
       </DialogActions>

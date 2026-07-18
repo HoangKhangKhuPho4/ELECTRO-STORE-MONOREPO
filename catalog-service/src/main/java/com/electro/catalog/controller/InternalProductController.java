@@ -1,5 +1,6 @@
 package com.electro.catalog.controller;
 
+import com.electro.catalog.entity.Image;
 import com.electro.catalog.entity.Product;
 import com.electro.catalog.entity.ProductVariant;
 import com.electro.catalog.repository.ProductRepository;
@@ -34,8 +35,9 @@ public class InternalProductController {
     private String serverUrl;
 
     @GetMapping("/{productId}")
+    @Transactional(readOnly = true)
     public ProductResponse getProductById(@PathVariable("productId") Integer productId) {
-        Product product = productRepository.findById(productId).orElseThrow();
+        Product product = productRepository.findByIdWithImages(productId).orElseThrow();
         ProductResponse res = new ProductResponse();
         res.setId(product.getId());
         res.setName(product.getName());
@@ -45,6 +47,7 @@ public class InternalProductController {
             res.setProductTypeId(product.getProductType().getId());
             res.setProductTypeName(product.getProductType().getName());
         }
+        res.setImageUrl(resolveProductImageUrl(product));
         return res;
     }
 
@@ -83,8 +86,9 @@ public class InternalProductController {
     }
 
     @GetMapping("/low-stock")
+    @Transactional(readOnly = true)
     public List<LowStockVariantResponse> getLowStockVariants() {
-        return productVariantRepository.findLowStockVariants().stream().map(v -> {
+        return productVariantRepository.findLowStockVariantsWithImages().stream().map(v -> {
             LowStockVariantResponse res = new LowStockVariantResponse();
             res.setVariantId(v.getId());
             res.setVariantName(v.getVariantName());
@@ -93,9 +97,32 @@ public class InternalProductController {
             if (v.getProduct() != null) {
                 res.setProductId(v.getProduct().getId());
                 res.setProductName(v.getProduct().getName());
+                res.setImageUrl(resolveProductImageUrl(v.getProduct()));
             }
             return res;
         }).toList();
+    }
+
+    private String resolveProductImageUrl(Product product) {
+        if (product == null || product.getImages() == null || product.getImages().isEmpty()) {
+            return null;
+        }
+        Image primary = product.getImages().stream()
+                .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                .findFirst()
+                .orElse(product.getImages().get(0));
+        return resolveImageUrl(primary);
+    }
+
+    private String resolveImageUrl(Image img) {
+        if (img == null) {
+            return null;
+        }
+        String stored = img.getImageUrl();
+        if (stored != null && !stored.isBlank()) {
+            return stored.trim();
+        }
+        return "/img/" + img.getId();
     }
 
     @Data
@@ -106,6 +133,7 @@ public class InternalProductController {
         private String variantName;
         private Integer stockQuantity;
         private Integer lowStockThreshold;
+        private String imageUrl;
     }
 
     @org.springframework.web.bind.annotation.PutMapping("/variants/{variantId}/stock")
@@ -130,6 +158,7 @@ public class InternalProductController {
         private Boolean requiresImei;
         private Integer productTypeId;
         private String productTypeName;
+        private String imageUrl;
     }
 
     @Data

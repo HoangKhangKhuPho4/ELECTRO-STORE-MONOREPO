@@ -6,6 +6,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "../../hooks/useDebounce";
 import { suggestProducts } from "../../services/productService";
@@ -19,10 +20,11 @@ const ProductSearchAutocomplete = ({
   value,
   onChange,
   categoryId = null,
-  placeholder = "Bạn đang tìm kiếm gì?",
+  placeholder,
   onSubmit,
   sx = {},
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -121,8 +123,8 @@ const ProductSearchAutocomplete = ({
       onChange={handleSelect}
       noOptionsText={
         debouncedQuery.trim().length < 2
-          ? "Gõ ít nhất 2 ký tự..."
-          : "Không tìm thấy sản phẩm"
+          ? t("search.minChars")
+          : t("search.noResults")
       }
       slotProps={{
         popper: { sx: { zIndex: 1400 } },
@@ -156,7 +158,7 @@ const ProductSearchAutocomplete = ({
               {option.name}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              {option.categoryName || "Sản phẩm"}
+              {option.categoryName || t("common.product")}
               {option.price != null && ` · ${Number(option.price).toLocaleString("vi-VN")}đ`}
             </Typography>
           </Box>
@@ -165,7 +167,7 @@ const ProductSearchAutocomplete = ({
       renderInput={(params) => (
         <TextField
           {...params}
-          placeholder={placeholder}
+          placeholder={placeholder || t("header.searchPlaceholder")}
           variant="outlined"
           onKeyDown={handleKeyDown}
           InputProps={{

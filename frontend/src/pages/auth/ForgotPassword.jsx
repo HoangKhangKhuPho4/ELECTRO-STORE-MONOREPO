@@ -9,9 +9,11 @@ import httpClient from "../../services/httpClient";
 import { API_PREFIX } from "../../config/api";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 const ForgotPassword = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +21,7 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!email) {
-      toast.error("Vui lòng nhập Email");
+      toast.error(t("auth.fillAllFields"));
       return;
     }
 
@@ -28,15 +30,15 @@ const ForgotPassword = () => {
       const response = await httpClient.post(`${API_PREFIX}/auth/forgot-password`, { email });
 
       if (response.data.success) {
-        toast.success(response.data.message || "Nếu email tồn tại, chúng tôi đã gửi liên kết đặt lại mật khẩu. Kiểm tra hộp thư (cả Spam).");
+        toast.success(response.data.message);
       } else {
-        toast.error(response.data.message || "Không thể gửi yêu cầu. Vui lòng thử lại.");
+        toast.error(response.data.message || t("auth.serverError"));
       }
     } catch (error) {
       if (error.response) {
-        toast.error(error.response.data?.message || "Không thể gửi yêu cầu. Vui lòng thử lại.");
+        toast.error(error.response.data?.message || t("auth.serverError"));
       } else {
-        toast.error("Lỗi kết nối máy chủ. Vui lòng thử lại.");
+        toast.error(t("auth.serverError"));
       }
     } finally {
       setLoading(false);
@@ -65,16 +67,16 @@ const ForgotPassword = () => {
         }}
       >
         <Typography variant="h5" sx={{ mb: 2, textAlign: "center", fontWeight: "bold" }}>
-          Quên Mật Khẩu
+          {t("auth.forgotPassword")}
         </Typography>
 
         <Typography variant="body2" sx={{ mb: 3, textAlign: "center", color: "#ccc" }}>
-          Vui lòng nhập email của bạn để nhận liên kết đặt lại mật khẩu.
+          {t("auth.fillAllFields")}
         </Typography>
 
         <form onSubmit={handleSubmit}>
           <TextField
-            label="Email"
+            label={t("auth.email")}
             name="email"
             type="email"
             variant="filled"
@@ -106,15 +108,15 @@ const ForgotPassword = () => {
               "&.Mui-disabled": { backgroundColor: "rgba(255, 195, 18, 0.5)", color: "rgba(0,0,0,0.5)" }
             }}
           >
-            {loading ? "Đang gửi..." : "Gửi Yêu Cầu"}
+            {loading ? t("profile.processing") : t("auth.forgotPassword")}
           </Button>
         </form>
 
         <Box sx={{ mt: 3, textAlign: "center" }}>
           <Typography variant="body2">
-            Nhớ mật khẩu?{" "}
+            {t("auth.hasAccount")}{" "}
             <Link to="/login" style={{ color: "#FFC312", textDecoration: "none", fontWeight: "bold" }}>
-              Đăng Nhập
+              {t("auth.loginNow")}
             </Link>
           </Typography>
         </Box>

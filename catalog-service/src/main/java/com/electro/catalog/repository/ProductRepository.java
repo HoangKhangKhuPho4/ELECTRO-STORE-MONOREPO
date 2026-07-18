@@ -126,4 +126,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
 
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.productType WHERE p.id = :id")
     Optional<Product> findByIdWithProductType(@Param("id") Integer id);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.images WHERE p.id = :id")
+    Optional<Product> findByIdWithImages(@Param("id") Integer id);
 }

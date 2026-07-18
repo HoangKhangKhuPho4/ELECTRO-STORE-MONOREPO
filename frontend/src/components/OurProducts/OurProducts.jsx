@@ -9,7 +9,8 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../ProductCard/ProductCard";
 import {
@@ -21,11 +22,11 @@ import {
 import { getApiErrorMessage, isAbortError, unwrapPageContent } from "../../utils/apiResponse";
 import { mapProductForCard } from "../../utils/productMapper";
 
-const TABS_CONFIG = [
-  { label: "Nổi Bật", fetch: () => fetchFeaturedPage(0, 8), path: "/shop?type=featured" },
-  { label: "Hàng Mới", fetch: fetchNewProductsPage, path: "/shop?sort_by=importdate&sort_dir=desc" },
-  { label: "Bán Chạy", fetch: () => fetchBestSellersPage(0, 8), path: "/shop?type=best-sellers" },
-  { label: "Tất Cả", fetch: () => fetchAllProductsPage(0, 10), path: "/shop" },
+const TAB_DEFS = [
+  { labelKey: "home.tabFeatured", fetch: () => fetchFeaturedPage(0, 8), path: "/shop?type=featured" },
+  { labelKey: "home.tabNew", fetch: fetchNewProductsPage, path: "/shop?sort_by=importdate&sort_dir=desc" },
+  { labelKey: "home.tabBestSellers", fetch: () => fetchBestSellersPage(0, 8), path: "/shop?type=best-sellers" },
+  { labelKey: "home.tabAll", fetch: () => fetchAllProductsPage(0, 10), path: "/shop" },
 ];
 
 const ProductSkeleton = () => (
@@ -50,6 +51,11 @@ const ProductSkeleton = () => (
 );
 
 const OurProducts = () => {
+  const { t, i18n } = useTranslation();
+  const tabsConfig = useMemo(
+    () => TAB_DEFS.map((tab) => ({ ...tab, label: t(tab.labelKey) })),
+    [t, i18n.language]
+  );
   const [tab, setTab] = useState(0);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +66,7 @@ const OurProducts = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await TABS_CONFIG[tabIndex].fetch();
+      const result = await tabsConfig[tabIndex].fetch();
       if (signal?.aborted) return;
       const content = unwrapPageContent(result);
       setProducts(content.map(mapProductForCard));
@@ -72,7 +78,7 @@ const OurProducts = () => {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, []);
+  }, [tabsConfig]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -86,7 +92,7 @@ const OurProducts = () => {
   };
 
   const handleSeeAll = () => {
-    navigate(TABS_CONFIG[tab].path);
+    navigate(tabsConfig[tab].path);
   };
 
   return (
@@ -124,7 +130,7 @@ const OurProducts = () => {
             },
           }}
         >
-          Sản Phẩm Của Chúng Tôi
+          {t("home.ourProducts")}
         </Typography>
         <Tabs
           value={tab}
@@ -149,7 +155,7 @@ const OurProducts = () => {
             "& .MuiTabs-indicator": { display: "none" },
           }}
         >
-          {TABS_CONFIG.map((config, index) => (
+          {tabsConfig.map((config, index) => (
             <Tab key={index} label={config.label} />
           ))}
         </Tabs>
@@ -195,7 +201,7 @@ const OurProducts = () => {
               onClick={handleRetry}
               sx={{ borderColor: "#f28900", color: "#f28900" }}
             >
-              Thử lại
+              {t("common.retry")}
             </Button>
           </Box>
         ) : products.length > 0 ? (
@@ -208,7 +214,7 @@ const OurProducts = () => {
           <Box sx={{ gridColumn: "1 / -1", textAlign: "center", py: 8 }}>
             <SentimentDissatisfiedIcon sx={{ fontSize: 60, color: "#94a3b8" }} />
             <Typography variant="h6" color="#475569" fontWeight={600}>
-              Chưa cập nhật sản phẩm nào
+              {t("home.noProducts")}
             </Typography>
           </Box>
         )}
@@ -231,7 +237,7 @@ const OurProducts = () => {
               "&:hover": { bgcolor: "#fff7ed", borderWidth: "2px" },
             }}
           >
-            Xem tất cả {TABS_CONFIG[tab].label}
+            {t("home.seeAllTab", { tab: tabsConfig[tab].label })}
           </Button>
         </Box>
       )}

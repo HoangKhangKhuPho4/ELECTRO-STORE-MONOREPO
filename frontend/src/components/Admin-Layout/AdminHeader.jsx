@@ -1,15 +1,12 @@
 import {
   ExitToApp as LogoutIcon,
   Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-  Search as SearchIcon, // <-- Thêm import icon tìm kiếm
+  Search as SearchIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material";
 import {
   AppBar,
-  Avatar,
-  Badge,
-  Box, // <-- Thêm Box
+  Box,
   IconButton,
   InputAdornment, // <-- Thêm InputAdornment
   ListItemIcon,
@@ -17,9 +14,15 @@ import {
   MenuItem,
   TextField, // <-- Thêm TextField
   Toolbar,
+  Typography,
 } from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser, logout } from "../../redux/appSlice";
+import { clearAuthSession } from "../../utils/authSession";
+import { getDisplayName, getPrimaryRoleInfo } from "../../utils/adminUserDisplay";
+import AdminUserAvatar from "./AdminUserAvatar";
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 80;
@@ -32,6 +35,10 @@ const AdminHeader = ({
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const currentUser = useSelector(selectUser);
+  const displayName = getDisplayName(currentUser);
+  const roleInfo = getPrimaryRoleInfo(currentUser);
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -43,6 +50,8 @@ const AdminHeader = ({
 
   const handleLogout = () => {
     handleProfileMenuClose();
+    clearAuthSession();
+    dispatch(logout());
     navigate("/login");
   };
 
@@ -175,30 +184,6 @@ const AdminHeader = ({
           }}
         />
         <Box sx={{ flexGrow: 1 }} />
-        {/* Icons bên phải - Custom hiệu ứng */}
-        <IconButton
-          color="inherit"
-          disableRipple
-          sx={{
-            mr: 1.5,
-            borderRadius: 2,
-            padding: 1.5,
-            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-
-            "&:hover": {
-              backgroundColor: "rgba(0, 0, 0, 0.04)",
-              transform: "translateY(-1px)", // Nâng lên nhẹ thay vì scale
-            },
-
-            "&:active": {
-              transform: "translateY(0px)",
-            },
-          }}
-        >
-          <Badge badgeContent={4} color="error">
-            <NotificationsIcon sx={{ fontSize: 22 }} />
-          </Badge>
-        </IconButton>
         <IconButton
           onClick={handleProfileMenuOpen}
           disableRipple
@@ -217,7 +202,7 @@ const AdminHeader = ({
             },
           }}
         >
-          <Avatar sx={{ bgcolor: "#ff9f1a", width: 36, height: 36 }}>A</Avatar>
+          <AdminUserAvatar user={currentUser} size={36} />
         </IconButton>
         <Menu
           anchorEl={anchorEl}
@@ -225,7 +210,16 @@ const AdminHeader = ({
           onClose={handleProfileMenuClose}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           transformOrigin={{ vertical: "top", horizontal: "right" }}
+          PaperProps={{ sx: { minWidth: 220, mt: 1 } }}
         >
+          <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid #f0f0f0" }}>
+            <Typography variant="subtitle2" fontWeight={800} color="#1e293b">
+              {displayName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              {roleInfo.label}
+            </Typography>
+          </Box>
           <MenuItem onClick={handleSettings}>
             <ListItemIcon>
               <SettingsIcon fontSize="small" />

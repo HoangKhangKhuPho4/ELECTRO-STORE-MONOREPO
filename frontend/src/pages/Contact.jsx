@@ -7,15 +7,19 @@
  * - Office location map
  */
 
+import { useTranslation } from "react-i18next";
+
 const Contact = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="contact-page">
       <div
         className="container"
         style={{ padding: "40px 20px", maxWidth: "1200px", margin: "0 auto" }}
       >
-        <h1>Contact Us</h1>
-        <p>Get in touch with our customer service team.</p>
+        <h1>{t("contact.title")}</h1>
+        <p>{t("contact.subtitle")}</p>
 
         <div
           className="contact-content"
@@ -28,7 +32,7 @@ const Contact = () => {
         >
           <div className="contact-map">
             <h3 style={{ marginBottom: "20px", color: "#333" }}>
-              Our Location
+              {t("contact.location")}
             </h3>
             <div
               style={{
@@ -75,7 +79,7 @@ const Contact = () => {
               flexDirection: "column",
             }}
           >
-            <h3 style={{ marginBottom: "20px" }}>Send us a message</h3>
+            <h3 style={{ marginBottom: "20px" }}>{t("contact.subtitle")}</h3>
             <form
               style={{
                 marginTop: "0px",
@@ -86,7 +90,7 @@ const Contact = () => {
             >
               <input
                 type="text"
-                placeholder="Your Name"
+                placeholder={t("contact.name")}
                 style={{
                   width: "100%",
                   padding: "15px",
@@ -99,7 +103,7 @@ const Contact = () => {
               />
               <input
                 type="email"
-                placeholder="Your Email"
+                placeholder={t("contact.email")}
                 style={{
                   width: "100%",
                   padding: "15px",
@@ -112,7 +116,7 @@ const Contact = () => {
               />
               <input
                 type="tel"
-                placeholder="Your Phone"
+                placeholder={t("profile.phone")}
                 style={{
                   width: "100%",
                   padding: "15px",
@@ -124,7 +128,7 @@ const Contact = () => {
                 }}
               />
               <textarea
-                placeholder="Your Message"
+                placeholder={t("contact.message")}
                 style={{
                   width: "100%",
                   padding: "15px",
@@ -153,7 +157,7 @@ const Contact = () => {
                   marginTop: "auto",
                 }}
               >
-                Send Message
+                {t("contact.send")}
               </button>
             </form>
           </div>

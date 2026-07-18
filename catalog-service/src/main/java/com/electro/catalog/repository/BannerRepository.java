@@ -10,4 +10,8 @@ import java.util.List;
 public interface BannerRepository extends JpaRepository<Banner, Integer> {
 
     List<Banner> findAllByOrderByPriorityAscIdAsc();
+
+    List<Banner> findByStatusAndPositionOrderByPriorityAscIdAsc(String status, String position);
+
+    List<Banner> findByStatusOrderByPriorityAscIdAsc(String status);
 }

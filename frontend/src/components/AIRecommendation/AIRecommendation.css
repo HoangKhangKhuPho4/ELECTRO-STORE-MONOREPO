@@ -1,0 +1,100 @@
+/* Gợi ý sản phẩm — đồng bộ style BestSellers / Electro Store */
+
+.product-recommendations {
+  width: 100%;
+  padding: 48px 24px;
+  background: #fff;
+}
+
+.product-recommendations__inner {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.product-recommendations__header {
+  margin-bottom: 32px;
+}
+
+.product-recommendations__title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.product-recommendations__icon {
+  font-size: 2rem !important;
+  color: #f28900;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.product-recommendations__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f28900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
+}
+
+.product-recommendations__title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #f28900, #ffb347);
+  border-radius: 2px;
+}
+
+.product-recommendations__subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 560px;
+}
+
+.product-recommendations__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.product-recommendations__item {
+  display: flex;
+  width: 100%;
+  transition: transform 0.25s ease;
+}
+
+.product-recommendations__item:hover {
+  transform: translateY(-4px);
+}
+
+@media (min-width: 600px) {
+  .product-recommendations__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .product-recommendations__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .product-recommendations__grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .product-recommendations {
+    padding: 32px 16px;
+  }
+}

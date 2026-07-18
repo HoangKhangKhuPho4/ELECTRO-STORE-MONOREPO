@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './ReviewStyles.css';
 import { FaStar, FaRegStar, FaTimes } from 'react-icons/fa';
 import { createReview, updateReview, uploadReviewImage } from '../../services/reviewService';
@@ -6,9 +6,19 @@ import { trackInteraction } from '../../utils/analytics';
 import { toast } from 'react-toastify';
 import { FaPaperclip, FaSpinner } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { selectUser } from '../../redux/appSlice';
 
+const RATING_LABEL_KEYS = {
+  1: 'review.rating1',
+  2: 'review.rating2',
+  3: 'review.rating3',
+  4: 'review.rating4',
+  5: 'review.rating5',
+};
+
 const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, variantId }) => {
+  const { t } = useTranslation();
   const currentUser = useSelector(selectUser);
   const [rating, setRating] = useState(initialData?.rating || 5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -28,7 +38,7 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         if (file.size > 10 * 1024 * 1024) {
-          toast.warning(`File ${file.name} vượt quá 10MB!`);
+          toast.warning(t('review.fileTooLarge', { name: file.name }));
           return null;
         }
         const res = await uploadReviewImage(file);
@@ -40,24 +50,24 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
 
       if (validUrls.length > 0) {
         setImages((prev) => [...prev, ...validUrls]);
-        toast.success(`Đã tải lên thành công ${validUrls.length} ảnh!`);
+        toast.success(t('review.uploadSuccess', { count: validUrls.length }));
       }
     } catch (err) {
-      toast.error("Tải ảnh lên thất bại. Vui lòng thử lại!");
+      toast.error(t('review.uploadFail'));
     } finally {
       setUploading(false);
-      e.target.value = ""; // Clear file input
+      e.target.value = "";
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (rating === 0) {
-      toast.warning("Vui lòng chọn số sao đánh giá!");
+      toast.warning(t('review.ratingRequired'));
       return;
     }
     if (content.length < 10) {
-      toast.warning("Nội dung đánh giá cần ít nhất 10 ký tự!");
+      toast.warning(t('review.contentMinLength'));
       return;
     }
 
@@ -83,7 +93,6 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
       }
 
       if (res.success) {
-        // 🧠 AI Tracking: Ghi lại RATED
         if (!initialData?.id) {
           trackInteraction({
             userId: currentUser?.id || null,
@@ -92,25 +101,27 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
             rating: Number(rating)
           });
         }
-        toast.success(initialData?.id ? "Cập nhật đánh giá thành công!" : "Gửi đánh giá thành công!");
+        toast.success(initialData?.id ? t('review.updateSuccess') : t('review.submitSuccess'));
         onSuccess();
         onClose();
       }
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá";
+      const msg = err.response?.data?.message || t('review.submitError');
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  const activeRating = hoverRating || rating;
+
   return (
     <div className="review-form-overlay">
       <div className="review-form">
         <button className="btn-close" onClick={onClose}><FaTimes /></button>
         <h3 className="form-title">
-          {initialData?.id ? "Chỉnh sửa đánh giá" : "Viết đánh giá sản phẩm"}
+          {initialData?.id ? t("profile.edit") : t("review.write")}
         </h3>
 
         <form onSubmit={handleSubmit}>
@@ -118,39 +129,35 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
             {[1, 2, 3, 4, 5].map((star) => (
               <span 
                 key={star}
-                className={`star ${(hoverRating || rating) >= star ? 'active' : ''}`}
+                className={`star ${activeRating >= star ? 'active' : ''}`}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => setRating(star)}
               >
-                {(hoverRating || rating) >= star ? <FaStar /> : <FaRegStar />}
+                {activeRating >= star ? <FaStar /> : <FaRegStar />}
               </span>
             ))}
           </div>
           
           <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
-            {rating === 1 && "Rất không hài lòng"}
-            {rating === 2 && "Không hài lòng"}
-            {rating === 3 && "Bình thường"}
-            {rating === 4 && "Hài lòng"}
-            {rating === 5 && "Cực kỳ hài lòng"}
+            {RATING_LABEL_KEYS[rating] && t(RATING_LABEL_KEYS[rating])}
           </div>
 
           <div className="form-group">
-            <label>Tiêu đề (Tùy chọn)</label>
+            <label>{t('review.titleLabel')}</label>
             <input 
               type="text" 
-              placeholder="VD: Sản phẩm rất tốt, Giao hàng nhanh..." 
+              placeholder={t('review.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div className="form-group">
-            <label>Nội dung chi tiết</label>
+            <label>{t('review.contentLabel')}</label>
             <textarea 
               rows="4" 
-              placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này (Tối thiểu 10 ký tự)"
+              placeholder={t('review.contentPlaceholder')}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
@@ -159,19 +166,19 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
 
           <div className="pros-cons-inputs">
             <div className="form-group">
-              <label>Ưu điểm (Tùy chọn)</label>
+              <label>{t('review.prosLabel')}</label>
               <input 
                 type="text" 
-                placeholder="VD: Thiết kế đẹp, Pin trâu..." 
+                placeholder={t('review.prosPlaceholder')}
                 value={pros}
                 onChange={(e) => setPros(e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label>Nhược điểm (Tùy chọn)</label>
+              <label>{t('review.consLabel')}</label>
               <input 
                 type="text" 
-                placeholder="VD: Giá hơi cao, Loa nhỏ..." 
+                placeholder={t('review.consPlaceholder')}
                 value={cons}
                 onChange={(e) => setCons(e.target.value)}
               />
@@ -180,8 +187,10 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
 
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Hình ảnh đánh giá sản phẩm (Tối đa 10MB/ảnh)</span>
-              <span style={{ color: 'var(--review-text-light)', fontWeight: 'normal' }}>{images.length} đã chọn</span>
+              <span>{t('review.imagesLabel')}</span>
+              <span style={{ color: 'var(--review-text-light)', fontWeight: 'normal' }}>
+                {t('review.imagesSelected', { count: images.length })}
+              </span>
             </label>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
               <input 
@@ -210,7 +219,7 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
                 }}
               >
                 {uploading ? <FaSpinner className="fa-spin" style={{ fontSize: '1.2rem' }} /> : <FaPaperclip style={{ fontSize: '1rem' }} />}
-                {uploading ? "Đang tải ảnh..." : "📁 Tải ảnh lên từ thiết bị"}
+                {uploading ? t('review.uploading') : t('review.uploadFromDevice')}
               </label>
             </div>
             
@@ -258,7 +267,7 @@ const ReviewForm = ({ productId, initialData, onClose, onSuccess, orderId, varia
             className="btn-submit"
             disabled={loading}
           >
-            {loading ? "Đang xử lý..." : (initialData?.id ? "Cập nhật đánh giá" : "Gửi đánh giá ngay")}
+            {loading ? t('review.processing') : (initialData?.id ? t('review.updateBtn') : t('review.submitBtn'))}
           </button>
         </form>
       </div>

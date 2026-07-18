@@ -2,6 +2,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../config/api";
 import { clearAuthSession } from "../utils/authSession";
 
+// Axios dùng chung toàn FE — baseURL từ api.js; dev thường "" để gọi /api qua Vite → Gateway
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
@@ -14,6 +15,7 @@ const RETRY_DELAY_MS = 2000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Stateless JWT: gắn Bearer token vào mọi request (nếu đã login)
 httpClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {

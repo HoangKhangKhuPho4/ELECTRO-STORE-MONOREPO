@@ -1,5 +1,12 @@
 import { Avatar, Box, Card, CardContent, Skeleton, Typography, TablePagination } from "@mui/material";
 import { useState } from "react";
+import { PLACEHOLDER_IMG } from "../../services/masterService";
+
+const resolveImageSrc = (url) => {
+    if (!url) return PLACEHOLDER_IMG;
+    if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("/")) return url;
+    return `/${url}`;
+};
 
 const TopProductsCard = ({ data, loading }) => {
     if (loading) {
@@ -69,8 +76,13 @@ const TopProductsCard = ({ data, loading }) => {
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                 <Box sx={{ position: "relative" }}>
                                     <Avatar
-                                        src={product.imageUrl}
+                                        src={resolveImageSrc(product.imageUrl)}
                                         variant="rounded"
+                                        imgProps={{
+                                            onError: (e) => {
+                                                e.currentTarget.src = PLACEHOLDER_IMG;
+                                            },
+                                        }}
                                         sx={{ width: 44, height: 44, bgcolor: "#f1f5f9", p: 0.5, border: "1px solid rgba(0,0,0,0.05)" }}
                                     />
                                     <Box sx={{

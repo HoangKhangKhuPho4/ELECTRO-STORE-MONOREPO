@@ -24,7 +24,10 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, In
     @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.items WHERE po.id = :id")
     Optional<PurchaseOrder> findByIdWithItems(@Param("id") Integer id);
 
-    List<PurchaseOrder> findByStatusOrderByOrderDateDesc(PurchaseOrder.PurchaseOrderStatus status);
+    @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.items "
+            + "WHERE po.status = :status ORDER BY po.orderDate DESC")
+    List<PurchaseOrder> findByStatusWithItemsOrderByOrderDateDesc(
+            @Param("status") PurchaseOrder.PurchaseOrderStatus status);
 
     @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.items "
             + "WHERE po.status IN :statuses ORDER BY po.orderDate DESC")

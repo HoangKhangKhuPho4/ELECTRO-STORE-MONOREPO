@@ -38,6 +38,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
             "/api/products/**",
             "/api/categories/**",
             "/api/producers/**",
+            "/api/banners/**",
             "/api/coupons/**",
             "/api/public/**",
             "/api/ghn/**",

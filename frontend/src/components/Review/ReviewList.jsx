@@ -6,9 +6,11 @@ import ReviewItem from './ReviewItem';
 import ReviewForm from './ReviewForm';
 import { FaCommentAlt, FaSpinner, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { selectIsLoggedIn, selectUser } from '../../redux/appSlice';
 
 const ReviewList = ({ productId }) => {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ const ReviewList = ({ productId }) => {
   const onWriteReviewClick = () => {
     if (!isAuthenticated) {
       // In a real app, redirection to login might be better
-      alert("Vui lòng đăng nhập để thực hiện chức năng này!");
+      alert(t("review.loginAlert"));
       return;
     }
     setShowForm(true);
@@ -62,7 +64,7 @@ const ReviewList = ({ productId }) => {
     <div className="review-section" id="reviews">
       <h2>
         <FaCommentAlt />
-        Đánh giá & Nhận xét
+        {t("product.reviews")}
       </h2>
 
       {loading && page === 0 ? (
@@ -84,7 +86,7 @@ const ReviewList = ({ productId }) => {
               ))
             ) : (
               <div style={{ textAlign: 'center', padding: '2rem', background: '#f8fafc', borderRadius: '1rem' }}>
-                <p style={{ color: '#64748b' }}>Chưa có đánh giá nào cho sản phẩm này.</p>
+                <p style={{ color: '#64748b' }}>{t("review.empty")}</p>
               </div>
             )}
           </div>

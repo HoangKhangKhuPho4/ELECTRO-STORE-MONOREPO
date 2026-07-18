@@ -78,7 +78,7 @@ public class StatisticsDashboardService {
 
     public OrderStatusStatsDTO getOrderStatusStats() {
         Map<String, Object> data = safeOrderCall(orderStatisticsClient::getOrderStatusStats, Map.of("statusBreakdown", List.of()));
-        List<Map<String, Object>> raw = (List<Map<String, Object>>) data.get("statusBreakdown");
+        List<Map<String, Object>> raw = (List<Map<String, Object>>) data.get("statusBreakdown");                                                            
         List<OrderStatusStatsDTO.StatusBreakdown> breakdown = raw == null ? List.of() : raw.stream()
                 .map(b -> OrderStatusStatsDTO.StatusBreakdown.builder()
                         .status((String) b.get("status"))
@@ -91,7 +91,7 @@ public class StatisticsDashboardService {
                 .totalOrders(toLong(data.get("totalOrders")))
                 .statusBreakdown(breakdown)
                 .build();
-    }
+    }                                                                                                                                                                                                                                                                                                                           
 
     public TopProductStatsDTO getTopProductStats(String type, int limit) {
         if ("low-stock".equals(type)) {
@@ -107,6 +107,7 @@ public class StatisticsDashboardService {
                             .currentStock(v.getStockQuantity())
                             .lowStockThreshold(v.getLowStockThreshold())
                             .status(status)
+                            .imageUrl(v.getImageUrl())
                             .build();
                 }).collect(Collectors.toList());
                 return TopProductStatsDTO.builder().type("low-stock").products(products).build();
@@ -115,17 +116,37 @@ public class StatisticsDashboardService {
             }
         }
         List<Map<String, Object>> raw = safeOrderCall(() -> orderStatisticsClient.getTopProducts(limit), List.of());
-        List<TopProductStatsDTO.ProductStat> products = raw.stream().map(p ->
-                TopProductStatsDTO.ProductStat.builder()
+        Map<Integer, String> imageCache = new HashMap<>();
+        List<TopProductStatsDTO.ProductStat> products = raw.stream().map(p -> {
+                Integer productId = toInt(p.get("productId"));
+                return TopProductStatsDTO.ProductStat.builder()
                         .rank(toInt(p.get("rank")))
-                        .productId(toInt(p.get("productId")))
+                        .productId(productId)
                         .productName((String) p.get("productName"))
                         .variantName((String) p.get("variantName"))
                         .quantitySold(toLong(p.get("quantitySold")))
                         .revenue(toBigDecimal(p.get("revenue")))
-                        .build()
-        ).collect(Collectors.toList());
+                        .imageUrl(lookupProductImage(productId, imageCache))
+                        .build();
+        }).collect(Collectors.toList());
         return TopProductStatsDTO.builder().type("best-selling").products(products).build();
+    }
+
+    private String lookupProductImage(Integer productId, Map<Integer, String> cache) {
+        if (productId == null) {
+            return null;
+        }
+        if (cache.containsKey(productId)) {
+            return cache.get(productId);
+        }
+        String imageUrl = null;
+        try {
+            CatalogClient.ProductResponse product = catalogClient.getProductById(productId);
+            imageUrl = product != null ? product.getImageUrl() : null;
+        } catch (Exception ignored) {
+        }
+        cache.put(productId, imageUrl);
+        return imageUrl;
     }
 
     public RecentOrderDTO getRecentOrders(int limit) {

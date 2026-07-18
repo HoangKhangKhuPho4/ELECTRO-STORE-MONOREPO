@@ -92,7 +92,7 @@ const ProducerManagementPage = () => {
         {/* ═══ HEADER ═══ */}
         <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>🏭 Quản Lý Thương Hiệu</Typography>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>Quản Lý Thương Hiệu</Typography>
             <Typography variant="body1" color="text.secondary">Quản lý danh sách nhà sản xuất và đối tác thương hiệu</Typography>
           </Box>
           <Button

@@ -167,7 +167,7 @@ const AttributeManagementPage = () => {
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              ⚙️ Quản Lý Thuộc Tính
+              Quản Lý Thuộc Tính
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Cấu hình các loại thuộc tính và giá trị biến thể cho sản phẩm (Màu sắc, Dung lượng, ...)

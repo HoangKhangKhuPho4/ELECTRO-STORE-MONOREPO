@@ -195,7 +195,7 @@ const InventoryManagementPage = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              {showSalesConsultation ? "📦 Tồn Kho & Tư Vấn" : "📦 Quản Lý Tồn Kho"}
+              {showSalesConsultation ? "Tồn Kho & Tư Vấn" : "Quản Lý Tồn Kho"}
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {showSalesConsultation

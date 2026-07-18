@@ -59,6 +59,13 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
            "ORDER BY v.stockQuantity ASC")
     List<ProductVariant> findLowStockVariants();
 
+    @Query("SELECT DISTINCT v FROM ProductVariant v " +
+           "JOIN FETCH v.product p " +
+           "LEFT JOIN FETCH p.images " +
+           "WHERE v.isActive = true AND v.stockQuantity <= v.lowStockThreshold " +
+           "ORDER BY v.stockQuantity ASC")
+    List<ProductVariant> findLowStockVariantsWithImages();
+
     @Query("SELECT v FROM ProductVariant v " +
            "JOIN FETCH v.product p " +
            "WHERE v.isActive = true AND (LOWER(v.skuCode) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 const TRACKING_STATUSES = ["APPROVED", "RECEIVED", "INSPECTING", "REPAIRING"];
@@ -25,10 +26,11 @@ import {
 import ProfileMenu from "../../components/Profile-Menu/ProfileMenu";
 import { selectUser } from "../../redux/appSlice";
 import { getMyWarrantyClaims } from "../../services/warrantyService";
-import { CLAIM_STATUS_COLORS, CLAIM_STATUS_LABELS } from "../../utils/warrantyClaimStatus";
+import { CLAIM_STATUS_COLORS } from "../../utils/warrantyClaimStatus";
 import { isApiSuccess } from "../../utils/apiResponse";
 
 const UserWarrantyPage = () => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
   const navigate = useNavigate();
   const [claims, setClaims] = useState([]);
@@ -74,16 +76,16 @@ const UserWarrantyPage = () => {
         }}
       >
         <Box sx={{ width: { xs: "100%", md: 260 }, minWidth: { md: 260 } }}>
-          <ProfileMenu activePage="Bảo Hành" user={user} />
+          <ProfileMenu activePage={t("profile.warranty")} user={user} />
         </Box>
 
         <Box sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
           <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <ShieldIcon color="primary" />
-            Bảo hành & Sửa chữa
+            {t("userWarranty.title")}
           </Typography>
           <Typography color="text.secondary" sx={{ mb: 3 }}>
-            Tra cứu thời hạn BH, gửi yêu cầu từ đơn đã mua, hoặc theo dõi ticket đang xử lý.
+            {t("userWarranty.subtitle")}
           </Typography>
 
           <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -92,13 +94,13 @@ const UserWarrantyPage = () => {
                 <CardContent>
                   <SearchIcon color="primary" sx={{ fontSize: 36, mb: 1 }} />
                   <Typography fontWeight="bold" gutterBottom>
-                    Tra cứu bảo hành
+                    {t("userWarranty.lookupTitle")}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Nhập IMEI/Serial để xem còn hạn bảo hành không.
+                    {t("userWarranty.lookupDesc")}
                   </Typography>
                   <Button variant="outlined" fullWidth onClick={() => navigate("/warranty-check")}>
-                    Mở tra cứu
+                    {t("userWarranty.openLookup")}
                   </Button>
                 </CardContent>
               </Card>
@@ -108,13 +110,13 @@ const UserWarrantyPage = () => {
                 <CardContent>
                   <OrderIcon sx={{ fontSize: 36, mb: 1, color: "#f59e0b" }} />
                   <Typography fontWeight="bold" gutterBottom>
-                    Gửi từ đơn hàng
+                    {t("userWarranty.fromOrderTitle")}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Cách 1: Vào đơn đã mua → bấm <strong>Yêu cầu BH / Sửa chữa</strong> cạnh sản phẩm.
+                    {t("userWarranty.fromOrderDesc")}
                   </Typography>
                   <Button variant="contained" color="warning" fullWidth onClick={() => navigate("/user/orders")}>
-                    Đơn hàng của tôi
+                    {t("userWarranty.myOrdersBtn")}
                   </Button>
                 </CardContent>
               </Card>
@@ -124,13 +126,13 @@ const UserWarrantyPage = () => {
                 <CardContent>
                   <RepairIcon sx={{ fontSize: 36, mb: 1, color: "#16a34a" }} />
                   <Typography fontWeight="bold" gutterBottom>
-                    Gửi bằng IMEI
+                    {t("userWarranty.byImeiTitle")}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Cách 2: Tra cứu IMEI → cuối trang có form gửi yêu cầu (khi đã đăng nhập).
+                    {t("userWarranty.byImeiDesc")}
                   </Typography>
                   <Button variant="contained" color="success" fullWidth onClick={() => navigate("/warranty-check")}>
-                    Gửi yêu cầu online
+                    {t("userWarranty.submitOnline")}
                   </Button>
                 </CardContent>
               </Card>
@@ -140,7 +142,7 @@ const UserWarrantyPage = () => {
           <Divider sx={{ mb: 2 }} />
 
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Yêu cầu bảo hành của tôi
+            {t("userWarranty.myClaims")}
           </Typography>
 
           {loading ? (
@@ -150,8 +152,7 @@ const UserWarrantyPage = () => {
           ) : claims.length === 0 ? (
             <Paper variant="outlined" sx={{ p: 3, textAlign: "center", bgcolor: "#fafafa" }}>
               <Typography color="text.secondary">
-                Bạn chưa có yêu cầu bảo hành nào. Hãy dùng <strong>Đơn hàng của tôi</strong> hoặc{" "}
-                <strong>Tra cứu bảo hành</strong> để gửi ticket mới.
+                {t("userWarranty.emptyClaims")}
               </Typography>
             </Paper>
           ) : (
@@ -176,7 +177,7 @@ const UserWarrantyPage = () => {
                     <Typography fontWeight="bold">#{c.claimNumber}</Typography>
                     <Typography variant="body2">{c.productName}</Typography>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      {c.createdAt ? new Date(c.createdAt).toLocaleString("vi-VN") : ""}
+                      {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
                     </Typography>
                     {TRACKING_STATUSES.includes(c.status) && c.returnTrackingCode && (
                       <Typography variant="caption" sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5, color: "#1d4ed8" }}>
@@ -187,7 +188,7 @@ const UserWarrantyPage = () => {
                   </Box>
                   <Chip
                     size="small"
-                    label={CLAIM_STATUS_LABELS[c.status] || c.statusDisplay}
+                    label={t(`userWarranty.status.${c.status}`, { defaultValue: c.statusDisplay || c.status })}
                     sx={{ bgcolor: CLAIM_STATUS_COLORS[c.status] || "#94a3b8", color: "#fff" }}
                   />
                 </Paper>

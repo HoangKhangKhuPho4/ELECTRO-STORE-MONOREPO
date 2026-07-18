@@ -24,7 +24,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -49,20 +50,6 @@ import { canRequestWarrantyForItem, buildWarrantyClaimContext } from "../../util
 import { canRequestReturnForItem, buildReturnRequestContext, canShowReturnActionForOrder, collectReturnableItems } from "../../utils/returnFromOrder";
 import { fetchMyReturnRequests, fetchMyReturnRequestDetail } from "../../services/customerReturnRequestService";
 
-// ─── Tabs trạng thái ─────────────────────────────────────────────────────────
-const STATUS_TABS = [
-  { label: "Tất cả", value: null },
-  { label: "Chờ xác nhận", value: "PENDING" },
-  { label: "Đã xác nhận", value: "CONFIRMED" },
-  { label: "Đang xử lý", value: "PROCESSING" },
-  { label: "Đang giao", value: "SHIPPING" },
-  { label: "Đã giao", value: "DELIVERED" },
-  { label: "Hoàn thành", value: "COMPLETED" },
-  { label: "Đã hủy", value: "CANCELLED" },
-];
-
-const PAGE_SIZE = 5;
-
 // ─── Màu Chip theo trạng thái ────────────────────────────────────────────────
 const getStatusChipColor = (status) => {
   const map = {
@@ -78,32 +65,73 @@ const getStatusChipColor = (status) => {
   return map[status] || "default";
 };
 
-const getPaymentStatusLabel = (ps) => {
-  const map = {
-    PENDING: "Chưa thanh toán",
-    PAID: "Đã thanh toán",
-    FAILED: "Thanh toán thất bại",
-    REFUNDED: "Đã hoàn tiền",
-  };
-  return map[ps] || ps;
-};
+const PAGE_SIZE = 5;
 
-const getPaymentMethodLabel = (pm) => {
-  const map = {
-    COD: "Thanh toán khi nhận hàng",
-    BANK_TRANSFER: "Chuyển khoản ngân hàng",
-    MOMO: "Ví MoMo",
-    VNPAY: "VNPay",
-    ZALOPAY: "ZaloPay",
-  };
-  return map[pm] || pm;
+const ORDER_STATUS_KEYS = {
+  PENDING: "order.tabPending",
+  CONFIRMED: "order.tabConfirmed",
+  PROCESSING: "order.tabProcessing",
+  SHIPPING: "order.tabShipping",
+  DELIVERED: "order.tabDelivered",
+  COMPLETED: "order.tabCompleted",
+  CANCELLED: "order.tabCancelled",
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
 // ORDER LIST COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 const OrderList = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  const STATUS_TABS = useMemo(
+    () => [
+      { label: t("order.tabAll"), value: null },
+      { label: t("order.tabPending"), value: "PENDING" },
+      { label: t("order.tabConfirmed"), value: "CONFIRMED" },
+      { label: t("order.tabProcessing"), value: "PROCESSING" },
+      { label: t("order.tabShipping"), value: "SHIPPING" },
+      { label: t("order.tabDelivered"), value: "DELIVERED" },
+      { label: t("order.tabCompleted"), value: "COMPLETED" },
+      { label: t("order.tabCancelled"), value: "CANCELLED" },
+    ],
+    [t, i18n.language],
+  );
+
+  const getOrderStatusLabel = useCallback(
+    (status, statusDisplay) => {
+      const key = ORDER_STATUS_KEYS[status];
+      return key ? t(key) : statusDisplay || status;
+    },
+    [t, i18n.language],
+  );
+
+  const getPaymentStatusLabel = useCallback(
+    (ps) => {
+      const map = {
+        PENDING: t("order.payPending"),
+        PAID: t("order.payPaid"),
+        FAILED: t("order.payFailed"),
+        REFUNDED: t("order.payRefunded"),
+      };
+      return map[ps] || ps;
+    },
+    [t, i18n.language],
+  );
+
+  const getPaymentMethodLabel = useCallback(
+    (pm) => {
+      const map = {
+        COD: t("checkout.cod"),
+        BANK_TRANSFER: t("checkout.bankTransfer"),
+        MOMO: t("checkout.momo"),
+        VNPAY: t("checkout.vnpay"),
+        ZALOPAY: t("checkout.zalopay"),
+      };
+      return map[pm] || pm;
+    },
+    [t, i18n.language],
+  );
   const [activeTab, setActiveTab] = useState(0);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -170,21 +198,16 @@ const OrderList = () => {
       const status = err.response?.status;
       const msg = err.response?.data?.message;
       if (status === 503) {
-        setError(
-          "Hệ thống đơn hàng tạm thời không phản hồi (service đang khởi động lại). Đợi ~30 giây rồi tải lại trang."
-        );
+        setError(t("order.error503"));
       } else if (status === 502 || status === 500) {
-        setError(
-          msg ||
-            "Lỗi máy chủ khi tải đơn hàng. Kiểm tra order-service / catalog-service đã chạy (START.ps1) rồi thử lại."
-        );
+        setError(msg || t("order.error502"));
       } else {
-        setError(msg || "Không thể tải danh sách đơn hàng. Vui lòng thử lại.");
+        setError(msg || t("order.loadFail"));
       }
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page]);
+  }, [activeTab, page, t]);
 
   useEffect(() => {
     fetchOrders();
@@ -235,13 +258,13 @@ const OrderList = () => {
       if (refundMsg) {
         toast.success(refundMsg);
       } else {
-        toast.success("Đã hủy đơn hàng.");
+        toast.success(t("order.cancelSuccess"));
       }
       setCancelDialog({ open: false, orderId: null, orderCode: "" });
       fetchOrders();
     } catch (err) {
       console.error("Lỗi hủy đơn:", err);
-      toast.error(err.response?.data?.message || "Hủy đơn thất bại.");
+      toast.error(err.response?.data?.message || t("order.cancelFail"));
     } finally {
       setCancelLoading(false);
     }
@@ -255,11 +278,11 @@ const OrderList = () => {
       if (resp?.paymentUrl) {
         window.location.href = resp.paymentUrl;
       } else {
-        setError("Không thể tạo link thanh toán mới.");
+        setError(t("order.retryPayLinkFail"));
       }
     } catch (err) {
       console.error("Lỗi retry payment:", err);
-      setError("Thanh toán lại thất bại. Vui lòng thử lại!");
+      setError(t("order.retryPayFail"));
     } finally {
       setRetryLoading(false);
     }
@@ -300,7 +323,7 @@ const OrderList = () => {
         detail = await getOrderDetail(order.orderCode);
         setOrderDetail(detail);
       } catch (err) {
-        toast.error("Không tải được chi tiết đơn hàng.");
+        toast.error(t("order.loadDetailFail"));
         return;
       } finally {
         setDetailLoading(false);
@@ -308,10 +331,7 @@ const OrderList = () => {
     }
     const returnables = collectReturnableItems(detail, returnBySerial);
     if (returnables.length === 0) {
-      toast.warning(
-        "Chưa thể trả hàng online: đơn cần trạng thái Đã giao/Hoàn thành, đã thanh toán và shop đã gán Serial/IMEI.",
-        { autoClose: 7000 },
-      );
+      toast.warning(t("order.returnNotAvailable"), { autoClose: 7000 });
       return;
     }
     if (returnables.length === 1) {
@@ -343,7 +363,7 @@ const OrderList = () => {
           onClick={() => navigate("/contact")}
           sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2, py: 1.2, color: "#333", borderColor: "#ccc" }}
         >
-          Liên hệ
+          {t("order.contact")}
         </Button>
         <Button
           variant="outlined"
@@ -351,7 +371,7 @@ const OrderList = () => {
           onClick={() => navigate("/shop")}
           sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2, py: 1.2, color: "#333", borderColor: "#ccc" }}
         >
-          Ghé thăm Shop
+          {t("order.visitShop")}
         </Button>
         <Button
           variant="outlined"
@@ -368,7 +388,7 @@ const OrderList = () => {
             "&:hover": { bgcolor: "#ffedd5", borderColor: "#9a3412" },
           }}
         >
-          Trả hàng / Hoàn tiền
+          {t("order.returnRefund")}
         </Button>
         <Button
           variant="contained"
@@ -382,7 +402,7 @@ const OrderList = () => {
             "&.Mui-disabled": { bgcolor: "#fdba74", color: "#fff" },
           }}
         >
-          {detail.status === "COMPLETED" ? "Đã nhận hàng" : "Chờ giao hàng"}
+          {detail.status === "COMPLETED" ? t("order.received") : t("order.waitingDelivery")}
         </Button>
       </Box>
     );
@@ -393,7 +413,7 @@ const OrderList = () => {
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
         <InventoryOutlinedIcon sx={{ color: "#f28900", fontSize: 28 }} />
         <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-          Đơn Hàng Của Tôi
+          {t("order.title")}
         </Typography>
       </Box>
 
@@ -483,7 +503,7 @@ const OrderList = () => {
                             variant="body2"
                             sx={{ color: "#888", ml: 1 }}
                           >
-                            +{order.totalItems - 1} sản phẩm khác
+                            {t("order.moreProducts", { count: order.totalItems - 1 })}
                           </Typography>
                         )}
                       </Typography>
@@ -508,7 +528,7 @@ const OrderList = () => {
 
                     {/* Chip trạng thái */}
                     <Chip
-                      label={order.statusDisplay || order.status}
+                      label={getOrderStatusLabel(order.status, order.statusDisplay)}
                       color={getStatusChipColor(order.status)}
                       size="small"
                       sx={{ fontWeight: 600, minWidth: 90 }}
@@ -531,7 +551,7 @@ const OrderList = () => {
                           borderRadius: 2,
                         }}
                       >
-                        Hủy đơn
+                        {t("order.cancelOrder")}
                       </Button>
                     )}
 
@@ -552,7 +572,7 @@ const OrderList = () => {
                           bgcolor: "#fff7ed",
                         }}
                       >
-                        Trả hàng / Hoàn tiền
+                        {t("order.returnRefund")}
                       </Button>
                     )}
                   </Box>
@@ -613,7 +633,7 @@ const OrderList = () => {
                                   variant="caption"
                                   color="text.secondary"
                                 >
-                                  Phân loại: {item.variantName}
+                                  {t("order.variantLabel")} {item.variantName}
                                 </Typography>
                               )}
                               <Typography
@@ -628,12 +648,12 @@ const OrderList = () => {
                               {['SHIPPING', 'DELIVERED', 'COMPLETED'].includes(orderDetail.status) && item.assignedImeis && item.assignedImeis.length > 0 && (
                                 <Box sx={{ mt: 1.5, p: 1.5, bgcolor: "#f5f5fa", borderRadius: 2, border: "1px dashed #cdd" }}>
                                   <Typography variant="caption" fontWeight="bold" color="primary.main" display="block" gutterBottom>
-                                    📋 Mã máy đã giao:
+                                    {t("order.deliveredImeis")}
                                   </Typography>
                                   {item.assignedImeis.map((imei, idx) => (
                                     <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: "wrap" }}>
                                       <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 600, color: "#333" }}>
-                                        • IMEI/Serial: {imei}
+                                        • {t("order.imeiSerial")} {imei}
                                       </Typography>
                                       <Button 
                                         size="small" 
@@ -641,10 +661,10 @@ const OrderList = () => {
                                         variant="outlined"
                                         onClick={() => { 
                                           navigator.clipboard.writeText(imei); 
-                                          toast.success("Đã copy mã máy: " + imei); 
+                                          toast.success(t("order.copySuccess", { imei })); 
                                         }}
                                       >
-                                        📋 Copy
+                                        📋 {t("order.copy")}
                                       </Button>
                                       <Button 
                                         size="small" 
@@ -652,7 +672,7 @@ const OrderList = () => {
                                         variant="outlined"
                                         onClick={() => window.open(`/warranty-check?code=${imei}`, '_blank')}
                                       >
-                                        🔍 Tra cứu BH
+                                        🔍 {t("order.lookupWarranty")}
                                       </Button>
                                     </Box>
                                   ))}
@@ -703,7 +723,7 @@ const OrderList = () => {
                                     }
                                   }}
                                 >
-                                  {existing ? `Trả hàng (${existing.statusLabel})` : "Trả hàng / Hoàn tiền"}
+                                  {existing ? t("order.returnWithStatus", { status: existing.statusLabel }) : t("order.returnRefund")}
                                 </Button>
                               );
                             })}
@@ -721,13 +741,13 @@ const OrderList = () => {
                                   })
                                 }
                               >
-                                Yêu cầu BH / Sửa chữa
+                                {t("order.warrantyRequest")}
                               </Button>
                             )}
                             {["DELIVERED", "COMPLETED", "SHIPPING"].includes(orderDetail.status) &&
                               (!item.assignedImeis || item.assignedImeis.length === 0) && (
                               <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 160 }}>
-                                Chưa có IMEI — bảo hành sau khi shop gán mã máy
+                                {t("order.noImeiYet")}
                               </Typography>
                             )}
                           </Box>
@@ -744,7 +764,7 @@ const OrderList = () => {
                             variant="subtitle2"
                             sx={{ fontWeight: 700, mb: 1 }}
                           >
-                            Thông tin giao hàng
+                            {t("order.shippingInfo")}
                           </Typography>
                           <Typography variant="body2">
                             {orderDetail.shippingName}
@@ -776,7 +796,7 @@ const OrderList = () => {
                               color="text.secondary"
                               sx={{ mt: 0.5, fontStyle: "italic" }}
                             >
-                              Ghi chú: {orderDetail.note}
+                              {t("order.noteLabel")} {orderDetail.note}
                             </Typography>
                           )}
                           {orderDetail.cancelReason && (
@@ -785,7 +805,7 @@ const OrderList = () => {
                               color="error"
                               sx={{ mt: 0.5 }}
                             >
-                              Lý do hủy: {orderDetail.cancelReason}
+                              {t("order.cancelReasonLabel")} {orderDetail.cancelReason}
                             </Typography>
                           )}
                         </Grid>
@@ -796,14 +816,14 @@ const OrderList = () => {
                             variant="subtitle2"
                             sx={{ fontWeight: 700, mb: 1 }}
                           >
-                            Thanh toán
+                            {t("checkout.paymentMethod")}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            Phương thức:{" "}
+                            {t("order.paymentMethodLabel")}{" "}
                             {getPaymentMethodLabel(orderDetail.paymentMethod)}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            Trạng thái:{" "}
+                            {t("order.paymentStatusLabel")}{" "}
                             {getPaymentStatusLabel(orderDetail.paymentStatus)}
                           </Typography>
 
@@ -818,7 +838,7 @@ const OrderList = () => {
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Tạm tính
+                                {t("order.subtotal")}
                               </Typography>
                               <Typography variant="body2">
                                 {formatMoney(orderDetail.subtotal)}
@@ -835,7 +855,7 @@ const OrderList = () => {
                                   variant="body2"
                                   sx={{ color: "#2e7d32" }}
                                 >
-                                  Giảm giá
+                                  {t("order.discount")}
                                 </Typography>
                                 <Typography
                                   variant="body2"
@@ -855,12 +875,12 @@ const OrderList = () => {
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Phí vận chuyển
+                                {t("order.shippingFee")}
                               </Typography>
                               <Typography variant="body2">
                                 {orderDetail.shippingFee > 0
                                   ? formatMoney(orderDetail.shippingFee)
-                                  : "Miễn phí"}
+                                  : t("order.free")}
                               </Typography>
                             </Box>
                             <Divider sx={{ my: 1 }} />
@@ -874,7 +894,7 @@ const OrderList = () => {
                                 variant="subtitle2"
                                 sx={{ fontWeight: 700 }}
                               >
-                                Tổng cộng
+                                {t("order.total")}
                               </Typography>
                               <Typography
                                 variant="subtitle2"
@@ -896,7 +916,7 @@ const OrderList = () => {
                                   disabled={retryLoading}
                                   sx={{ fontWeight: "bold", textTransform: "none", width: "100%", py: 1.5, borderRadius: 2 }}
                                 >
-                                  {retryLoading ? <CircularProgress size={24} color="inherit" /> : "Thanh Toán Ngay"}
+                                  {retryLoading ? <CircularProgress size={24} color="inherit" /> : t("order.payNow")}
                                 </Button>
                               </Box>
                             )}
@@ -917,7 +937,7 @@ const OrderList = () => {
                 sx={{ fontSize: 60, color: "#ccc", mb: 1 }}
               />
               <Typography color="text.secondary">
-                Không có đơn hàng nào trong mục này.
+                {t("order.emptyTab")}
               </Typography>
             </Box>
           )}
@@ -946,14 +966,14 @@ const OrderList = () => {
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 700 }}>
-          Hủy đơn hàng #{cancelDialog.orderCode}
+          {t("order.cancelDialogTitle", { code: cancelDialog.orderCode })}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Bạn có chắc muốn hủy đơn hàng này? Hành động này không thể hoàn tác.
+            {t("order.cancelDialogDesc")}
           </Typography>
           <TextField
-            label="Lý do hủy (không bắt buộc)"
+            label={t("order.cancelReasonOptional")}
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
             fullWidth
@@ -969,7 +989,7 @@ const OrderList = () => {
             }
             sx={{ textTransform: "none" }}
           >
-            Đóng
+            {t("order.close")}
           </Button>
           <Button
             variant="contained"
@@ -981,7 +1001,7 @@ const OrderList = () => {
             {cancelLoading ? (
               <CircularProgress size={20} sx={{ color: "#fff" }} />
             ) : (
-              "Xác nhận hủy"
+              t("order.confirmCancel")
             )}
           </Button>
         </DialogActions>
@@ -1008,12 +1028,12 @@ const OrderList = () => {
       >
         <DialogTitle component="div">
           <Typography component="span" variant="h6" fontWeight={700}>
-            Chọn sản phẩm cần trả
+            {t("order.selectReturnProduct")}
           </Typography>
         </DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Đơn có nhiều máy/serial. Chọn một sản phẩm để tạo yêu cầu trả hàng.
+            {t("order.selectReturnDesc")}
           </Typography>
           {serialPicker.options.map((row) => (
             <Button
@@ -1041,7 +1061,7 @@ const OrderList = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSerialPicker({ open: false, options: [], orderDetail: null })}>
-            Đóng
+            {t("order.close")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1053,6 +1073,7 @@ const OrderList = () => {
 // MAIN PAGE
 // ═════════════════════════════════════════════════════════════════════════════
 const OrderHistoryPage = () => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
 
   return (
@@ -1089,7 +1110,7 @@ const OrderHistoryPage = () => {
             minWidth: { md: 260 },
           }}
         >
-          <ProfileMenu activePage="Đơn Hàng" user={user} />
+          <ProfileMenu activePage={t("profile.orders")} user={user} />
         </Box>
 
         {/* Cột phải: Đơn hàng */}

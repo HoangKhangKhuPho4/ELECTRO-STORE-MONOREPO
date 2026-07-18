@@ -3,7 +3,6 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import {
   Alert,
   Box,
@@ -12,14 +11,9 @@ import {
   CardContent,
   CircularProgress,
   Grid,
-  IconButton,
   LinearProgress,
-  Snackbar,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import { ContentCopy as CopyIcon } from "@mui/icons-material";
-import { selectUser } from "../../redux/appSlice";
 import {
   Forum as ChatIcon,
   ShoppingCart as OrdersIcon,
@@ -41,14 +35,8 @@ const QUICK_LINKS = [
 
 const SalesStaffHomePage = () => {
   const navigate = useNavigate();
-  const currentUser = useSelector(selectUser);
   const [kpi, setKpi] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  const referralLink = currentUser?.id
-    ? `${window.location.origin}/checkout?ref=${currentUser.id}`
-    : "";
 
   useEffect(() => {
     const now = new Date();
@@ -70,32 +58,6 @@ const SalesStaffHomePage = () => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Số liệu tháng hiện tại theo đơn được gán cho bạn — không phải doanh thu toàn cửa hàng.
       </Typography>
-
-      {referralLink && (
-        <Card variant="outlined" sx={{ mb: 3, bgcolor: "#f0fdf4" }}>
-          <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              Link giới thiệu (SALES_LINK — HH theo cấu hình Admin)
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-              <Typography variant="body2" sx={{ wordBreak: "break-all", flex: 1 }}>{referralLink}</Typography>
-              <Tooltip title="Sao chép link">
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    navigator.clipboard.writeText(referralLink);
-                    setCopied(true);
-                  }}
-                >
-                  <CopyIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </CardContent>
-        </Card>
-      )}
-
-      <Snackbar open={copied} autoHideDuration={2500} onClose={() => setCopied(false)} message="Đã sao chép link giới thiệu" />
 
       {kpi?.cancelRateExceeded && (
         <Alert severity="error" sx={{ mb: 2 }}>

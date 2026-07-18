@@ -1,0 +1,108 @@
+{
+  "info": {
+    "name": "Electro Store - Reco Service",
+    "description": "Collection test cac API cua reco-service (Recommendation - Item-based KNNBaseline).\n\nCach dung:\n1. Import file nay vao Postman.\n2. Chinh bien collection: baseUrl (mac dinh http://localhost:5003), userId, topK.\n3. Chay 'Retrain Model' truoc de sinh model, sau do goi cac API recommend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5003",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "topK",
+      "value": "10",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Thong tin co ban cua service."
+          }
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Kiem tra service con song (tra {\"status\": \"UP\"})."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Retrain Model",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/retrain",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "retrain"]
+        },
+        "description": "Train lai model tu du lieu danh gia trong DB va luu file model.\nPhai chay endpoint nay THANH CONG truoc khi goi cac API recommend."
+      }
+    },
+    {
+      "name": "Recommend by user_id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/recommend/{{userId}}?top_k={{topK}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["recommend", "{{userId}}"],
+          "query": [
+            {
+              "key": "top_k",
+              "value": "{{topK}}"
+            }
+          ]
+        },
+        "description": "Lay danh sach san pham goi y cho user_id.\nstrategy co the la: item_knn_baseline, item_knn_baseline+popular, item_knn_baseline+purchase_fallback, popular_fallback."
+      }
+    },
+    {
+      "name": "Recommend Explain (chi tiet cong thuc)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/recommend_explain/{{userId}}?top_k={{topK}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["recommend_explain", "{{userId}}"],
+          "query": [
+            {
+              "key": "top_k",
+              "value": "{{topK}}"
+            }
+          ]
+        },
+        "description": "Giong recommend nhung tra ve them chi tiet cong thuc: baseline (mu, bu, bi), residual, sim_ij, tu numerator/denominator den prediction."
+      }
+    }
+  ]
+}

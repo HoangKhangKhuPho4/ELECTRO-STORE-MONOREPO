@@ -282,7 +282,7 @@ const ProductManagementPage = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Box>
             <Typography variant="h4" fontWeight={950} color="#1e293b" sx={{ letterSpacing: -0.5, mb: 1 }}>
-              {readOnlyCatalog ? "🔍 Tra Cứu Sản Phẩm" : "📦 Quản Lý Sản Phẩm"}
+              {readOnlyCatalog ? "Tra Cứu Sản Phẩm" : "Quản Lý Sản Phẩm"}
             </Typography>
             <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ opacity: 0.8 }}>
               {readOnlyCatalog

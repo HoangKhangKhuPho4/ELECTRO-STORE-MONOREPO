@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   removeFromWishlist,
@@ -28,6 +29,7 @@ import { trackAddToCart } from "../../services/interactionService";
 import { formatMoney } from "../../utils/formatters";
 
 const Wishlist = () => {
+  const { t } = useTranslation();
   const wishlist = useSelector(selectWishlist);
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const currentUser = useSelector(selectUser);
@@ -50,7 +52,7 @@ const Wishlist = () => {
     }
 
     if (!isLoggedIn) {
-      alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      alert(t("product.loginToCart"));
       navigate("/login");
       return;
     }
@@ -61,10 +63,10 @@ const Wishlist = () => {
       if (currentUser?.id) {
         trackAddToCart(currentUser.id, Number(product.id));
       }
-      alert("Đã thêm " + product.name + " vào giỏ hàng!");
+      alert(t("product.addedToCart", { name: product.name }));
     } catch (err) {
       console.error("Add to cart from wishlist failed:", err);
-      alert(err.response?.data?.message || "Không thể thêm vào giỏ hàng");
+      alert(err.response?.data?.message || t("product.addCartFail"));
     }
   };
 
@@ -76,12 +78,12 @@ const Wishlist = () => {
         gutterBottom
         sx={{ fontWeight: 700, color: "#333" }}
       >
-        ❤️ Sản Phẩm Yêu Thích
+        {t("wishlist.title")}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         {wishlist.length > 0
-          ? `Bạn có ${wishlist.length} sản phẩm trong danh sách yêu thích`
-          : "Danh sách yêu thích trống"}
+          ? t("wishlist.count", { count: wishlist.length })
+          : t("wishlist.empty")}
       </Typography>
       <TableContainer
         component={Paper}
@@ -96,17 +98,17 @@ const Wishlist = () => {
             <TableRow sx={{ bgcolor: "#f8f9fa" }}>
               <TableCell sx={{ width: "8%", fontWeight: 700 }}>Ảnh</TableCell>
               <TableCell sx={{ width: "35%", fontWeight: 700 }}>
-                Tên Sản Phẩm
+                {t("wishlist.colName")}
               </TableCell>
               <TableCell sx={{ width: "15%", fontWeight: 700 }}>
-                Danh Mục
+                {t("wishlist.colCategory")}
               </TableCell>
               <TableCell sx={{ width: "15%", fontWeight: 700 }}>
-                Đơn Giá
+                {t("wishlist.colPrice")}
               </TableCell>
               <TableCell sx={{ width: "17%", fontWeight: 700 }}></TableCell>
               <TableCell sx={{ width: "10%", fontWeight: 700 }} align="center">
-                Xóa
+                {t("wishlist.remove")}
               </TableCell>
             </TableRow>
           </TableHead>
@@ -126,7 +128,7 @@ const Wishlist = () => {
                       💔
                     </Typography>
                     <Typography variant="h6" color="text.secondary">
-                      Chưa có sản phẩm yêu thích nào
+                      {t("wishlist.empty")}
                     </Typography>
                     <Button
                       variant="contained"
@@ -134,7 +136,7 @@ const Wishlist = () => {
                       onClick={() => navigate("/shop")}
                       sx={{ borderRadius: 5, textTransform: "none", mt: 1 }}
                     >
-                      Khám phá sản phẩm
+                      {t("wishlist.explore")}
                     </Button>
                   </Box>
                 </TableCell>
@@ -212,8 +214,8 @@ const Wishlist = () => {
                       onClick={(e) => handleAddToCart(e, product)}
                     >
                       {(product.originalData?.variants?.length || 0) > 1
-                        ? "Chọn loại"
-                        : "Thêm vào giỏ"}
+                        ? t("wishlist.chooseVariant")
+                        : t("wishlist.addToCart")}
                     </Button>
                   </TableCell>
                   <TableCell align="center">

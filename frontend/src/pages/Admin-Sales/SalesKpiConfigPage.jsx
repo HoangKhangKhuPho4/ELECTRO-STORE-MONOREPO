@@ -29,7 +29,6 @@ const SalesKpiConfigPage = () => {
         commissionRateOrganic: Number(form.commissionRateOrganic),
         commissionRateWeb: Number(form.commissionRateWeb),
         commissionRateSalesAssisted: Number(form.commissionRateSalesAssisted),
-        commissionRateSalesLink: Number(form.commissionRateSalesLink),
         maxCancelRatePercent: Number(form.maxCancelRatePercent),
       });
       setForm(updated);
@@ -68,7 +67,6 @@ const SalesKpiConfigPage = () => {
             <Grid item xs={12} sm={6}>{field("commissionRateOrganic", "% HH — Khách tự web (Organic)", "0 = không thưởng")}</Grid>
             <Grid item xs={12} sm={6}>{field("commissionRateWeb", "% HH — Web auto-assign (WEB_ASSIGNED)", "0.005 = 0.5%")}</Grid>
             <Grid item xs={12} sm={6}>{field("commissionRateSalesAssisted", "% HH — Sales tư vấn/chat", "0.01 = 1%")}</Grid>
-            <Grid item xs={12} sm={6}>{field("commissionRateSalesLink", "% HH — Link giới thiệu", "0.005")}</Grid>
             <Grid item xs={12} sm={6}>{field("maxCancelRatePercent", "Ngưỡng cảnh báo tỷ lệ hủy (%)", "VD: 15")}</Grid>
           </Grid>
           <Button variant="contained" sx={{ mt: 3 }} onClick={handleSave}>

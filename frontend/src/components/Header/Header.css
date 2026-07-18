@@ -17,7 +17,7 @@
   padding: 0 2rem !important;
   display: grid !important;
   grid-template-columns: minmax(200px, 1fr) minmax(500px, 3fr) minmax(
-      280px,
+      320px,
       1fr
     );
   align-items: center;
@@ -165,9 +165,4 @@
 
 .header-actions .MuiIconButton-root:hover {
   background-color: rgba(0, 0, 0, 0.04);
-}
-
-/* Cart price styling */
-.header-actions .MuiTypography-root {
-  margin-left: 4px;
 }

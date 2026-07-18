@@ -1,9 +1,8 @@
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SendIcon from "@mui/icons-material/Send";
-import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import {
   Box,
   Chip,
@@ -13,7 +12,8 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../redux/appSlice";
@@ -23,22 +23,34 @@ import {
 } from "../../services/chatbotService";
 import "./StoreChatbot.css";
 
-const QUICK_QUESTIONS = [
-  "Shop có bao nhiêu sản phẩm?",
-  "Thương hiệu nào có nhiều sản phẩm nhất?",
-  "Sản phẩm nào đang giảm giá?",
-  "Có laptop gaming không?",
-];
+const QUICK_QUESTION_KEYS = ["chatbot.quick1", "chatbot.quick2", "chatbot.quick3", "chatbot.quick4"];
 
-const WELCOME =
-  "Xin chào! 👋 Em là trợ lý AI của Electro Store.\n\nAnh/chị cần tư vấn sản phẩm, khuyến mãi hay thông tin đơn hàng? Hãy chọn gợi ý bên dưới hoặc nhập câu hỏi nhé!";
+const STATUS_HINT_KEYS = {
+  started: "chatbot.statusStarted",
+  retrieving: "chatbot.statusRetrieving",
+  generating: "chatbot.statusGenerating",
+  complete: "chatbot.statusComplete",
+  cache_hit: "chatbot.statusCache",
+};
 
-const STATUS_HINTS = {
-  started: "Đã nhận câu hỏi",
-  retrieving: "Đang tìm trong kho dữ liệu cửa hàng...",
-  generating: "Đang soạn câu trả lời...",
-  complete: "Hoàn tất",
-  cache_hit: "Trả lời nhanh từ bộ nhớ đệm ⚡",
+function getUserFriendlyStatus(healthOk, healthLabel, t) {
+  if (healthOk) return { label: t("chatbot.online"), online: true };
+  if (healthLabel.includes("Neo4j") || healthLabel.includes("đồng bộ"))
+    return { label: t("chatbot.connecting"), online: false };
+  if (healthLabel.includes("NVIDIA"))
+    return { label: t("chatbot.starting"), online: false };
+  return { label: t("chatbot.offline"), online: false };
+}
+
+const TypingIndicator = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="store-chatbot-typing" aria-label={t("chatbot.typing")}>
+      <span />
+      <span />
+      <span />
+    </div>
+  );
 };
 
 function getOrCreateSessionId(userId) {
@@ -52,24 +64,9 @@ function getOrCreateSessionId(userId) {
   return sid;
 }
 
-function getUserFriendlyStatus(healthOk, healthLabel) {
-  if (healthOk) return { label: "Đang trực tuyến", online: true };
-  if (healthLabel.includes("Neo4j") || healthLabel.includes("đồng bộ"))
-    return { label: "Đang kết nối dữ liệu...", online: false };
-  if (healthLabel.includes("NVIDIA"))
-    return { label: "Đang khởi động...", online: false };
-  return { label: "Tạm ngoại tuyến", online: false };
-}
-
-const TypingIndicator = () => (
-  <div className="store-chatbot-typing" aria-label="Đang trả lời">
-    <span />
-    <span />
-    <span />
-  </div>
-);
-
-const ChatMessage = ({ msg }) => (
+const ChatMessage = ({ msg }) => {
+  const { t } = useTranslation();
+  return (
   <div
     className={`store-chatbot-row ${msg.role} ${msg.loading ? "loading" : ""}`}
   >
@@ -77,7 +74,7 @@ const ChatMessage = ({ msg }) => (
       {msg.role === "user" ? (
         <PersonOutlineIcon sx={{ fontSize: 16 }} />
       ) : (
-        <SmartToyOutlinedIcon sx={{ fontSize: 16 }} />
+        <SupportAgentOutlinedIcon sx={{ fontSize: 16 }} />
       )}
     </div>
     <div
@@ -95,29 +92,44 @@ const ChatMessage = ({ msg }) => (
           {msg.text}
           {msg.fromCache && (
             <span className="store-chatbot-msg-meta store-chatbot-cache-badge">
-              ⚡ Trả lời từ cache
+              {t("chatbot.cacheBadge")}
             </span>
           )}
           {msg.status && msg.status !== "Accurate" && (
             <span className="store-chatbot-msg-meta">
-              Thông tin tham khảo — {msg.status}
+              {t("chatbot.referenceInfo", { status: msg.status })}
             </span>
           )}
         </>
       )}
     </div>
   </div>
-);
+  );
+};
 
 const StoreChatbot = () => {
+  const { t, i18n } = useTranslation();
   const user = useSelector(selectUser);
+  const welcome = t("chatbot.welcome");
+  const quickQuestions = useMemo(
+    () => QUICK_QUESTION_KEYS.map((key) => t(key)),
+    [t, i18n.language]
+  );
+  const statusHints = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(STATUS_HINT_KEYS).map(([phase, key]) => [phase, t(key)])
+      ),
+    [t, i18n.language]
+  );
+
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [healthLabel, setHealthLabel] = useState("Đang kiểm tra...");
+  const [healthLabel, setHealthLabel] = useState(() => t("chatbot.healthChecking"));
   const [healthOk, setHealthOk] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", text: WELCOME },
+    { role: "assistant", text: welcome },
   ]);
   const [clientHistory, setClientHistory] = useState([]);
   const [sessionId, setSessionId] = useState(() =>
@@ -127,7 +139,16 @@ const StoreChatbot = () => {
   const inputRef = useRef(null);
 
   const hasUserMessage = messages.some((m) => m.role === "user");
-  const status = getUserFriendlyStatus(healthOk, healthLabel);
+  const status = getUserFriendlyStatus(healthOk, healthLabel, t);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].role === "assistant" && !prev[0].loading) {
+        return [{ role: "assistant", text: welcome }];
+      }
+      return prev;
+    });
+  }, [welcome]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -158,9 +179,7 @@ const StoreChatbot = () => {
         }
         if (typeof data.neo4j_connected !== "boolean") {
           setHealthOk(false);
-          setHealthLabel(
-            "Không đọc được /api/health — kiểm tra VITE_CHATBOT_API_URL"
-          );
+          setHealthLabel(t("chatbot.healthInvalid"));
           console.warn("[Chatbot] Health response invalid:", data, url);
           return;
         }
@@ -172,32 +191,32 @@ const StoreChatbot = () => {
           validatorOk &&
           data.graph_ready;
         setHealthOk(ok);
-        if (ok) setHealthLabel("Trợ lý sẵn sàng");
+        if (ok) setHealthLabel(t("chatbot.healthReady"));
         else if (!data.neo4j_connected)
-          setHealthLabel("Neo4j chưa kết nối — kiểm tra .env NEO4J_*");
+          setHealthLabel(t("chatbot.healthNeo4j"));
         else if (!data.nvidia_configured || !validatorOk)
-          setHealthLabel("Thiếu NVIDIA_API_KEY (Validator/T2C/Generator)");
+          setHealthLabel(t("chatbot.healthNvidia"));
         else if (!data.graph_ready)
-          setHealthLabel("Graph trống — cần SYNC Neo4j");
-        else setHealthLabel("Hệ thống chưa sẵn sàng");
+          setHealthLabel(t("chatbot.healthGraphEmpty"));
+        else setHealthLabel(t("chatbot.healthNotReady"));
         if (!ok) {
           console.warn("[Chatbot] Health:", data, "URL:", url);
         }
       } catch (err) {
         if (!cancelled) {
           setHealthOk(false);
-          setHealthLabel("API trợ lý chưa chạy (chatbot-service :8092)");
+          setHealthLabel(t("chatbot.healthApiDown"));
           console.warn("[Chatbot] Health exception:", err);
         }
       }
     };
     run();
-    const t = setInterval(run, 45000);
+    const interval = setInterval(run, 45000);
     return () => {
       cancelled = true;
-      clearInterval(t);
+      clearInterval(interval);
     };
-  }, []);
+  }, [t]);
 
   const handleNewChat = () => {
     const prefix = user?.id ? `user_${user.id}` : "guest";
@@ -205,7 +224,7 @@ const StoreChatbot = () => {
     sessionStorage.setItem("electro_chatbot_session", sid);
     setSessionId(sid);
     setClientHistory([]);
-    setMessages([{ role: "assistant", text: WELCOME }]);
+    setMessages([{ role: "assistant", text: welcome }]);
     inputRef.current?.focus();
   };
 
@@ -221,7 +240,7 @@ const StoreChatbot = () => {
         role: "assistant",
         text: "",
         loading: true,
-        statusHint: STATUS_HINTS.started,
+        statusHint: statusHints.started,
       },
     ]);
 
@@ -243,7 +262,7 @@ const StoreChatbot = () => {
         history: clientHistory.slice(-10),
         onStatus: (data) => {
           const hint =
-            STATUS_HINTS[data.phase] || data.message || "Đang xử lý...";
+            statusHints[data.phase] || data.message || t("common.loading");
           updateAssistant({ statusHint: hint, loading: true });
         },
         onToken: (content) => {
@@ -251,7 +270,7 @@ const StoreChatbot = () => {
           updateAssistant({
             text: fullAnswer,
             loading: true,
-            statusHint: STATUS_HINTS.generating,
+            statusHint: statusHints.generating,
           });
         },
         onDone: (data) => {
@@ -278,7 +297,7 @@ const StoreChatbot = () => {
       updateAssistant({
         text:
           err.message ||
-          "Xin lỗi, em chưa kết nối được máy chủ trợ lý. Vui lòng thử lại sau vài phút nhé! 🙏",
+          t("chatbot.connectionError"),
         loading: false,
         statusHint: undefined,
       });
@@ -307,15 +326,15 @@ const StoreChatbot = () => {
         <div className="store-chatbot-fab-wrap">
           <span className="store-chatbot-fab-pulse" aria-hidden />
           {healthOk && (
-            <span className="store-chatbot-fab-badge" title="Trực tuyến" />
+            <span className="store-chatbot-fab-badge" title={t("chatbot.fabOnline")} />
           )}
-          <Tooltip title="Trợ lý AI — Hỏi ngay!" placement="left" arrow>
+          <Tooltip title={t("chatbot.fabTooltip")} placement="left" arrow>
             <Fab
               className="store-chatbot-fab"
               onClick={() => setOpen(true)}
-              aria-label="Mở trợ lý AI"
+              aria-label={t("chatbot.open")}
             >
-              <SmartToyOutlinedIcon sx={{ fontSize: 28 }} />
+              <SupportAgentOutlinedIcon sx={{ fontSize: 28 }} />
             </Fab>
           </Tooltip>
         </div>
@@ -325,7 +344,7 @@ const StoreChatbot = () => {
         <Box
           className="store-chatbot-panel"
           role="dialog"
-          aria-label="Trợ lý cửa hàng Electro"
+          aria-label={t("chatbot.dialogAria")}
           sx={{
             position: "fixed",
             bottom: 96,
@@ -337,10 +356,10 @@ const StoreChatbot = () => {
           <header className="store-chatbot-header">
             <div className="store-chatbot-header-info">
               <div className="store-chatbot-avatar">
-                <AutoAwesomeIcon sx={{ fontSize: 22 }} />
+                <SupportAgentOutlinedIcon sx={{ fontSize: 22 }} />
               </div>
               <div>
-                <div className="store-chatbot-header-title">Trợ lý Electro</div>
+                <div className="store-chatbot-header-title">{t("chatbot.assistantName")}</div>
                 <div className="store-chatbot-header-status">
                   <span
                     className={`store-chatbot-status-dot ${status.online ? "online" : "offline"}`}
@@ -350,22 +369,22 @@ const StoreChatbot = () => {
               </div>
             </div>
             <div className="store-chatbot-header-actions">
-              <Tooltip title="Cuộc trò chuyện mới" arrow>
+              <Tooltip title={t("chatbot.newChat")} arrow>
                 <IconButton
                   size="small"
                   className="store-chatbot-header-btn"
                   onClick={handleNewChat}
-                  aria-label="Cuộc trò chuyện mới"
+                  aria-label={t("chatbot.newChat")}
                 >
                   <RefreshIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Đóng" arrow>
+              <Tooltip title={t("chatbot.close")} arrow>
                 <IconButton
                   size="small"
                   className="store-chatbot-header-btn"
                   onClick={() => setOpen(false)}
-                  aria-label="Đóng"
+                  aria-label={t("chatbot.close")}
                 >
                   <CloseIcon fontSize="small" />
                 </IconButton>
@@ -375,7 +394,7 @@ const StoreChatbot = () => {
 
           <Box className="store-chatbot-messages">
             <div className="store-chatbot-date-divider">
-              <span>Hôm nay</span>
+              <span>{t("chatbot.today")}</span>
             </div>
             {messages.map((msg, idx) => (
               <ChatMessage key={idx} msg={msg} />
@@ -385,16 +404,17 @@ const StoreChatbot = () => {
 
           {!healthOk && (
             <div className="store-chatbot-offline-banner" role="status">
-              {healthLabel || "Trợ lý đang khởi động"} — vẫn có thể thử gửi
-              câu hỏi. (F12 → Console để xem chi tiết)
+              {t("chatbot.offlineBanner", {
+                status: healthLabel || t("chatbot.offlineStarting"),
+              })}
             </div>
           )}
 
           {!hasUserMessage && !loading && (
             <div className="store-chatbot-hints-wrap">
-              <div className="store-chatbot-hints-label">Gợi ý nhanh</div>
+              <div className="store-chatbot-hints-label">{t("chatbot.quickHints")}</div>
               <div className="store-chatbot-hints">
-                {QUICK_QUESTIONS.map((q) => (
+                {quickQuestions.map((q) => (
                   <Chip
                     key={q}
                     label={q}
@@ -418,7 +438,7 @@ const StoreChatbot = () => {
               inputRef={inputRef}
               fullWidth
               size="small"
-              placeholder="Nhập câu hỏi của bạn..."
+              placeholder={t("chatbot.placeholder")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
@@ -435,7 +455,7 @@ const StoreChatbot = () => {
               type="submit"
               className="store-chatbot-send-btn"
               disabled={loading || !input.trim()}
-              aria-label="Gửi tin nhắn"
+              aria-label={t("chatbot.send")}
             >
               {loading ? (
                 <CircularProgress size={22} sx={{ color: "#fff" }} />

@@ -73,6 +73,13 @@ import ConversionRateTable from "./ConversionRateTable";
 import CustomerSegmentsChart from "./CustomerSegmentsChart";
 import ActionKpiCards from "./ActionKpiCards";
 import CategoryRevenueChart from "./CategoryRevenueChart";
+import { PLACEHOLDER_IMG } from "../../services/masterService";
+
+const resolveImageSrc = (url) => {
+    if (!url) return PLACEHOLDER_IMG;
+    if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("/")) return url;
+    return `/${url}`;
+};
 
 /**
  * Premium Statistics Dashboard Component
@@ -680,8 +687,13 @@ const LowStockAlerts = ({ data, loading }) => {
                             >
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                     <Avatar
-                                        src={product.imageUrl}
+                                        src={resolveImageSrc(product.imageUrl)}
                                         variant="rounded"
+                                        imgProps={{
+                                            onError: (e) => {
+                                                e.currentTarget.src = PLACEHOLDER_IMG;
+                                            },
+                                        }}
                                         sx={{ width: 40, height: 40, bgcolor: "white" }}
                                     />
                                     <Box>

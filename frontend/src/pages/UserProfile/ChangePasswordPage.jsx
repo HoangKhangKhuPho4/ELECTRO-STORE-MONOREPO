@@ -9,12 +9,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import ProfileMenu from "../../components/Profile-Menu/ProfileMenu.jsx";
 import { selectUser } from "../../redux/appSlice.js";
 import { changeMyPassword } from "../../services/userService.js";
 
 const ChangePasswordForm = () => {
+  const { t } = useTranslation();
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
     newPassword: "",
@@ -25,12 +27,12 @@ const ChangePasswordForm = () => {
 
   const handleChangePassword = async () => {
     if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      setSnackbar({ open: true, message: "Vui lòng điền đầy đủ thông tin!", severity: "error" });
+      setSnackbar({ open: true, message: t("profile.fillRequired"), severity: "error" });
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setSnackbar({ open: true, message: "Mật khẩu xác nhận không khớp!", severity: "error" });
+      setSnackbar({ open: true, message: t("profile.passwordMismatch"), severity: "error" });
       return;
     }
 
@@ -41,12 +43,12 @@ const ChangePasswordForm = () => {
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword,
       });
-      setSnackbar({ open: true, message: res.message || "Đổi mật khẩu thành công!", severity: "success" });
+      setSnackbar({ open: true, message: res.message || t("profile.changePasswordSuccess"), severity: "success" });
       setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error) {
       const data = error.response?.data;
       const fieldErrors = data?.data;
-      let msg = data?.message || "Đổi mật khẩu thất bại. Mật khẩu cũ không đúng.";
+      let msg = data?.message || t("profile.changePasswordFail");
       if (fieldErrors && typeof fieldErrors === "object") {
         const first = Object.values(fieldErrors)[0];
         if (first) msg = first;
@@ -60,15 +62,15 @@ const ChangePasswordForm = () => {
   return (
     <Paper sx={{ p: 4, height: "100%" }}>
       <Typography variant="h5" component="h1" gutterBottom>
-        Đổi Mật Khẩu
+        {t("profile.changePassword")}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-        Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác
+        {t("profile.changePasswordDesc")}
       </Typography>
 
       <Box sx={{ maxWidth: 500, mt: 2 }}>
         <TextField
-          label="Mật khẩu hiện tại"
+          label={t("profile.currentPassword")}
           type="password"
           fullWidth
           margin="normal"
@@ -76,7 +78,7 @@ const ChangePasswordForm = () => {
           onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
         />
         <TextField
-          label="Mật khẩu mới"
+          label={t("profile.newPassword")}
           type="password"
           fullWidth
           margin="normal"
@@ -84,7 +86,7 @@ const ChangePasswordForm = () => {
           onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
         />
         <TextField
-          label="Xác nhận mật khẩu mới"
+          label={t("profile.confirmPassword")}
           type="password"
           fullWidth
           margin="normal"
@@ -103,7 +105,7 @@ const ChangePasswordForm = () => {
               px: 5,
             }}
           >
-            {changingPassword ? <CircularProgress size={24} color="inherit" /> : "Xác nhận"}
+            {changingPassword ? <CircularProgress size={24} color="inherit" /> : t("profile.confirm")}
           </Button>
         </Box>
       </Box>
@@ -125,6 +127,7 @@ const ChangePasswordForm = () => {
 
 // --- Main Page Wrapper ---
 const ChangePasswordPage = () => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
 
   return (
@@ -155,7 +158,7 @@ const ChangePasswordPage = () => {
         }}
       >
         <Box sx={{ width: { xs: "100%", md: 260 }, minWidth: { md: 260 } }}>
-          <ProfileMenu activePage="Đổi Mật Khẩu" user={user} />
+          <ProfileMenu activePage={t("profile.changePassword")} user={user} />
         </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>

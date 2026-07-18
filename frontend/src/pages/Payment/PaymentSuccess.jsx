@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { Box, Typography, Button, CircularProgress, Container, Card, Stack } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -6,6 +7,7 @@ import { getPaymentStatus } from "../../services/orderService";
 import { formatMoney } from "../../utils/formatters";
 
 const PaymentSuccess = () => {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [paymentData, setPaymentData] = useState(null);
 
@@ -44,35 +46,35 @@ const PaymentSuccess = () => {
             <Card sx={{ p: 4, textAlign: "center", borderRadius: 3, boxShadow: "0 8px 24px rgba(0,0,0,0.05)" }}>
                 <CheckCircleOutlineIcon sx={{ fontSize: 80, color: "#4caf50", mb: 2 }} />
                 <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, color: "#2e7d32" }}>
-                    Thanh toán thành công!
+                    {t("payment.successTitle")}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                    Cảm ơn bạn đã mua sắm tại cửa hàng. Đơn hàng của bạn đã được ghi nhận.
+                    {t("payment.successThanks")}
                 </Typography>
 
                 {paymentData && (
                     <Box sx={{ bgcolor: "#f5f5f5", p: 3, borderRadius: 2, mb: 4, textAlign: "left" }}>
                         <Stack spacing={1.5}>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                <Typography variant="body2" color="text.secondary">Mã đơn hàng</Typography>
+                                <Typography variant="body2" color="text.secondary">{t("payment.orderCode")}</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>{paymentData.orderCode}</Typography>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                <Typography variant="body2" color="text.secondary">Tổng tiền</Typography>
+                                <Typography variant="body2" color="text.secondary">{t("payment.total")}</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600, color: "#f28900" }}>{formatMoney(paymentData.amount)}</Typography>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                <Typography variant="body2" color="text.secondary">Phương thức</Typography>
+                                <Typography variant="body2" color="text.secondary">{t("payment.method")}</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>{paymentData.paymentMethod}</Typography>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                <Typography variant="body2" color="text.secondary">Thời gian GD</Typography>
+                                <Typography variant="body2" color="text.secondary">{t("payment.time")}</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                     {paymentData.paidAt ? new Date(paymentData.paidAt).toLocaleString("vi-VN") : "N/A"}
                                 </Typography>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                <Typography variant="body2" color="text.secondary">Mã GD VNPay</Typography>
+                                <Typography variant="body2" color="text.secondary">{t("payment.vnpayRef")}</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>{paymentData.gatewayTransactionId || "N/A"}</Typography>
                             </Box>
                         </Stack>
@@ -86,7 +88,7 @@ const PaymentSuccess = () => {
                         to="/"
                         sx={{ px: 4, py: 1.5, borderColor: "#ccc", color: "#333", "&:hover": { borderColor: "#999", bgcolor: "#f5f5f5" } }}
                     >
-                        Về trang chủ
+                        {t("payment.home")}
                     </Button>
                     <Button
                         variant="contained"
@@ -94,7 +96,7 @@ const PaymentSuccess = () => {
                         to="/user/orders"
                         sx={{ px: 4, py: 1.5, bgcolor: "#f28900", "&:hover": { bgcolor: "#e67c00" } }}
                     >
-                        Lịch sử đơn hàng
+                        {t("payment.orderHistory")}
                     </Button>
                 </Stack>
             </Card>

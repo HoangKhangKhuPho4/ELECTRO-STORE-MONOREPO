@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,7 @@ public class InternalReviewController {
     }
 
     // ─── GET /api/reviews/internal/all-ratings ──────────────────────────────
-    // Lấy TOÀN BỘ ratings đã duyệt (cho training pipeline)
+    // Lấy TOÀN BỘ ratings đã duyệt (cho training pipeline; kèm createdAt để dedupe theo recency)
     @GetMapping("/all-ratings")
     public List<TrainingRatingResponse> getAllApprovedRatings() {
         List<Review> reviews = reviewRepository.findAllByIsApproved(true);
@@ -70,7 +71,10 @@ public class InternalReviewController {
         return reviews.stream()
                 .filter(r -> r.getUserId() != null && r.getProductId() != null && r.getRating() != null)
                 .map(r -> new TrainingRatingResponse(
-                        r.getUserId(), r.getProductId(), r.getRating().doubleValue()))
+                        r.getUserId(),
+                        r.getProductId(),
+                        r.getRating().doubleValue(),
+                        r.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 
@@ -105,11 +109,17 @@ public class InternalReviewController {
         private final Integer userId;
         private final Integer productId;
         private final Double rating;
+        private final LocalDateTime createdAt;
 
-        public TrainingRatingResponse(Integer userId, Integer productId, Double rating) {
+        public TrainingRatingResponse(
+                Integer userId,
+                Integer productId,
+                Double rating,
+                LocalDateTime createdAt) {
             this.userId = userId;
             this.productId = productId;
             this.rating = rating;
+            this.createdAt = createdAt;
         }
     }
 }

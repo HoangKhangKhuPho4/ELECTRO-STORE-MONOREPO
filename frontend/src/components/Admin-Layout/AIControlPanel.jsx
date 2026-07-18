@@ -8,7 +8,8 @@ import {
     CircularProgress,
     Typography,
 } from "@mui/material";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import RecommendOutlinedIcon from "@mui/icons-material/RecommendOutlined";
+import SyncIcon from "@mui/icons-material/Sync";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import StorageIcon from "@mui/icons-material/Storage";
 import GroupIcon from "@mui/icons-material/Group";
@@ -44,7 +45,6 @@ const AIControlPanel = () => {
         return () => clearInterval(interval);
     }, [fetchModelStatus, canManageAI]);
 
-    // Bấm nút Cập nhật AI
     const handleRetrain = async () => {
         setIsRetraining(true);
         setRetrainMessage("");
@@ -53,10 +53,9 @@ const AIControlPanel = () => {
             const res = await axios.post(`${AI_SERVICE_URL}/api/retrain`);
             setRetrainMessage(res.data.message);
             setRetrainSuccess(true);
-            // Sau 3 giây thì tự động fetch lại status
             setTimeout(fetchModelStatus, 3000);
         } catch (err) {
-            const msg = err.response?.data?.message || "Lỗi kết nối đến AI Service!";
+            const msg = err.response?.data?.message || "Lỗi kết nối đến dịch vụ gợi ý!";
             setRetrainMessage(msg);
             setRetrainSuccess(false);
         } finally {
@@ -69,29 +68,13 @@ const AIControlPanel = () => {
     return (
         <Card
             sx={{
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
-                boxShadow: "0 8px 32px rgba(91, 71, 255, 0.35)",
-                color: "#fff",
+                borderRadius: 2,
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                 mb: 3,
-                overflow: "visible",
-                position: "relative",
             }}
         >
-            {/* Glow decoration */}
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: -20,
-                    right: 40,
-                    width: 120,
-                    height: 120,
-                    background: "radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)",
-                    borderRadius: "50%",
-                    pointerEvents: "none",
-                }}
-            />
-
             <CardContent sx={{ p: 3 }}>
                 <Box
                     sx={{
@@ -101,99 +84,88 @@ const AIControlPanel = () => {
                         gap: 3,
                     }}
                 >
-                    {/* Icon + Title */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
                         <Box
                             sx={{
                                 p: 1.5,
                                 borderRadius: 2,
-                                background: "rgba(99,102,241,0.25)",
-                                border: "1px solid rgba(99,102,241,0.5)",
+                                background: "#fff7ed",
+                                border: "1px solid #fed7aa",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                             }}
                         >
-                            <AutoFixHighIcon sx={{ fontSize: 32, color: "#a78bfa" }} />
+                            <RecommendOutlinedIcon sx={{ fontSize: 32, color: "#f28900" }} />
                         </Box>
                         <Box>
-                            <Typography variant="h6" fontWeight={700} sx={{ color: "#fff", lineHeight: 1.2 }}>
-                                🤖 AI Recommendation Engine
+                            <Typography variant="h6" fontWeight={700} sx={{ color: "#111827", lineHeight: 1.2 }}>
+                                Hệ thống gợi ý sản phẩm
                             </Typography>
-                            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.65)", mt: 0.3 }}>
-                                Collaborative Filtering — SVD Algorithm v2.0
+                            <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.3 }}>
+                                Collaborative Filtering — cập nhật dữ liệu mua hàng & đánh giá
                             </Typography>
                         </Box>
                     </Box>
 
-                    {/* Stats */}
                     {modelStatus?.model_loaded && (
-                        <Box
-                            sx={{
-                                display: "flex",
-                                gap: 2,
-                                flexWrap: "wrap",
-                            }}
-                        >
+                        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                                <GroupIcon sx={{ fontSize: 18, color: "#a78bfa" }} />
-                                <Typography variant="body2" sx={{ color: "#ddd" }}>
-                                    <strong style={{ color: "#fff" }}>{modelStatus.total_users}</strong> Users
+                                <GroupIcon sx={{ fontSize: 18, color: "#f28900" }} />
+                                <Typography variant="body2" sx={{ color: "#4b5563" }}>
+                                    <strong style={{ color: "#111827" }}>{modelStatus.total_users}</strong> người dùng
                                 </Typography>
                             </Box>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                                <InventoryIcon sx={{ fontSize: 18, color: "#a78bfa" }} />
-                                <Typography variant="body2" sx={{ color: "#ddd" }}>
-                                    <strong style={{ color: "#fff" }}>{modelStatus.total_products}</strong> Sản phẩm
+                                <InventoryIcon sx={{ fontSize: 18, color: "#f28900" }} />
+                                <Typography variant="body2" sx={{ color: "#4b5563" }}>
+                                    <strong style={{ color: "#111827" }}>{modelStatus.total_products}</strong> sản phẩm
                                 </Typography>
                             </Box>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                                <AccessTimeIcon sx={{ fontSize: 18, color: "#a78bfa" }} />
-                                <Typography variant="body2" sx={{ color: "#ddd" }}>
-                                    Train lúc: <strong style={{ color: "#c4b5fd" }}>{modelStatus.trained_at || "N/A"}</strong>
+                                <AccessTimeIcon sx={{ fontSize: 18, color: "#f28900" }} />
+                                <Typography variant="body2" sx={{ color: "#4b5563" }}>
+                                    Huấn luyện: <strong style={{ color: "#111827" }}>{modelStatus.trained_at || "N/A"}</strong>
                                 </Typography>
                             </Box>
                         </Box>
                     )}
 
-                    {/* Status Chip */}
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: { xs: "flex-start", md: "flex-end" }, gap: 1.5 }}>
                         <Chip
                             icon={
                                 isTraining ? (
-                                    <CircularProgress size={14} sx={{ color: "#fff !important" }} />
+                                    <CircularProgress size={14} sx={{ color: "#b45309 !important" }} />
                                 ) : modelStatus?.model_loaded ? (
-                                    <CheckCircleIcon sx={{ fontSize: 16, color: "#fff" }} />
+                                    <CheckCircleIcon sx={{ fontSize: 16, color: "#15803d" }} />
                                 ) : (
-                                    <StorageIcon sx={{ fontSize: 16, color: "#fff" }} />
+                                    <StorageIcon sx={{ fontSize: 16, color: "#dc2626" }} />
                                 )
                             }
                             label={
                                 isTraining
-                                    ? "Đang cập nhật AI..."
+                                    ? "Đang cập nhật mô hình..."
                                     : modelStatus?.model_loaded
-                                        ? "Model đã sẵn sàng"
+                                        ? "Mô hình sẵn sàng"
                                         : "Chưa kết nối"
                             }
                             sx={{
                                 background: isTraining
-                                    ? "rgba(251,191,36,0.25)"
+                                    ? "#fffbeb"
                                     : modelStatus?.model_loaded
-                                        ? "rgba(34,197,94,0.25)"
-                                        : "rgba(239,68,68,0.25)",
+                                        ? "#f0fdf4"
+                                        : "#fef2f2",
                                 border: `1px solid ${isTraining
-                                    ? "rgba(251,191,36,0.6)"
+                                    ? "#fde68a"
                                     : modelStatus?.model_loaded
-                                        ? "rgba(34,197,94,0.6)"
-                                        : "rgba(239,68,68,0.6)"
+                                        ? "#bbf7d0"
+                                        : "#fecaca"
                                     }`,
-                                color: "#fff",
+                                color: "#111827",
                                 fontWeight: 600,
-                                "& .MuiChip-icon": { color: "#fff" },
                             }}
                         />
 
-                        {/* Nút Cập nhật AI */}
                         {canManageAI ? (
                             <Button
                                 variant="contained"
@@ -203,72 +175,61 @@ const AIControlPanel = () => {
                                     isTraining ? (
                                         <CircularProgress size={16} sx={{ color: "#fff" }} />
                                     ) : (
-                                        <AutoFixHighIcon />
+                                        <SyncIcon />
                                     )
                                 }
                                 sx={{
-                                    background: isTraining
-                                        ? "rgba(99,102,241,0.4)"
-                                        : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                                    background: "#f28900",
                                     color: "#fff",
                                     fontWeight: 700,
                                     px: 3,
                                     py: 1,
-                                    borderRadius: 2,
+                                    borderRadius: 1.5,
                                     textTransform: "none",
                                     fontSize: "0.95rem",
-                                    boxShadow: "0 4px 15px rgba(99,102,241,0.4)",
+                                    boxShadow: "none",
                                     "&:hover": {
-                                        background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-                                        boxShadow: "0 6px 20px rgba(99,102,241,0.6)",
-                                        transform: "translateY(-2px)",
+                                        background: "#e07d00",
+                                        boxShadow: "0 2px 8px rgba(242,137,0,0.35)",
                                     },
-                                    "&:disabled": { color: "rgba(255,255,255,0.5)" },
-                                    transition: "all 0.3s ease",
+                                    "&:disabled": { color: "rgba(255,255,255,0.7)", background: "#fdba74" },
                                 }}
                             >
-                                {isTraining ? "Đang cập nhật..." : "⚡ Cập nhật AI ngay"}
+                                {isTraining ? "Đang cập nhật..." : "Cập nhật mô hình gợi ý"}
                             </Button>
                         ) : (
                             <Button
-                                variant="contained"
+                                variant="outlined"
                                 disabled
-                                startIcon={<AutoFixHighIcon />}
+                                startIcon={<SyncIcon />}
                                 sx={{
-                                    background: "rgba(255,255,255,0.1)",
-                                    color: "rgba(255,255,255,0.4)",
-                                    fontWeight: 700,
-                                    px: 3,
-                                    py: 1,
-                                    borderRadius: 2,
+                                    borderColor: "#e5e7eb",
+                                    color: "#9ca3af",
+                                    fontWeight: 600,
                                     textTransform: "none",
-                                    fontSize: "0.95rem",
                                 }}
                             >
-                                🔒 Không có quyền cập nhật
+                                Không có quyền cập nhật
                             </Button>
                         )}
                     </Box>
                 </Box>
 
-                {/* Thông báo kết quả */}
                 {retrainMessage && (
                     <Box
                         sx={{
                             mt: 2,
                             p: 1.5,
-                            borderRadius: 2,
-                            background: retrainSuccess
-                                ? "rgba(34,197,94,0.15)"
-                                : "rgba(239,68,68,0.15)",
-                            border: `1px solid ${retrainSuccess ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
+                            borderRadius: 1.5,
+                            background: retrainSuccess ? "#f0fdf4" : "#fef2f2",
+                            border: `1px solid ${retrainSuccess ? "#bbf7d0" : "#fecaca"}`,
                         }}
                     >
                         <Typography
                             variant="body2"
-                            sx={{ color: retrainSuccess ? "#86efac" : "#fca5a5" }}
+                            sx={{ color: retrainSuccess ? "#15803d" : "#b91c1c" }}
                         >
-                            {retrainSuccess ? "✅" : "❌"} {retrainMessage}
+                            {retrainMessage}
                         </Typography>
                     </Box>
                 )}

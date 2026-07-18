@@ -150,7 +150,7 @@ const AdminProductFormPage = () => {
               Quay lại danh sách
             </Button>
             <Typography variant="h4" fontWeight="800" sx={{ color: "#1e293b", letterSpacing: "-0.5px" }}>
-              ✨ Thêm Sản Phẩm Mới
+              Thêm Sản Phẩm Mới
             </Typography>
             <Typography variant="body1" sx={{ color: "#64748b", mt: 0.5 }}>
               Điền thông tin cơ bản của sản phẩm trước khi thêm hình ảnh và biến thể.

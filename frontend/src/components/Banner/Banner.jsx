@@ -1,104 +1,200 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import "./Banner.css";
+import { getPublicBanners } from "../../services/bannerService";
+import { API_BASE_URL } from "../../config/api";
 
-const slides = [
-  {
-    id: 1,
-    kicker: "GIẢM ĐẾN 4.000.000Đ",
-    title: "Hàng Chọn Lọc\nLaptop &\nPC Hoặc\nĐiện Thoại",
-    desc: "Số lượng có hạn. Áp dụng ngay",
-    cta: "Mua Ngay",
-    image:
-      "https://cdn.tgdd.vn/Files/2016/10/27/905695/imac-macbook_800x450.jpg",
-  },
-  {
-    id: 2,
-    kicker: "CƠ HỘI CÓ 1 KHÔNG 2",
-    title: "Nâng Cấp\nGóc Làm Việc\nNgay Hôm Nay",
-    desc: "Miễn phí vận chuyển tận nơi 100%",
-    cta: "Khám Phá",
-    image:
-      "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=2000&auto=format&fit=crop",
-  },
-];
+const resolveBannerImage = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  // Ảnh trong frontend/public — Vite phục vụ trực tiếp, không qua API Gateway
+  if (url.startsWith("/images/")) return url;
+  if (url.startsWith("/")) return `${API_BASE_URL}${url}`;
+  return url;
+};
+
+const BannerLink = ({ link, className, children }) => {
+  const href = link || "/shop";
+  if (href.startsWith("http://") || href.startsWith("https://")) {
+    return (
+      <a href={href} className={className} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={href} className={className}>
+      {children}
+    </Link>
+  );
+};
 
 const Banner = () => {
+  const { t } = useTranslation();
+  const [heroSlides, setHeroSlides] = useState([]);
+  const [sidebarBanner, setSidebarBanner] = useState(null);
   const [index, setIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(t);
+    let cancelled = false;
+    (async () => {
+      try {
+        const [hero, sidebar] = await Promise.all([
+          getPublicBanners("hero"),
+          getPublicBanners("sidebar"),
+        ]);
+        if (cancelled) return;
+        setHeroSlides(Array.isArray(hero) ? hero : []);
+        setSidebarBanner(Array.isArray(sidebar) && sidebar.length > 0 ? sidebar[0] : null);
+      } catch {
+        if (!cancelled) {
+          setHeroSlides([]);
+          setSidebarBanner(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  useEffect(() => {
+    setIndex(0);
+  }, [heroSlides.length]);
+
+  useEffect(() => {
+    if (heroSlides.length <= 1) return undefined;
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [heroSlides.length]);
+
   const go = (dir) => {
+    if (heroSlides.length === 0) return;
     setIndex((prev) => {
-      if (dir === "prev") return (prev - 1 + slides.length) % slides.length;
-      return (prev + 1) % slides.length;
+      if (dir === "prev") return (prev - 1 + heroSlides.length) % heroSlides.length;
+      return (prev + 1) % heroSlides.length;
     });
   };
 
+  const hasHero = heroSlides.length > 0;
+  const hasSidebar = Boolean(sidebarBanner?.image);
+
+  if (!loading && !hasHero && !hasSidebar) {
+    return null;
+  }
+
   return (
     <section className="banner">
-      <div className="banner-container">
-        {/* LEFT: Carousel */}
+      <div className={`banner-container ${!hasSidebar ? "banner-container--hero-only" : ""}`}>
         <div className="banner-carousel">
-          {slides.map((s, i) => (
-            <div
-              key={s.id}
-              className={`banner-slide ${i === index ? "active" : ""}`}
-            >
-              <div className="slide-image-wrap">
-                <img className="slide-image" src={s.image} alt="slide" />
-                <div className="slide-overlay" />
-              </div>
-              <div className="slide-text">
-                <div className="slide-kicker">{s.kicker}</div>
-                <h2 className="slide-title">
-                  {s.title.split("\n").map((line, idx) => (
-                    <span key={idx}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
-                </h2>
-                <div className="slide-desc">{s.desc}</div>
-                <button className="cta-btn">{s.cta}</button>
-              </div>
+          {loading && (
+            <div className="banner-placeholder">
+              <p>{t("banner.loading")}</p>
             </div>
-          ))}
-          <div className="carousel-nav">
-            <button className="nav-btn" onClick={() => go("prev")}>
-              ‹
-            </button>
-            <button className="nav-btn" onClick={() => go("next")}>
-              ›
-            </button>
-          </div>
+          )}
+
+          {!loading && !hasHero && (
+            <div className="banner-placeholder">
+              <p>{t("banner.noHero")}</p>
+              <span>{t("banner.noHeroHint")}</span>
+            </div>
+          )}
+
+          {!loading &&
+            heroSlides.map((slide, i) => (
+              <div
+                key={slide.id}
+                className={`banner-slide ${i === index ? "active" : ""}`}
+              >
+                {slide.image ? (
+                  <div className="slide-image-wrap">
+                    {slide.link ? (
+                      <BannerLink link={slide.link} className="slide-image-link">
+                        <img
+                          className="slide-image"
+                          src={resolveBannerImage(slide.image)}
+                          alt={slide.title || "Banner"}
+                        />
+                      </BannerLink>
+                    ) : (
+                      <img
+                        className="slide-image"
+                        src={resolveBannerImage(slide.image)}
+                        alt={slide.title || "Banner"}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="slide-image-wrap slide-image-wrap--empty" />
+                )}
+              </div>
+            ))}
+
+          {hasHero && heroSlides.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="carousel-nav-btn carousel-nav-btn--prev"
+                onClick={() => go("prev")}
+                aria-label={t("common.prev")}
+              >
+                <ChevronLeftIcon fontSize="inherit" />
+              </button>
+              <button
+                type="button"
+                className="carousel-nav-btn carousel-nav-btn--next"
+                onClick={() => go("next")}
+                aria-label={t("common.next")}
+              >
+                <ChevronRightIcon fontSize="inherit" />
+              </button>
+            </>
+          )}
+
+          {hasHero && heroSlides.length > 1 && (
+            <div className="carousel-dots" role="tablist" aria-label="Banner slides">
+              {heroSlides.map((slide, i) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === index}
+                  aria-label={`Slide ${i + 1}`}
+                  className={`carousel-dot ${i === index ? "active" : ""}`}
+                  onClick={() => setIndex(i)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* RIGHT: Ad */}
-        <aside className="banner-ad">
-          <img
-            className="ad-image"
-            alt="ad"
-            src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
-          />
-          <div className="ad-overlay" />
-          <div className="ad-tag">Deal Độc Quyền</div>
-          <div className="ad-content">
-            <div style={{ opacity: 0.85, fontSize: 14 }}>Máy Tính Bảng</div>
-            <h3 className="ad-title">Apple iPad Mini 6</h3>
-            <div className="ad-price">
-              <s style={{ opacity: 0.6, marginRight: 8 }}>14.990.000đ</s>
-              <strong>12.490.000đ</strong>
+        {hasSidebar && (
+          <aside className="banner-ad">
+            <div className="banner-ad-media">
+              <img
+                className="ad-image"
+                alt={sidebarBanner.title || t("banner.adAlt")}
+                src={resolveBannerImage(sidebarBanner.image)}
+              />
             </div>
-            <button className="ad-btn">
-              <span>🛒</span> Thêm Giỏ Hàng
-            </button>
-          </div>
-        </aside>
+            <div className="banner-ad-footer">
+              <BannerLink
+                link={sidebarBanner.link || "/shop"}
+                className="banner-ad-detail-btn"
+              >
+                {t("common.viewDetails")}
+              </BannerLink>
+            </div>
+          </aside>
+        )}
       </div>
     </section>
   );

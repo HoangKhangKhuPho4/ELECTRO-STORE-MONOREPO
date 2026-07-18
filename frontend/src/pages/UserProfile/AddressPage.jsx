@@ -29,6 +29,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import ProfileMenu from "../../components/Profile-Menu/ProfileMenu.jsx";
 import { selectUser } from "../../redux/appSlice.js";
@@ -43,6 +44,7 @@ import { getDistricts, getProvinces, getWards } from "../../services/shippingSer
 
 // --- Form Dialog Component ---
 const AddressDialog = ({ open, onClose, address, onSaved }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     receiverName: "",
@@ -89,7 +91,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
           ward: "",
           addressDetail: "",
           isDefault: false,
-          label: "Nhà",
+          label: t("profile.homeType"),
         });
         setSelectedProvinceId("");
         setSelectedDistrictId("");
@@ -185,7 +187,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
       !formData.ward ||
       !formData.addressDetail
     ) {
-      setError("Vui lòng điền đầy đủ các thông tin bắt buộc.");
+      setError(t("profile.fillRequired"));
       return;
     }
 
@@ -200,18 +202,18 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
       onSaved();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || "Lỗi lưu thông tin địa chỉ.");
+      setError(err.response?.data?.message || t("profile.addressSaveFail"));
     } finally {
       setLoading(false);
     }
   };
 
-  const labels = ["Nhà", "Công ty", "Khác"];
+  const labels = [t("profile.homeType"), t("profile.officeType"), t("profile.otherType")];
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
-        {address ? "Cập Nhật Địa Chỉ" : "Thêm Địa Chỉ Mới"}
+        {address ? t("profile.editAddress") : t("profile.newAddress")}
       </DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -219,7 +221,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid item xs={12} sm={6}>
             <TextField
-              label="Họ tên người nhận"
+              label={t("profile.receiverName")}
               fullWidth
               required
               value={formData.receiverName}
@@ -228,7 +230,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              label="Số điện thoại"
+              label={t("profile.phone")}
               fullWidth
               required
               value={formData.phone}
@@ -239,10 +241,10 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
           {/* Location Selectors */}
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth required>
-              <InputLabel>Tỉnh/Thành</InputLabel>
+              <InputLabel>{t("profile.provinceShort")}</InputLabel>
               <Select
                 value={selectedProvinceId}
-                label="Tỉnh/Thành"
+                label={t("profile.provinceShort")}
                 onChange={handleProvinceChange}
               >
                 {provinces.map((p) => (
@@ -255,10 +257,10 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
           </Grid>
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth required disabled={!selectedProvinceId}>
-              <InputLabel>Quận/Huyện</InputLabel>
+              <InputLabel>{t("profile.districtShort")}</InputLabel>
               <Select
                 value={selectedDistrictId}
-                label="Quận/Huyện"
+                label={t("profile.districtShort")}
                 onChange={handleDistrictChange}
               >
                 {districts.map((d) => (
@@ -271,10 +273,10 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
           </Grid>
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth required disabled={!selectedDistrictId}>
-              <InputLabel>Phường/Xã</InputLabel>
+              <InputLabel>{t("profile.wardShort")}</InputLabel>
               <Select
                 value={formData.ward}
-                label="Phường/Xã"
+                label={t("profile.wardShort")}
                 onChange={handleWardChange}
               >
                 {wards.map((w) => (
@@ -288,7 +290,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
 
           <Grid item xs={12}>
             <TextField
-              label="Địa chỉ chi tiết (Số nhà, đường...)"
+              label={t("profile.addressDetail")}
               fullWidth
               multiline
               rows={2}
@@ -301,7 +303,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
           {/* Label Selection */}
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Nhãn địa chỉ
+              {t("profile.addressLabelType")}
             </Typography>
             <Box sx={{ display: "flex", gap: 1 }}>
               {labels.map((l) => (
@@ -311,7 +313,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
                   onClick={() => setFormData({ ...formData, label: l })}
                   variant={formData.label === l ? "filled" : "outlined"}
                   color={formData.label === l ? "primary" : "default"}
-                  icon={l === "Nhà" ? <HomeIcon /> : l === "Công ty" ? <WorkIcon /> : <LocationOnIcon />}
+                  icon={l === t("profile.homeType") ? <HomeIcon /> : l === t("profile.officeType") ? <WorkIcon /> : <LocationOnIcon />}
                   sx={{ cursor: "pointer" }}
                 />
               ))}
@@ -327,20 +329,20 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
                   onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
                 />
               }
-              label="Đặt làm địa chỉ mặc định"
+              label={t("profile.setDefault")}
             />
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={loading}>Thủy</Button>
+        <Button onClick={onClose} disabled={loading}>{t("profile.cancel")}</Button>
         <Button
           variant="contained"
           onClick={handleSave}
           disabled={loading}
           sx={{ backgroundColor: "#ee4d2d", "&:hover": { backgroundColor: "#d73112" } }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : "Lưu Địa Chỉ"}
+          {loading ? <CircularProgress size={24} color="inherit" /> : t("profile.saveAddress")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -349,6 +351,7 @@ const AddressDialog = ({ open, onClose, address, onSaved }) => {
 
 // --- Main Content: Address List ---
 const AddressList = () => {
+  const { t } = useTranslation();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
@@ -376,7 +379,7 @@ const AddressList = () => {
   const handleSetDefault = async (id) => {
     try {
       await setDefaultAddress(id);
-      setSnackbar({ open: true, message: "Đã đổi địa chỉ mặc định!", severity: "success" });
+      setSnackbar({ open: true, message: t("profile.defaultChanged"), severity: "success" });
       fetchAddresses();
     } catch (err) {
       console.error(err);
@@ -384,10 +387,10 @@ const AddressList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) return;
+    if (!window.confirm(t("profile.confirmDelete"))) return;
     try {
       await deleteAddress(id);
-      setSnackbar({ open: true, message: "Đã xóa địa chỉ!", severity: "success" });
+      setSnackbar({ open: true, message: t("profile.addressDeleted"), severity: "success" });
       fetchAddresses();
     } catch (err) {
       console.error(err);
@@ -408,7 +411,7 @@ const AddressList = () => {
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-          Địa Chỉ Của Tôi
+          {t("profile.myAddresses")}
         </Typography>
         <Button
           variant="contained"
@@ -416,7 +419,7 @@ const AddressList = () => {
           onClick={handleAddNew}
           sx={{ backgroundColor: "#ee4d2d", "&:hover": { backgroundColor: "#d73112" } }}
         >
-          Thêm địa chỉ mới
+          {t("profile.addAddress")}
         </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
@@ -427,7 +430,7 @@ const AddressList = () => {
         </Box>
       ) : addresses.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 5, color: "text.secondary" }}>
-          Bạn chưa lưu địa chỉ nhận hàng nào.
+          {t("profile.noAddresses")}
         </Box>
       ) : (
         <Grid container spacing={2}>
@@ -442,10 +445,10 @@ const AddressList = () => {
                           {addr.receiverName}
                         </Typography>
                         {addr.label && <Chip label={addr.label} size="small" variant="outlined" color="primary" />}
-                        {addr.isDefault && <Chip label="Mặc định" size="small" sx={{ backgroundColor: "#bffaa3", color: "#1b4d07" }} />}
+                        {addr.isDefault && <Chip label={t("profile.default")} size="small" sx={{ backgroundColor: "#bffaa3", color: "#1b4d07" }} />}
                       </Box>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Số điện thoại: {addr.phone}
+                        {t("profile.phone")}: {addr.phone}
                       </Typography>
                       <Typography variant="body2">
                         {addr.addressDetail}
@@ -457,9 +460,9 @@ const AddressList = () => {
 
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "flex-end" }}>
                       <Box sx={{ display: "flex", gap: 1 }}>
-                        <Button size="small" variant="text" onClick={() => handleEdit(addr)}>Sửa</Button>
+                        <Button size="small" variant="text" onClick={() => handleEdit(addr)}>{t("profile.edit")}</Button>
                         {!addr.isDefault && (
-                          <Button size="small" variant="text" color="error" onClick={() => handleDelete(addr.id)}>Xóa</Button>
+                          <Button size="small" variant="text" color="error" onClick={() => handleDelete(addr.id)}>{t("profile.delete")}</Button>
                         )}
                       </Box>
                       {!addr.isDefault && (
@@ -468,7 +471,7 @@ const AddressList = () => {
                           variant="outlined"
                           onClick={() => handleSetDefault(addr.id)}
                         >
-                          Chọn làm mặc định
+                          {t("profile.chooseAsDefault")}
                         </Button>
                       )}
                     </Box>
@@ -502,6 +505,7 @@ const AddressList = () => {
 
 // --- Main Page Wrapper ---
 const AddressPage = () => {
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
 
   return (
@@ -532,7 +536,7 @@ const AddressPage = () => {
         }}
       >
         <Box sx={{ width: { xs: "100%", md: 260 }, minWidth: { md: 260 } }}>
-          <ProfileMenu activePage="Địa Chỉ" user={user} />
+          <ProfileMenu activePage={t("profile.address")} user={user} />
         </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>

@@ -85,7 +85,7 @@ spring:
         - id: catalog-service
           uri: lb://catalog-service
           predicates:
-            - Path=/api/products/**, /api/categories/**, /api/producers/**, /api/admin/products/**, /api/admin/sales-consultation/**, /api/admin/inventory/**, /api/admin/inventory-audits/**, /api/admin/suppliers/**, /api/admin/purchase-orders/**, /api/admin/categories/**, /api/admin/producers/**, /api/admin/attributes/**, /api/admin/attribute-values/**, /api/admin/banners/**, /api/admin/posts/**, /img/**
+            - Path=/api/products/**, /api/categories/**, /api/producers/**, /api/banners/**, /api/admin/products/**, /api/admin/sales-consultation/**, /api/admin/inventory/**, /api/admin/inventory-audits/**, /api/admin/suppliers/**, /api/admin/purchase-orders/**, /api/admin/categories/**, /api/admin/producers/**, /api/admin/attributes/**, /api/admin/attribute-values/**, /api/admin/banners/**, /api/admin/posts/**, /img/**
 
         - id: order-service
           uri: lb://order-service
@@ -102,11 +102,14 @@ spring:
           predicates:
             - Path=/api/chatbot/**
 
+        # AI thuần: path /recommend/** (không phải luồng Trang chủ)
         - id: reco-service
           uri: lb://reco-service
           predicates:
-            - Path=/recommend/**, /api/recommend
+            - Path=/recommend/**, /recommend_explain/**, /api/recommend, /api/retrain
 
+        # Trang chủ gợi ý: FE gọi /api/recommendations/** → statistics-service (BFF)
+        # Gateway chỉ định tuyến, không tính KNN / Top-K
         - id: statistics-service
           uri: lb://statistics-service
           predicates:

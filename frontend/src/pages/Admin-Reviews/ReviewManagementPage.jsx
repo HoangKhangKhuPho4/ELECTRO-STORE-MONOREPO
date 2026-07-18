@@ -131,7 +131,7 @@ const ReviewManagementPage = () => {
         {/* HEADER */}
         <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>⭐ Quản Lý Đánh Giá</Typography>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>Quản Lý Đánh Giá</Typography>
             <Typography variant="body1" color="text.secondary">Xem, kiểm duyệt và phản hồi ý kiến của khách hàng về sản phẩm</Typography>
           </Box>
           <Button startIcon={<RefreshIcon />} onClick={fetchReviews} variant="contained"

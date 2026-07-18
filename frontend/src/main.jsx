@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import App from "./App.jsx";
 import "./index.css";
+import "./i18n";
 import { setCart } from "./redux/appSlice";
 import { store } from "./redux/store";
 import { fetchCart } from "./services/cartService";

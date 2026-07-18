@@ -220,6 +220,9 @@ function Get-MinimalServiceNames {
 
 function Ensure-RecoServiceVenv {
     param([string]$ModulePath)
+    # Cac lenh native (python/pip) ghi ra stderr binh thuong (vd traceback khi thieu module).
+    # Ha ErrorActionPreference cuc bo de stderr khong bien thanh terminating error (quirk PS 5.1).
+    $ErrorActionPreference = 'Continue'
     $pythonPath = Join-Path $ModulePath '.venv\Scripts\python.exe'
     $pipPath = Join-Path $ModulePath '.venv\Scripts\pip.exe'
     $reqPath = Join-Path $ModulePath 'requirements.txt'
@@ -230,11 +233,11 @@ function Ensure-RecoServiceVenv {
         Write-Host '  Tao .venv cho reco-service...' -ForegroundColor Yellow
         python -m venv (Join-Path $ModulePath '.venv')
     }
-    $null = & $pythonPath -c "import uvicorn" 2>$null
+    & $pythonPath -c "import uvicorn" 2>$null | Out-Null
     $uvicornOk = $LASTEXITCODE -eq 0
     if (-not $uvicornOk -and (Test-Path $reqPath)) {
         Write-Host '  Cai dependencies reco-service (lan dau hoac .venv lo)...' -ForegroundColor Yellow
-        $null = & $pipPath install -r $reqPath -q 2>&1
+        & $pipPath install -r $reqPath 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "reco-service: pip install that bai (exit code $LASTEXITCODE). Chay thu: cd reco-service; .\.venv\Scripts\pip.exe install -r requirements.txt"
         }
@@ -249,8 +252,8 @@ function Start-RecoService {
         [string]$RunDir
     )
     $modulePath = Join-Path $Root $Service.Name
-    if (-not (Test-Path (Join-Path $modulePath 'app.py'))) {
-        throw "Khong tim thay reco-service (app.py)"
+    if (-not (Test-Path (Join-Path $modulePath 'main.py'))) {
+        throw "Khong tim thay reco-service (main.py)"
     }
     if (Test-PortOpen -Port $Service.Port) {
         Write-Host "  Bo qua $($Service.Name) - port $($Service.Port) da mo." -ForegroundColor Yellow
@@ -275,7 +278,7 @@ Set-Location '$modulePath'
 `$env:AI_PORT = '$($Service.Port)'
 `$env:APP_NAME = 'reco-service'
 `$env:EUREKA_SERVER_URL = `$(if (`$env:EUREKA_SERVER_URL) { `$env:EUREKA_SERVER_URL } else { 'http://localhost:8761/eureka/' })
-& '$pythonPath' -m uvicorn app:app --host 0.0.0.0 --port $($Service.Port) 2>&1 | Tee-Object -FilePath '$logFile'
+& '$pythonPath' -m uvicorn main:app --host 0.0.0.0 --port $($Service.Port) 2>&1 | Tee-Object -FilePath '$logFile'
 "@
 
     Start-Process powershell.exe -WindowStyle Minimized -ArgumentList @(

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Button,
@@ -27,6 +28,7 @@ import { getAvailableCoupons } from "../../services/couponService";
 import { formatMoney } from "../../utils/formatters";
 
 const CouponSelector = ({ onSelect, selectedCode }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ const CouponSelector = ({ onSelect, selectedCode }) => {
           "&:hover": { bgcolor: "#fff8ef" }
         }}
       >
-        Chọn mã giảm giá
+        {t("checkout.couponTitle")}
       </Button>
 
       <Dialog
@@ -77,7 +79,7 @@ const CouponSelector = ({ onSelect, selectedCode }) => {
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" component="span" fontWeight="bold">Chọn ưu đãi cho bạn</Typography>
+          <Typography variant="h6" component="span" fontWeight="bold">{t("checkout.couponSubtitle")}</Typography>
           <IconButton onClick={() => setOpen(false)} size="small">
             <CloseIcon />
           </IconButton>
@@ -89,7 +91,7 @@ const CouponSelector = ({ onSelect, selectedCode }) => {
             </Box>
           ) : coupons.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 5 }}>
-              <Typography color="text.secondary">Hiện không có mã giảm giá nào khả dụng.</Typography>
+              <Typography color="text.secondary">{t("checkout.noCoupons")}</Typography>
             </Box>
           ) : (
             <Stack spacing={2}>

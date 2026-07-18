@@ -1,0 +1,37 @@
+.language-switcher {
+  display: flex;
+  align-items: center;
+}
+
+.language-switcher__btn {
+  text-transform: none !important;
+  color: #555 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 6px 10px !important;
+  min-width: auto !important;
+  border-radius: 8px !important;
+  white-space: nowrap;
+}
+
+.language-switcher__btn:hover {
+  background: #fff7ed !important;
+  color: #f28900 !important;
+}
+
+.language-switcher__label {
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .language-switcher__label {
+    display: none;
+  }
+
+  .language-switcher__btn {
+    min-width: 40px !important;
+    padding: 6px 8px !important;
+  }
+}

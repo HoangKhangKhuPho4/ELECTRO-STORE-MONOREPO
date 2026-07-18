@@ -22,14 +22,20 @@ import {
 } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-// Component giờ đây nhận vào một prop tên là `activePage` và `user`
 const ProfileMenu = ({ activePage, user }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const isAccountSection =
+    activePage === t("profile.profile") ||
+    activePage === t("profile.address") ||
+    activePage === t("profile.changePassword");
+
   return (
     <Paper elevation={0} sx={{ height: "100%", borderRadius: 0, borderRight: { xs: "none", md: "1px solid #e0e0e0" } }}>
       <List sx={{ p: 1 }}>
-        {/* Avatar và thông tin cá nhân */}
         <ListItem
           sx={{ flexDirection: "column", alignItems: "flex-start", py: 2 }}
         >
@@ -42,7 +48,7 @@ const ProfileMenu = ({ activePage, user }) => {
                 {user?.name || "User"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Chỉnh sửa hồ sơ
+                {t("profile.editProfile")}
               </Typography>
             </div>
           </div>
@@ -51,99 +57,110 @@ const ProfileMenu = ({ activePage, user }) => {
         <Divider sx={{ my: 1 }} />
 
         <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Thông Báo"}>
+          <ListItemButton selected={activePage === t("profile.notifications")}>
             <ListItemIcon sx={{ minWidth: 40, color: "#ff6f61" }}>
               <NotificationsNoneOutlinedIcon />
             </ListItemIcon>
-            <ListItemText primary="Thông Báo" />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton 
-            selected={activePage === "Tài Khoản Của Tôi" || activePage === "Hồ Sơ" || activePage === "Địa Chỉ" || activePage === "Đổi Mật Khẩu"}
-            onClick={() => navigate("/profile")}
-          >
-            <ListItemIcon sx={{ minWidth: 40, color: "#42a5f5" }}>
-              <AccountCircleOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Tài Khoản Của Tôi" />
-          </ListItemButton>
-        </ListItem>
-
-        {/* Sub-items cho Tài Khoản */}
-        <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Hồ Sơ"} onClick={() => navigate("/profile")}>
-            <ListItemIcon sx={{ minWidth: 40, color: "#4caf50" }}>
-              <PersonOutlineIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Hồ Sơ"
-              sx={{ color: activePage === "Hồ Sơ" ? "#ee4d2d" : "inherit" }}
-            />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Ngân Hàng"}>
-            <ListItemIcon sx={{ minWidth: 40, color: "#e91e63" }}>
-              <AccountBalanceOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Ngân Hàng" />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Địa Chỉ"} onClick={() => navigate("/profile/address")}>
-            <ListItemIcon sx={{ minWidth: 40, color: "#ff5722" }}>
-              <LocationOnOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Địa Chỉ" 
-              sx={{ color: activePage === "Địa Chỉ" ? "#ee4d2d" : "inherit" }}
-            />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Đổi Mật Khẩu"} onClick={() => navigate("/profile/password")}>
-            <ListItemIcon sx={{ minWidth: 40, color: "#607d8b" }}>
-              <LockOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Đổi Mật Khẩu" 
-              sx={{ color: activePage === "Đổi Mật Khẩu" ? "#ee4d2d" : "inherit" }}
-            />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Đơn Mua" || activePage === "Đơn Hàng"} onClick={() => navigate("/user/orders")}>
-            <ListItemIcon sx={{ minWidth: 40, color: "#42a5f5" }}>
-              <DescriptionOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Đơn Mua" />
+            <ListItemText primary={t("profile.notifications")} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
           <ListItemButton
-            selected={activePage === "Bảo Hành"}
+            selected={isAccountSection}
+            onClick={() => navigate("/profile")}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: "#42a5f5" }}>
+              <AccountCircleOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText primary={t("profile.myAccount")} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={activePage === t("profile.profile")}
+            onClick={() => navigate("/profile")}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: "#4caf50" }}>
+              <PersonOutlineIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("profile.profile")}
+              sx={{ color: activePage === t("profile.profile") ? "#ee4d2d" : "inherit" }}
+            />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton selected={activePage === t("profile.bank")}>
+            <ListItemIcon sx={{ minWidth: 40, color: "#e91e63" }}>
+              <AccountBalanceOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText primary={t("profile.bank")} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={activePage === t("profile.address")}
+            onClick={() => navigate("/profile/address")}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: "#ff5722" }}>
+              <LocationOnOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("profile.address")}
+              sx={{ color: activePage === t("profile.address") ? "#ee4d2d" : "inherit" }}
+            />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={activePage === t("profile.changePassword")}
+            onClick={() => navigate("/profile/password")}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: "#607d8b" }}>
+              <LockOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("profile.changePassword")}
+              sx={{ color: activePage === t("profile.changePassword") ? "#ee4d2d" : "inherit" }}
+            />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={activePage === t("profile.orders")}
+            onClick={() => navigate("/user/orders")}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: "#42a5f5" }}>
+              <DescriptionOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText primary={t("profile.orders")} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={activePage === t("profile.warranty")}
             onClick={() => navigate("/user/warranty")}
           >
             <ListItemIcon sx={{ minWidth: 40, color: "#7c3aed" }}>
               <ShieldOutlinedIcon />
             </ListItemIcon>
-            <ListItemText primary="Bảo Hành" />
+            <ListItemText primary={t("profile.warranty")} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
-          <ListItemButton selected={activePage === "Kho Voucher"}>
+          <ListItemButton selected={activePage === t("profile.vouchers")}>
             <ListItemIcon sx={{ minWidth: 40, color: "#ff9800" }}>
               <PaymentOutlinedIcon />
             </ListItemIcon>
-            <ListItemText primary="Kho Voucher" />
+            <ListItemText primary={t("profile.vouchers")} />
           </ListItemButton>
         </ListItem>
       </List>

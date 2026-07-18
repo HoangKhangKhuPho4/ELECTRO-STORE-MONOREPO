@@ -39,8 +39,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { selectIsLoggedIn } from "../../redux/appSlice";
 import { fetchCart } from "../../services/cartService";
 import {
@@ -50,9 +51,6 @@ import {
 import { formatMoney } from "../../utils/formatters";
 import { useGHNShipping } from "../../hooks/useGHNShipping";
 import CouponSelector from "./CouponSelector";
-
-const SALES_REF_KEY = "electro_sales_ref";
-
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const cardSx = {
@@ -71,12 +69,14 @@ const selectSx = {
 
 // ─── Component phí ship ───────────────────────────────────────────────────────
 const ShippingInfoBox = ({ shippingInfo, loading }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1.5 }}>
         <CircularProgress size={16} sx={{ color: "#f28900" }} />
         <Typography variant="body2" color="text.secondary">
-          Đang tính phí vận chuyển...
+          {t("checkout.calculatingShipping")}
         </Typography>
       </Box>
     );
@@ -85,7 +85,7 @@ const ShippingInfoBox = ({ shippingInfo, loading }) => {
   if (!shippingInfo) {
     return (
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: "italic" }}>
-        Chọn địa chỉ để xem phí ship
+        {t("checkout.selectAddressForShipping")}
       </Typography>
     );
   }
@@ -112,7 +112,7 @@ const ShippingInfoBox = ({ shippingInfo, loading }) => {
         </Typography>
         {shippingInfo.freeShipping && (
           <Chip
-            label="🎁 MIỄN PHÍ"
+            label={t("checkout.freeShipBadge")}
             size="small"
             sx={{ bgcolor: "#2e7d32", color: "#fff", fontSize: "0.7rem", height: 20 }}
           />
@@ -142,24 +142,9 @@ const ShippingInfoBox = ({ shippingInfo, loading }) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Checkout = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const isLoggedIn = useSelector(selectIsLoggedIn);
-  const [salesRef, setSalesRef] = useState(null);
-
-  useEffect(() => {
-    const refParam = searchParams.get("ref");
-    if (refParam && !Number.isNaN(Number(refParam))) {
-      const id = Number(refParam);
-      localStorage.setItem(SALES_REF_KEY, String(id));
-      setSalesRef(id);
-      return;
-    }
-    const stored = localStorage.getItem(SALES_REF_KEY);
-    if (stored && !Number.isNaN(Number(stored))) {
-      setSalesRef(Number(stored));
-    }
-  }, [searchParams]);
 
   // ─── State ───
   const [cartItems, setCartItems] = useState([]);
@@ -257,22 +242,21 @@ const Checkout = () => {
   const validate = () => {
     const tempErrors = {};
     if (!formData.shippingName.trim())
-      tempErrors.shippingName = "Vui lòng nhập họ tên người nhận";
+      tempErrors.shippingName = t("checkout.errName");
     if (!formData.shippingPhone.trim())
-      tempErrors.shippingPhone = "Vui lòng nhập số điện thoại";
+      tempErrors.shippingPhone = t("checkout.errPhone");
     else if (!/^[0-9]{9,12}$/.test(formData.shippingPhone.trim()))
-      tempErrors.shippingPhone = "Số điện thoại không hợp lệ (9-12 chữ số)";
+      tempErrors.shippingPhone = t("checkout.errPhoneInvalid");
     if (!formData.shippingAddress.trim())
-      tempErrors.shippingAddress = "Vui lòng nhập địa chỉ chi tiết";
-    // GHN: phải chọn đủ tỉnh/quận/phường để có phí chính xác
+      tempErrors.shippingAddress = t("checkout.errAddress");
     if (!selectedProvince)
-      tempErrors.province = "Vui lòng chọn tỉnh/thành phố";
+      tempErrors.province = t("checkout.errProvince");
     if (!selectedDistrict)
-      tempErrors.district = "Vui lòng chọn quận/huyện";
+      tempErrors.district = t("checkout.errDistrict");
     if (!selectedWard)
-      tempErrors.ward = "Vui lòng chọn phường/xã";
+      tempErrors.ward = t("checkout.errWard");
     if (!paymentMethod)
-      tempErrors.paymentMethod = "Vui lòng chọn phương thức thanh toán";
+      tempErrors.paymentMethod = t("checkout.errPayment");
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -293,7 +277,7 @@ const Checkout = () => {
       setCouponResult(result);
     } catch (err) {
 
-      setCouponError(err.response?.data?.message || "Mã giảm giá không hợp lệ");
+      setCouponError(err.response?.data?.message || t("checkout.invalidCoupon"));
     } finally {
       setCouponLoading(false);
     }
@@ -331,10 +315,6 @@ const Checkout = () => {
         request.toWardCode = selectedWard.code;       // String!
       }
 
-      if (salesRef) {
-        request.salesRef = salesRef;
-      }
-
       const order = await checkout(request);
 
       // Redirect đến cổng thanh toán nếu VNPAY/MOMO/ZALOPAY
@@ -345,7 +325,7 @@ const Checkout = () => {
 
       setSnackbar({
         open: true,
-        message: "Đặt hàng thành công! 🎉",
+        message: t("checkout.success"),
         severity: "success",
       });
       setTimeout(() => navigate("/user/orders"), 1500);
@@ -357,7 +337,7 @@ const Checkout = () => {
       }
       setSnackbar({
         open: true,
-        message: errMsg || "Đặt hàng thất bại. Vui lòng thử lại!",
+        message: errMsg || t("checkout.fail"),
         severity: "error",
       });
     } finally {
@@ -387,10 +367,10 @@ const Checkout = () => {
       <Box sx={{ maxWidth: 500, mx: "auto", mt: 10, textAlign: "center", p: 4 }}>
         <LockIcon sx={{ fontSize: 80, color: "#ccc", mb: 2 }} />
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-          Vui lòng đăng nhập
+          {t("checkout.loginTitle")}
         </Typography>
         <Typography sx={{ color: "#888", mb: 3 }}>
-          Bạn cần đăng nhập để tiến hành thanh toán
+          {t("checkout.loginDesc")}
         </Typography>
         <Button
           variant="contained"
@@ -398,7 +378,7 @@ const Checkout = () => {
           to="/login"
           sx={{ bgcolor: "#f28900", "&:hover": { bgcolor: "#e67c00" } }}
         >
-          Đăng nhập ngay
+          {t("auth.loginNow")}
         </Button>
       </Box>
     );
@@ -409,10 +389,10 @@ const Checkout = () => {
     return (
       <Box sx={{ maxWidth: 500, mx: "auto", mt: 10, textAlign: "center", p: 4 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-          Giỏ hàng trống
+          {t("checkout.emptyCart")}
         </Typography>
         <Typography sx={{ color: "#888", mb: 3 }}>
-          Hãy thêm sản phẩm vào giỏ trước khi thanh toán
+          {t("checkout.emptyCartDesc")}
         </Typography>
         <Button
           variant="contained"
@@ -420,7 +400,7 @@ const Checkout = () => {
           to="/shop"
           sx={{ bgcolor: "#f28900", "&:hover": { bgcolor: "#e67c00" } }}
         >
-          Khám phá cửa hàng
+          {t("checkout.goShopping")}
         </Button>
       </Box>
     );
@@ -440,14 +420,14 @@ const Checkout = () => {
           }}
         >
           <Typography variant="h3" component="h1" sx={{ fontWeight: 700 }}>
-            Thanh toán
+            {t("checkout.title")}
           </Typography>
           <Button
             component={Link}
             to="/cart"
             sx={{ color: "#f28900", textTransform: "none", fontWeight: 600 }}
           >
-            ← Quay lại giỏ hàng
+            ← {t("checkout.backToCart")}
           </Button>
         </Box>
 
@@ -472,27 +452,27 @@ const Checkout = () => {
                   >
                     <ShoppingBagOutlinedIcon sx={{ color: "#f28900" }} />
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      Sản phẩm trong đơn hàng ({cartItems.length})
+                      {t("checkout.orderItemsCount", { count: cartItems.length })}
                     </Typography>
                   </Box>
                   <Table>
                     <TableHead>
                       <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                        <TableCell sx={{ fontWeight: 600 }}>Sản phẩm</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{t("checkout.colProduct")}</TableCell>
                         <TableCell sx={{ fontWeight: 600, width: 110 }}>
-                          Đơn giá
+                          {t("checkout.colPrice")}
                         </TableCell>
                         <TableCell
                           sx={{ fontWeight: 600, width: 70 }}
                           align="center"
                         >
-                          SL
+                          {t("checkout.colQty")}
                         </TableCell>
                         <TableCell
                           sx={{ fontWeight: 600, width: 120 }}
                           align="right"
                         >
-                          Thành tiền
+                          {t("checkout.colTotal")}
                         </TableCell>
                       </TableRow>
                     </TableHead>
@@ -523,7 +503,7 @@ const Checkout = () => {
                                     "https://placehold.co/48x48?text=No+Image"
                                   }
                                   alt={
-                                    item.variant?.product?.name || "Sản phẩm"
+                                    item.variant?.product?.name || t("common.product")
                                   }
                                   style={{
                                     width: "100%",
@@ -543,7 +523,7 @@ const Checkout = () => {
                                     maxWidth: 250,
                                   }}
                                 >
-                                  {item.variant?.product?.name || "Sản phẩm"}
+                                  {item.variant?.product?.name || t("common.product")}
                                 </Typography>
                                 {item.variant?.variantName && (
                                   <Typography
@@ -591,7 +571,7 @@ const Checkout = () => {
                   >
                     <LocationOnOutlinedIcon sx={{ color: "#f28900" }} />
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      Địa chỉ giao hàng
+                      {t("checkout.shippingAddress")}
                     </Typography>
                   </Box>
 
@@ -600,7 +580,7 @@ const Checkout = () => {
                       {/* Tên + SĐT */}
                       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                         <TextField
-                          label="Họ tên người nhận *"
+                          label={t("checkout.recipientName")}
                           name="shippingName"
                           value={formData.shippingName}
                           onChange={handleChange}
@@ -611,7 +591,7 @@ const Checkout = () => {
                           sx={selectSx}
                         />
                         <TextField
-                          label="Số điện thoại *"
+                          label={t("checkout.phone")}
                           name="shippingPhone"
                           value={formData.shippingPhone}
                           onChange={handleChange}
@@ -629,10 +609,10 @@ const Checkout = () => {
                         sx={{ mb: 2, ...selectSx }}
                         error={!!errors.province}
                       >
-                        <InputLabel>Tỉnh / Thành phố *</InputLabel>
+                        <InputLabel>{t("checkout.province")}</InputLabel>
                         <Select
                           value={selectedProvince?.id || ""}
-                          label="Tỉnh / Thành phố *"
+                          label={t("checkout.province")}
                           onChange={(e) => {
                             const prov = provinces.find(
                               (p) => p.provinceId === e.target.value
@@ -647,7 +627,7 @@ const Checkout = () => {
                           disabled={provinces.length === 0}
                         >
                           <MenuItem value="">
-                            <em>-- Chọn tỉnh/thành phố --</em>
+                            <em>{t("checkout.selectProvince")}</em>
                           </MenuItem>
                           {provinces.map((p) => (
                             <MenuItem key={p.provinceId} value={p.provinceId}>
@@ -671,12 +651,12 @@ const Checkout = () => {
                           disabled={!selectedProvince || loadingDistricts}
                         >
                           <InputLabel>
-                            Quận / Huyện *
-                            {loadingDistricts && " (Đang tải...)"}
+                            {t("checkout.district")}
+                            {loadingDistricts && ` ${t("checkout.loadingSuffix")}`}
                           </InputLabel>
                           <Select
                             value={selectedDistrict?.id || ""}
-                            label={`Quận / Huyện *${loadingDistricts ? " (Đang tải...)" : ""}`}
+                            label={`${t("checkout.district")}${loadingDistricts ? ` ${t("checkout.loadingSuffix")}` : ""}`}
                             onChange={(e) => {
                               const dist = districts.find(
                                 (d) => d.districtId === e.target.value
@@ -690,7 +670,7 @@ const Checkout = () => {
                             }}
                           >
                             <MenuItem value="">
-                              <em>-- Chọn quận/huyện --</em>
+                              <em>{t("checkout.selectDistrict")}</em>
                             </MenuItem>
                             {districts.map((d) => (
                               <MenuItem key={d.districtId} value={d.districtId}>
@@ -713,12 +693,12 @@ const Checkout = () => {
                           disabled={!selectedDistrict || loadingWards}
                         >
                           <InputLabel>
-                            Phường / Xã *
-                            {loadingWards && " (Đang tải...)"}
+                            {t("checkout.ward")}
+                            {loadingWards && ` ${t("checkout.loadingSuffix")}`}
                           </InputLabel>
                           <Select
                             value={selectedWard?.code || ""}
-                            label={`Phường / Xã *${loadingWards ? " (Đang tải...)" : ""}`}
+                            label={`${t("checkout.ward")}${loadingWards ? ` ${t("checkout.loadingSuffix")}` : ""}`}
                             onChange={(e) => {
                               // wardCode là String!
                               const ward = wards.find(
@@ -733,7 +713,7 @@ const Checkout = () => {
                             }}
                           >
                             <MenuItem value="">
-                              <em>-- Chọn phường/xã --</em>
+                              <em>{t("checkout.selectWard")}</em>
                             </MenuItem>
                             {wards.map((w) => (
                               <MenuItem key={w.wardCode} value={w.wardCode}>
@@ -751,7 +731,7 @@ const Checkout = () => {
 
                       {/* Địa chỉ chi tiết */}
                       <TextField
-                        label="Địa chỉ chi tiết (Số nhà, tên đường...) *"
+                        label={t("checkout.street")}
                         name="shippingAddress"
                         value={formData.shippingAddress}
                         onChange={handleChange}
@@ -784,7 +764,7 @@ const Checkout = () => {
                   >
                     <PaymentIcon sx={{ color: "#f28900" }} />
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      Phương thức thanh toán
+                      {t("checkout.paymentMethod")}
                     </Typography>
                   </Box>
 
@@ -802,27 +782,27 @@ const Checkout = () => {
                       {
                         value: "COD",
                         icon: <LocalShippingOutlinedIcon fontSize="small" />,
-                        label: "Thanh toán khi nhận hàng (COD)",
+                        label: t("checkout.cod"),
                       },
                       {
                         value: "BANK_TRANSFER",
                         icon: <AccountBalanceIcon fontSize="small" />,
-                        label: "Chuyển khoản ngân hàng",
+                        label: t("checkout.bankTransfer"),
                       },
                       {
                         value: "MOMO",
                         icon: <WalletIcon fontSize="small" />,
-                        label: "Ví MoMo",
+                        label: t("checkout.momo"),
                       },
                       {
                         value: "VNPAY",
                         icon: <PaymentIcon fontSize="small" />,
-                        label: "VNPay",
+                        label: t("checkout.vnpay"),
                       },
                       {
                         value: "ZALOPAY",
                         icon: <WalletIcon fontSize="small" />,
-                        label: "ZaloPay",
+                        label: t("checkout.zalopay"),
                       },
                     ].map((pm) => (
                       <FormControlLabel
@@ -871,15 +851,14 @@ const Checkout = () => {
                     >
                       <ReceiptLongOutlinedIcon sx={{ color: "#f28900" }} />
                       <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        Tóm tắt đơn hàng
+                        {t("checkout.orderSummary")}
                       </Typography>
                     </Box>
 
                     <Stack spacing={1.5}>
-                      {/* Tạm tính */}
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2" color="text.secondary">
-                          Tạm tính ({cartItems.length} sản phẩm)
+                          {t("checkout.subtotalWithCount", { count: cartItems.length })}
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
                           {formatMoney(subtotal)}
@@ -890,7 +869,7 @@ const Checkout = () => {
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            Phí vận chuyển
+                            {t("checkout.shippingFee")}
                           </Typography>
                           {/* Tên dịch vụ ship */}
                           {shippingInfo?.serviceName && (
@@ -910,14 +889,14 @@ const Checkout = () => {
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             <CircularProgress size={14} sx={{ color: "#f28900" }} />
                             <Typography variant="caption" color="text.secondary">
-                              Đang tính...
+                              {t("checkout.calculatingShort")}
                             </Typography>
                           </Box>
                         ) : shippingInfo ? (
                           shippingInfo.freeShipping ? (
                             <Tooltip title={shippingInfo.freeShippingReason || ""}>
                               <Chip
-                                label="🎁 MIỄN PHÍ"
+                                label={t("checkout.freeShipBadge")}
                                 size="small"
                                 sx={{ bgcolor: "#2e7d32", color: "#fff", fontSize: "0.7rem" }}
                               />
@@ -933,7 +912,7 @@ const Checkout = () => {
                           )
                         ) : (
                           <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                            Chọn phường/xã để xem phí ship
+                            {t("checkout.selectWardForShipping")}
                           </Typography>
                         )}
                       </Box>
@@ -942,7 +921,7 @@ const Checkout = () => {
                       {discountAmount > 0 && (
                         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                           <Typography variant="body2" sx={{ color: "#2e7d32" }}>
-                            Giảm giá
+                            {t("checkout.discount")}
                           </Typography>
                           <Typography
                             variant="body2"
@@ -965,7 +944,7 @@ const Checkout = () => {
                       }}
                     >
                       <Typography variant="h6" fontWeight="bold">
-                        Tổng cộng
+                        {t("checkout.grandTotal")}
                       </Typography>
                       <Typography
                         variant="h6"
@@ -974,7 +953,7 @@ const Checkout = () => {
                       >
                         {shippingInfo
                           ? formatMoney(totalAmount)
-                          : `${formatMoney(subtotal - discountAmount)} + phí ship`}
+                          : `${formatMoney(subtotal - discountAmount)} ${t("checkout.plusShipping")}`}
                       </Typography>
                     </Box>
 
@@ -994,7 +973,7 @@ const Checkout = () => {
                         />
                         <Typography variant="caption" sx={{ color: "#2e7d32" }}>
                           {shippingInfo.freeShippingReason ||
-                            "Đơn hàng đủ điều kiện miễn phí vận chuyển!"}
+                            t("checkout.freeShippingEligible")}
                         </Typography>
                       </Box>
                     )}
@@ -1016,7 +995,7 @@ const Checkout = () => {
                         sx={{ color: "#f28900" }}
                       />
                       <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        Mã giảm giá
+                        {t("checkout.couponCode")}
                       </Typography>
                       <Box sx={{ ml: "auto" }}>
                         <CouponSelector 
@@ -1061,12 +1040,12 @@ const Checkout = () => {
                               sx={{ color: "#4caf50" }}
                             >
                               {couponResult.message ||
-                                `Giảm ${formatMoney(couponResult.discountAmount)}`}
+                                t("checkout.discountOff", { amount: formatMoney(couponResult.discountAmount) })}
                             </Typography>
                           </Box>
                         </Box>
                         <Chip
-                          label="Xoá"
+                          label={t("checkout.remove")}
                           size="small"
                           color="error"
                           variant="outlined"
@@ -1077,7 +1056,7 @@ const Checkout = () => {
                     ) : (
                       <Stack direction="row" spacing={1}>
                         <TextField
-                          placeholder="Nhập mã giảm giá..."
+                          placeholder={t("checkout.couponPlaceholder")}
                           value={couponCode}
                           onChange={(e) => {
                             setCouponCode(e.target.value.toUpperCase());
@@ -1111,7 +1090,7 @@ const Checkout = () => {
                           {couponLoading ? (
                             <CircularProgress size={20} />
                           ) : (
-                            "Áp dụng"
+                            t("checkout.apply")
                           )}
                         </Button>
                       </Stack>
@@ -1132,11 +1111,11 @@ const Checkout = () => {
                     >
                       <EditNoteIcon sx={{ color: "#f28900" }} />
                       <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        Ghi chú
+                        {t("checkout.note")}
                       </Typography>
                     </Box>
                     <TextField
-                      placeholder="Ghi chú cho đơn hàng (không bắt buộc)..."
+                      placeholder={t("checkout.notePlaceholder")}
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
                       variant="outlined"
@@ -1174,7 +1153,7 @@ const Checkout = () => {
                   ) : (
                     <>
                       <LockIcon sx={{ mr: 1, fontSize: 18 }} />
-                      Đặt hàng ngay
+                      {t("checkout.placeOrder")}
                     </>
                   )}
                 </Button>
@@ -1189,7 +1168,7 @@ const Checkout = () => {
                 >
                   <LockIcon sx={{ fontSize: 14, color: "#bbb" }} />
                   <Typography variant="caption" sx={{ color: "#bbb" }}>
-                    Thanh toán an toàn &amp; bảo mật
+                    {t("checkout.secure")}
                   </Typography>
                 </Box>
               </Stack>

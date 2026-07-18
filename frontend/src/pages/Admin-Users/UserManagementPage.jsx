@@ -152,7 +152,7 @@ const UserManagementPage = () => {
         <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              👥 Quản Lý Người Dùng
+              Quản Lý Người Dùng
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Tổng số {totalElements} tài khoản đang được quản lý trong hệ thống

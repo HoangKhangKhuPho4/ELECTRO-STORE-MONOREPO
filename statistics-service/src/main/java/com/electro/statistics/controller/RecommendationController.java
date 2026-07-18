@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Entry từ API Gateway: Path=/api/recommendations/** → statistics-service.
+ * Chỉ nhận userId rồi ủy thác sang AIRecommendationService (BFF).
+ */
 @RestController
 @RequestMapping("/api/recommendations")
 @RequiredArgsConstructor
@@ -16,6 +20,7 @@ public class RecommendationController {
 
     private final AIRecommendationService recommendationService;
 
+    /** FE gọi: GET /api/recommendations/user/{userId} */
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRecommendations(
             @PathVariable Integer userId) {

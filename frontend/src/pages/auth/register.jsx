@@ -8,9 +8,11 @@ import {
 import httpClient from "../../services/httpClient";
 import { API_PREFIX } from "../../config/api";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom"; // Giả định bạn sẽ cần Link để quay về Login
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -37,7 +39,7 @@ const Register = () => {
     // Kiểm tra xem các trường có trống không
     for (const key in formData) {
       if (formData[key] === "") {
-        alert(`Vui lòng điền vào trường ${key}`);
+        alert(t("auth.fillAllFields"));
         return;
       }
     }
@@ -48,17 +50,17 @@ const Register = () => {
 
       // Nếu thành công ✅
       console.log("Phản hồi từ server:", response.data);
-      alert("Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.");
-      navigate("/login"); // Chuyển hướng đến trang đăng nhập
+      alert(response.data?.message || t("auth.registerTitle"));
+      navigate("/login");
     } catch (error) {
       // Nếu có lỗi ❌
       console.error("Lỗi khi đăng ký:", error);
 
       // Hiển thị thông báo lỗi từ backend (nếu có)
       if (error.response && error.response.data) {
-        alert(`Đăng ký thất bại: ${error.response.data.message}`);
+        alert(`${t("auth.serverError")}: ${error.response.data.message}`);
       } else {
-        alert("Đã xảy ra lỗi. Vui lòng thử lại.");
+        alert(t("auth.serverError"));
       }
     }
   };
@@ -97,13 +99,12 @@ const Register = () => {
                 align="center"
                 sx={{ mb: 5, mt: 4, fontWeight: "bold" }}
               >
-                Sign up
+                {t("auth.registerTitle")}
               </Typography>
 
               <form onSubmit={handleSubmit}>
-                {/* Thêm các TextField còn thiếu */}
                 <TextField
-                  label="Your Name"
+                  label={t("profile.fullName")}
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
@@ -112,7 +113,7 @@ const Register = () => {
                   sx={{ mb: 4 }}
                 />
                 <TextField
-                  label="Username"
+                  label={t("profile.username")}
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
@@ -121,7 +122,7 @@ const Register = () => {
                   sx={{ mb: 4 }}
                 />
                 <TextField
-                  label="Your Email"
+                  label={t("auth.email")}
                   name="email"
                   type="email"
                   value={formData.email}
@@ -131,7 +132,7 @@ const Register = () => {
                   sx={{ mb: 4 }}
                 />
                 <TextField
-                  label="Phone"
+                  label={t("profile.phone")}
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
@@ -140,7 +141,7 @@ const Register = () => {
                   sx={{ mb: 4 }}
                 />
                 <TextField
-                  label="Address"
+                  label={t("profile.addressLabel")}
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
@@ -149,7 +150,7 @@ const Register = () => {
                   sx={{ mb: 4 }}
                 />
                 <TextField
-                  label="Password"
+                  label={t("auth.password")}
                   name="password"
                   type="password"
                   value={formData.password}
@@ -175,16 +176,16 @@ const Register = () => {
                     size="large"
                     fullWidth
                   >
-                    Register
+                    {t("auth.registerTitle")}
                   </Button>
                 </Box>
 
                 {/* Quay lại Login */}
                 <Box sx={{ textAlign: "center", mt: 3 }}>
                   <Typography variant="body2">
-                    Already have an account?{" "}
+                    {t("auth.hasAccount")}{" "}
                     <Link to="/login" style={{ textDecoration: "none" }}>
-                      Sign In
+                      {t("auth.loginNow")}
                     </Link>
                   </Typography>
                 </Box>

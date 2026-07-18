@@ -12,7 +12,7 @@ import {
   AppBar,
   Avatar,
   Badge,
-  Box /*...,*/,
+  Box,
   Button,
   Divider,
   FormControl,
@@ -24,52 +24,55 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   logout,
   selectCartItemCount,
-  selectCartTotal,
   selectIsLoggedIn,
   selectUser,
   selectWishlistCount,
 } from "../../redux/appSlice";
+import LanguageSwitcher from "../LanguageSwitcher/LanguageSwitcher";
 import Logo from "../UI/Logo";
 import ProductSearchAutocomplete from "../Search/ProductSearchAutocomplete";
 import "./Header.css";
 
-// Map tên danh mục → product_type_id
-const categoryIdMap = {
-  "Phụ Kiện Điện Tử": 10,
-  "Máy Tính & Linh Kiện": 11,
-  "Laptop & Desktop": 12,
-  "Điện Thoại & Tablet": 13,
-  "SmartTV & Thiết Bị Thông Minh": 14,
-};
+const CATEGORY_OPTIONS = [
+  { key: "all", id: null },
+  { key: "accessories", id: 10 },
+  { key: "pcParts", id: 11 },
+  { key: "mobileTablet", id: 13 },
+  { key: "laptopDesktop", id: 12 },
+  { key: "smartTv", id: 14 },
+];
 
 const Header = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả danh mục");
-  const [anchorEl, setAnchorEl] = useState(null); // Menu dropdown cho user
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  //dùng useSelector() để lấy dữ liệu từ store
   const cartItemCount = useSelector(selectCartItemCount);
-  const cartTotal = useSelector(selectCartTotal);
   const wishlistCount = useSelector(selectWishlistCount);
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const user = useSelector(selectUser);
 
-  const categories = [
-    "Tất cả danh mục",
-    "Phụ Kiện Điện Tử",
-    "Máy Tính & Linh Kiện",
-    "Điện Thoại & Tablet",
-    "Laptop & Desktop",
-    "SmartTV & Thiết Bị Thông Minh",
-  ];
+  const categories = useMemo(
+    () =>
+      CATEGORY_OPTIONS.map((opt) => ({
+        ...opt,
+        label: t(`categories.${opt.key}`),
+      })),
+    [t, i18n.language],
+  );
+
+  const selectedCategoryId =
+    CATEGORY_OPTIONS.find((c) => c.key === selectedCategory)?.id ?? null;
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -77,14 +80,11 @@ const Header = () => {
     if (searchTerm.trim()) {
       params.set("keyword", searchTerm.trim());
     }
-    const catId = categoryIdMap[selectedCategory];
-    if (catId) {
-      params.set("category", catId.toString());
+    if (selectedCategoryId) {
+      params.set("category", selectedCategoryId.toString());
     }
     navigate(`/shop?${params.toString()}`);
   };
-
-  const categoryId = categoryIdMap[selectedCategory] ?? null;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -112,7 +112,7 @@ const Header = () => {
           padding: "0 2rem",
           display: "grid",
           gridTemplateColumns:
-            "minmax(200px, 1fr) minmax(500px, 3fr) minmax(280px, 1fr)",
+            "minmax(200px, 1fr) minmax(500px, 3fr) minmax(320px, 1fr)",
           alignItems: "center",
           gap: "2rem",
           maxWidth: "100%",
@@ -120,7 +120,6 @@ const Header = () => {
           width: "100%",
         }}
       >
-        {/* Khu vực 1: Logo (Trái) */}
         <Box
           className="header-logo"
           sx={{
@@ -132,7 +131,6 @@ const Header = () => {
           <Logo />
         </Box>
 
-        {/* Khu vực 2: Search Bar (Giữa) */}
         <Box
           className="header-search"
           sx={{
@@ -155,7 +153,6 @@ const Header = () => {
               overflow: "hidden",
             }}
           >
-            {/* Category Dropdown */}
             <FormControl
               sx={{
                 minWidth: 140,
@@ -186,23 +183,22 @@ const Header = () => {
               >
                 {categories.map((category) => (
                   <MenuItem
-                    key={category}
-                    value={category}
+                    key={category.key}
+                    value={category.key}
                     sx={{ fontSize: "14px" }}
                   >
-                    {category}
+                    {category.label}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            {/* Smart search — autocomplete */}
             <ProductSearchAutocomplete
               value={searchTerm}
               onChange={setSearchTerm}
-              categoryId={categoryId}
+              categoryId={selectedCategoryId}
               onSubmit={handleSearch}
-              placeholder="Bạn đang tìm kiếm gì?"
+              placeholder={t("header.searchPlaceholder")}
               sx={{
                 flex: 1,
                 "& .MuiOutlinedInput-root": {
@@ -228,7 +224,6 @@ const Header = () => {
               }}
             />
 
-            {/* Search Button */}
             <IconButton
               type="submit"
               sx={{
@@ -245,57 +240,42 @@ const Header = () => {
           </Box>
         </Box>
 
-        {/* Khu vực 3: User Actions (Phải) */}
         <Box
           className="header-actions"
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            gap: "16px",
+            gap: "12px",
           }}
         >
-          {/* Shuffle Icon */}
-          <IconButton sx={{ color: "#666" }} title="Random Product">
+          <IconButton sx={{ color: "#666" }} title={t("header.randomProduct")}>
             <ShuffleIcon />
           </IconButton>
 
-          {/* Wishlist Icon */}
           <Link
             to="/wishlist"
             style={{ textDecoration: "none", color: "inherit" }}
           >
-            <IconButton sx={{ color: "#666" }} title="Wishlist">
+            <IconButton sx={{ color: "#666" }} title={t("header.wishlist")}>
               <Badge badgeContent={wishlistCount} color="error">
                 <FavoriteIcon />
               </Badge>
             </IconButton>
           </Link>
 
-          {/* Cart Icon with Price */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Link
-              to="/cart"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <IconButton sx={{ color: "#666" }} title="Shopping Cart">
-                <Badge badgeContent={cartItemCount} color="error">
-                  <CartIcon />
-                </Badge>
-              </IconButton>
-            </Link>
+          <Link
+            to="/cart"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            <IconButton sx={{ color: "#666" }} title={t("header.cart")}>
+              <Badge badgeContent={cartItemCount} color="error">
+                <CartIcon />
+              </Badge>
+            </IconButton>
+          </Link>
 
-            <Typography
-              variant="h6"
-              sx={{
-                color: "#333",
-                fontWeight: 600,
-                fontSize: "16px",
-              }}
-            >
-              {cartTotal.toLocaleString("vi-VN")}đ
-            </Typography>
-          </Box>
+          <LanguageSwitcher />
 
           {isLoggedIn ? (
             <>
@@ -328,7 +308,7 @@ const Header = () => {
                 open={Boolean(anchorEl)}
                 onClose={() => setAnchorEl(null)}
                 PaperProps={{
-                  sx: { minWidth: 180, mt: 1 },
+                  sx: { minWidth: 200, mt: 1 },
                 }}
               >
                 <MenuItem
@@ -338,7 +318,7 @@ const Header = () => {
                   }}
                 >
                   <PersonOutlineIcon sx={{ mr: 1, fontSize: 20 }} />
-                  Tài khoản của tôi
+                  {t("header.myAccount")}
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -347,7 +327,7 @@ const Header = () => {
                   }}
                 >
                   <OrderIcon sx={{ mr: 1, fontSize: 20 }} />
-                  Đơn hàng của tôi
+                  {t("header.myOrders")}
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -356,12 +336,12 @@ const Header = () => {
                   }}
                 >
                   <ShieldOutlinedIcon sx={{ mr: 1, fontSize: 20 }} />
-                  Bảo hành & Sửa chữa
+                  {t("header.warrantyRepair")}
                 </MenuItem>
                 <Divider />
                 <MenuItem onClick={handleLogout} sx={{ color: "#D32F2F" }}>
                   <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
-                  Đăng xuất
+                  {t("header.logout")}
                 </MenuItem>
               </Menu>
             </>
@@ -380,7 +360,7 @@ const Header = () => {
                   },
                 }}
               >
-                Đăng nhập
+                {t("header.login")}
               </Button>
             </Link>
           )}

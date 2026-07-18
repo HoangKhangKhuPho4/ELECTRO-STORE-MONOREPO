@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { selectIsLoggedIn, setCart } from "../../redux/appSlice";
@@ -29,6 +30,7 @@ const FREE_SHIPPING_THRESHOLD = 500000;
 const SHIPPING_FEE = 30000;
 
 function ShoppingCart() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const isLoggedIn = useSelector(selectIsLoggedIn);
@@ -70,7 +72,7 @@ function ShoppingCart() {
       dispatch(setCart(items));
     } catch (err) {
       console.error("Lỗi khi xoá item:", err);
-      alert(err.response?.data?.message || "Không thể xoá sản phẩm");
+      alert(err.response?.data?.message || t("cart.removeFail"));
     } finally {
       setRemovingId(null);
     }
@@ -86,7 +88,7 @@ function ShoppingCart() {
       dispatch(setCart(items));
     } catch (err) {
       console.error("Lỗi khi cập nhật số lượng:", err);
-      alert(err.response?.data?.message || "Không thể cập nhật số lượng");
+      alert(err.response?.data?.message || t("cart.updateFail"));
     } finally {
       setUpdatingId(null);
     }
@@ -135,10 +137,10 @@ function ShoppingCart() {
       >
         <ShoppingCartOutlinedIcon sx={{ fontSize: 80, color: "#ccc", mb: 2 }} />
         <Typography variant="h5" sx={{ fontWeight: 700, color: "#333", mb: 1 }}>
-          Vui lòng đăng nhập
+          {t("cart.loginTitle")}
         </Typography>
         <Typography sx={{ color: "#888", mb: 3 }}>
-          Bạn cần đăng nhập để xem giỏ hàng của mình
+          {t("cart.loginDesc")}
         </Typography>
         <Button
           variant="contained"
@@ -155,7 +157,7 @@ function ShoppingCart() {
             textTransform: "none",
           }}
         >
-          Đăng nhập ngay
+          {t("cart.loginBtn")}
         </Button>
       </Box>
     );
@@ -175,10 +177,10 @@ function ShoppingCart() {
       >
         <ShoppingCartOutlinedIcon sx={{ fontSize: 80, color: "#ccc", mb: 2 }} />
         <Typography variant="h5" sx={{ fontWeight: 700, color: "#333", mb: 1 }}>
-          Giỏ hàng trống
+          {t("cart.emptyTitle")}
         </Typography>
         <Typography sx={{ color: "#888", mb: 3 }}>
-          Hãy khám phá cửa hàng và thêm sản phẩm yêu thích vào giỏ
+          {t("cart.emptyDesc")}
         </Typography>
         <Button
           variant="contained"
@@ -195,7 +197,7 @@ function ShoppingCart() {
             textTransform: "none",
           }}
         >
-          Khám phá cửa hàng
+          {t("cart.exploreShop")}
         </Button>
       </Box>
     );
@@ -213,10 +215,10 @@ function ShoppingCart() {
     >
       {/* Title */}
       <Typography variant="h5" sx={{ fontWeight: 700, color: "#333", mb: 0.5 }}>
-        Giỏ hàng
+        {t("cart.title")}
       </Typography>
       <Typography variant="body2" sx={{ color: "#888", mb: 3 }}>
-        Bạn có {cartItems.length} sản phẩm trong giỏ hàng
+        {t("cart.itemCount", { count: cartItems.length })}
       </Typography>
 
       {/* Free shipping progress bar */}
@@ -236,10 +238,11 @@ function ShoppingCart() {
           <LocalShippingOutlinedIcon sx={{ color: "#f28900" }} />
           <Box sx={{ flex: 1 }}>
             <Typography variant="body2" sx={{ color: "#333", mb: 0.5 }}>
-              Mua thêm{" "}
-              <strong>{formatMoney(FREE_SHIPPING_THRESHOLD - subtotal)}</strong>{" "}
-              để được{" "}
-              <strong style={{ color: "#2e7d32" }}>miễn phí vận chuyển</strong>
+              <Trans
+                i18nKey="cart.buyMore"
+                values={{ amount: formatMoney(FREE_SHIPPING_THRESHOLD - subtotal) }}
+                components={{ strong: <strong /> }}
+              />
             </Typography>
             <LinearProgress
               variant="determinate"
@@ -276,7 +279,7 @@ function ShoppingCart() {
             variant="body2"
             sx={{ color: "#2e7d32", fontWeight: 600 }}
           >
-            Bạn được miễn phí vận chuyển!
+            {t("cart.freeShipping")}
           </Typography>
         </Box>
       )}
@@ -314,7 +317,7 @@ function ShoppingCart() {
                 letterSpacing: 0.5,
               }}
             >
-              Sản phẩm
+              {t("cart.colProduct")}
             </Typography>
             <Typography
               variant="caption"
@@ -327,7 +330,7 @@ function ShoppingCart() {
                 textAlign: "center",
               }}
             >
-              Đơn giá
+              {t("cart.colPrice")}
             </Typography>
             <Typography
               variant="caption"
@@ -340,7 +343,7 @@ function ShoppingCart() {
                 textAlign: "center",
               }}
             >
-              Số lượng
+              {t("cart.colQty")}
             </Typography>
             <Typography
               variant="caption"
@@ -353,7 +356,7 @@ function ShoppingCart() {
                 textAlign: "right",
               }}
             >
-              Thành tiền
+              {t("cart.colTotal")}
             </Typography>
             <Box sx={{ width: 48 }} />
           </Box>
@@ -410,7 +413,7 @@ function ShoppingCart() {
                           item.variant?.imageUrl ||
                           "https://placehold.co/80x80?text=No+Image"
                         }
-                        alt={item.variant?.product?.name || "Sản phẩm"}
+                        alt={item.variant?.product?.name || t("common.product")}
                         style={{
                           width: "100%",
                           height: "100%",
@@ -434,7 +437,7 @@ function ShoppingCart() {
                           if (pid) navigate(`/product/${pid}`);
                         }}
                       >
-                        {item.variant?.product?.name || "Sản phẩm"}
+                        {item.variant?.product?.name || t("common.product")}
                       </Typography>
                       {item.variant?.variantName && (
                         <Chip
@@ -574,7 +577,7 @@ function ShoppingCart() {
                           item.variant?.imageUrl ||
                           "https://placehold.co/90x90?text=No+Image"
                         }
-                        alt={item.variant?.product?.name || "Sản phẩm"}
+                        alt={item.variant?.product?.name || t("common.product")}
                         style={{
                           width: "100%",
                           height: "100%",
@@ -597,7 +600,7 @@ function ShoppingCart() {
                           WebkitBoxOrient: "vertical",
                         }}
                       >
-                        {item.variant?.product?.name || "Sản phẩm"}
+                        {item.variant?.product?.name || t("common.product")}
                       </Typography>
                       {item.variant?.variantName && (
                         <Typography variant="caption" sx={{ color: "#999", mr: 1 }}>
@@ -696,7 +699,7 @@ function ShoppingCart() {
                 "&:hover": { bgcolor: "#fff8ef" },
               }}
             >
-              ← Tiếp tục mua sắm
+              {t("cart.continueShopping")}
             </Button>
           </Box>
         </Box>
@@ -729,7 +732,7 @@ function ShoppingCart() {
               <Typography
                 sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#333" }}
               >
-                Tóm tắt đơn hàng
+                {t("cart.summary")}
               </Typography>
             </Box>
 
@@ -756,7 +759,7 @@ function ShoppingCart() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {item.variant?.product?.name || "Sản phẩm"}{" "}
+                      {item.variant?.product?.name || t("common.product")}{" "}
                       <Typography
                         component="span"
                         variant="body2"
@@ -785,7 +788,7 @@ function ShoppingCart() {
               <Stack spacing={1}>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" sx={{ color: "#888" }}>
-                    Tạm tính
+                    {t("cart.subtotal")}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -796,7 +799,7 @@ function ShoppingCart() {
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" sx={{ color: "#888" }}>
-                    Phí vận chuyển
+                    {t("cart.shippingFee")}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -805,7 +808,7 @@ function ShoppingCart() {
                       color: freeShipping ? "#2e7d32" : "#333",
                     }}
                   >
-                    {freeShipping ? "Miễn phí" : formatMoney(shipping)}
+                    {freeShipping ? t("cart.free") : formatMoney(shipping)}
                   </Typography>
                 </Box>
               </Stack>
@@ -824,7 +827,7 @@ function ShoppingCart() {
                 <Typography
                   sx={{ fontWeight: 700, fontSize: "1rem", color: "#333" }}
                 >
-                  Tổng cộng
+                  {t("cart.grandTotal")}
                 </Typography>
                 <Typography
                   sx={{
@@ -859,13 +862,13 @@ function ShoppingCart() {
                   transition: "all 0.2s ease",
                 }}
               >
-                Tiến hành thanh toán
+                {t("cart.checkout")}
               </Button>
 
               {/* Security badge */}
               <Box sx={{ mt: 2, textAlign: "center" }}>
                 <Typography variant="caption" sx={{ color: "#bbb" }}>
-                  🔒 Thanh toán an toàn & bảo mật
+                  {t("cart.secure")}
                 </Typography>
               </Box>
             </Box>

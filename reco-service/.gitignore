@@ -1,9 +1,10 @@
-.env
 .venv/
-venv/
-docs/ratings_dataset.csv
-collaborativefiltering/asset/archive/
 __pycache__/
-*.pyc
-.venv/
-venv/
+*.py[cod]
+.pytest_cache/
+.env
+*.npz
+*.pkl
+models/
+.idea/
+.vscode/

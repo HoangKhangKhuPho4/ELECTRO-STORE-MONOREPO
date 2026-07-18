@@ -8,55 +8,32 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetPostsQuery } from "../../redux/apiSlice";
 import { addToCart, selectCartItemCount } from "../../redux/appSlice";
 
-const featureItems = [
-  {
-    title: "MIỄN PHÍ TRẢ HÀNG",
-    desc: "Đổi trả trong vòng 30 ngày",
-    icon: "https://res.cloudinary.com/dhhvmdtcz/image/upload/customer-benefits/free_return.png",
-    color: "#10b981",
-  },
-  {
-    title: "GIAO HÀNG MIỄN PHÍ",
-    desc: "Đơn hàng trên 500.000đ",
-    icon: "https://res.cloudinary.com/dhhvmdtcz/image/upload/customer-benefits/free_shipping.png",
-    color: "#3b82f6",
-  },
-  {
-    title: "HỖ TRỢ 24/7",
-    desc: "Tư vấn khách hàng mọi lúc",
-    icon: "https://res.cloudinary.com/dhhvmdtcz/image/upload/customer-benefits/support.png",
-    color: "#8b5cf6",
-  },
-  {
-    title: "THẺ QUÀ TẶNG",
-    desc: "Nhận quà với đơn hàng 1tr+",
-    icon: "https://res.cloudinary.com/dhhvmdtcz/image/upload/customer-benefits/gift_card.png",
-    color: "#f59e0b",
-  },
-  {
-    title: "THANH TOÁN AN TOÀN",
-    desc: "Bảo mật thông tin tuyệt đối",
-    icon: "https://res.cloudinary.com/dhhvmdtcz/image/upload/customer-benefits/secure_payment.png",
-    color: "#ef4444",
-  },
-  {
-    title: "BẢO HÀNH CHÍNH HÃNG",
-    desc: "Bảo hành toàn quốc 12 tháng",
-    icon: "https://res.cloudinary.com/dhhvmdtcz/image/upload/customer-benefits/warranty.png",
-    color: "#06b6d4",
-  },
+const FEATURE_KEYS = [
+  { titleKey: "promo.freeReturn", descKey: "promo.freeReturnDesc", icon: "/images/promo/free_return.png", color: "#10b981" },
+  { titleKey: "promo.freeShipping", descKey: "promo.freeShippingDesc", icon: "/images/promo/free_shipping.png", color: "#3b82f6" },
+  { titleKey: "promo.support247", descKey: "promo.support247Desc", icon: "/images/promo/support.png", color: "#8b5cf6" },
+  { titleKey: "promo.giftCard", descKey: "promo.giftCardDesc", icon: "/images/promo/gift_card.png", color: "#f59e0b" },
+  { titleKey: "promo.securePayment", descKey: "promo.securePaymentDesc", icon: "/images/promo/secure_payment.png", color: "#ef4444" },
+  { titleKey: "promo.warranty", descKey: "promo.warrantyDesc", icon: "/images/promo/warranty.png", color: "#06b6d4" },
 ];
 
 const Promo = () => {
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   const cartCount = useSelector(selectCartItemCount);
 
   // Use RTK Query as demo data source for promo titles/subtitles
   const { data: posts = [], isFetching } = useGetPostsQuery();
+
+  const featureItems = useMemo(
+    () => FEATURE_KEYS.map((f) => ({ ...f, title: t(f.titleKey), desc: t(f.descKey) })),
+    [t, i18n.language]
+  );
 
   const promoCards = useMemo(
     () => [
@@ -68,7 +45,7 @@ const Promo = () => {
         overlay: "linear-gradient(to right, rgba(255,255,255,0.95) 40%, rgba(255,255,255,0.4) 100%)",
         titleColor: "#f28900",
         subtitleColor: "#888",
-        btnText: "Mua Ngay",
+        btnText: t("common.buyNow"),
         btnBg: "#f28900",
         layout: "flex-start",
         alignText: "left",
@@ -77,19 +54,19 @@ const Promo = () => {
       {
         id: 102,
         title: "SALE",
-        subtitle: "Giảm Đến 50%",
+        subtitle: t("promo.saleSubtitle"),
         image: "https://mac365.vn/wp-content/uploads/2024/03/3-12.png",
-        overlay: "rgba(245, 190, 105, 0.85)", // Orange-yellowish tint
+        overlay: "rgba(245, 190, 105, 0.85)",
         titleColor: "#e63946",
         subtitleColor: "#fff",
-        btnText: "Mua Ngay",
+        btnText: t("common.buyNow"),
         btnBg: "#e63946",
         layout: "center",
         alignText: "center",
         bgPos: "center",
       },
     ],
-    []
+    [t, i18n.language]
   );
 
   return (

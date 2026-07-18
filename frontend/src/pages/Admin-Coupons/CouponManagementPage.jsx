@@ -98,7 +98,7 @@ const CouponManagementPage = () => {
         {/* HEADER */}
         <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>🎟️ Quản Lý Mã Giảm Giá</Typography>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>Quản Lý Mã Giảm Giá</Typography>
             <Typography variant="body1" color="text.secondary">Quản lý các chương trình khuyến mãi và mã ưu đãi</Typography>
           </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal("add")}

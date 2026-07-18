@@ -21,6 +21,7 @@ import Checkbox from "@mui/material/Checkbox";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard/ProductCard";
 
@@ -34,13 +35,14 @@ import { mapProductForCard } from "../utils/productMapper";
 import httpClient from "../services/httpClient";
 import { API_PREFIX } from "../config/api";
 
-const priceRanges = [
-  { label: "Dưới 1 Triệu", value: "under1M", min: null, max: 1000000 },
-  { label: "Từ 1 - 2.5 Triệu", value: "1to2.5M", min: 1000000, max: 2500000 },
-  { label: "Trên 2.5 Triệu", value: "above2.5M", min: 2500000, max: null },
+const PRICE_RANGE_DEFS = [
+  { labelKey: "shop.priceUnder1M", value: "under1M", min: null, max: 1000000 },
+  { labelKey: "shop.price1to2_5M", value: "1to2.5M", min: 1000000, max: 2500000 },
+  { labelKey: "shop.priceAbove2_5M", value: "above2.5M", min: 2500000, max: null },
 ];
 
 const Shop = () => {
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [layout, setLayout] = useState("grid");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -50,7 +52,7 @@ const Shop = () => {
   const [selectedRating, setSelectedRating] = useState(0);
 
   // Sort & categories state
-  const [categories, setCategories] = useState([{ id: "", name: "Tất cả sản phẩm" }]);
+  const [categories, setCategories] = useState([{ id: "", name: "" }]);
   const [sortBy, setSortBy] = useState("");
   const [sortDir, setSortDir] = useState("asc");
 
@@ -94,14 +96,29 @@ const Shop = () => {
         const cats = await fetchCategoriesPublic();
         if (cats) {
           const list = Array.isArray(cats) ? cats : cats.content || [];
-          setCategories([{ id: "", name: "Tất cả sản phẩm" }, ...list]);
+          setCategories([{ id: "", name: t("shop.allProducts") }, ...list]);
         }
       } catch (err) {
         console.warn("Failed to load categories:", err);
       }
     };
     fetchCategories();
-  }, []);
+  }, [i18n.language, t]);
+
+  useEffect(() => {
+    setCategories((prev) => {
+      if (!prev.length) return [{ id: "", name: t("shop.allProducts") }];
+      if (prev[0].id === "") {
+        return [{ ...prev[0], name: t("shop.allProducts") }, ...prev.slice(1)];
+      }
+      return prev;
+    });
+  }, [t, i18n.language]);
+
+  const priceRanges = useMemo(
+    () => PRICE_RANGE_DEFS.map((r) => ({ ...r, label: t(r.labelKey) })),
+    [t, i18n.language]
+  );
 
   const handlePriceChange = (event) => {
     const { value, checked } = event.target;
@@ -243,7 +260,7 @@ const Shop = () => {
                 color: "text.primary", // Dùng màu mặc định của theme
               }}
             >
-              Danh Mục Sản Phẩm
+              {t("shop.categories")}
             </FormLabel>
             <RadioGroup
               value={selectedCategory}
@@ -282,7 +299,7 @@ const Shop = () => {
                 color: "text.primary", // Dùng màu mặc định của theme
               }}
             >
-              Lọc Theo Màu
+              {t("shop.filterByColor")}
             </FormLabel>
             <RadioGroup
               value={selectedColor}
@@ -295,7 +312,7 @@ const Shop = () => {
               <FormControlLabel
                 value=""
                 control={<Radio />}
-                label="Tất Cả Màu Sắc"
+                label={t("shop.allColors")}
               />
               {stableColors.map((color) => (
                 <FormControlLabel
@@ -319,7 +336,7 @@ const Shop = () => {
             }}
           >
             <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
-              Giá Bán
+              {t("shop.price")}
             </Typography>
             {priceRanges.map((range) => (
               <FormControlLabel
@@ -361,7 +378,7 @@ const Shop = () => {
                   fontSize: "18px",
                 }}
               >
-                Đánh Giá
+                {t("shop.rating")}
               </Typography>
               <KeyboardArrowUpIcon sx={{ color: "orange" }} />
             </Box>
@@ -397,7 +414,7 @@ const Shop = () => {
                           sx={{ color: "#ffb400" }}
                         />
                         <Typography sx={{ color: "#666", fontSize: "14px" }}>
-                          & trở lên
+                          {t("shop.ratingAndUp")}
                         </Typography>
                       </Box>
                     }
@@ -476,9 +493,9 @@ const Shop = () => {
             </Box>
             {/* Sort By */}
             <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel>Sắp xếp theo</InputLabel>
+              <InputLabel>{t("shop.sortBy")}</InputLabel>
               <Select
-                label="Sắp xếp theo"
+                label={t("shop.sortBy")}
                 value={sortBy ? `${sortBy}_${sortDir}` : ""}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -490,11 +507,11 @@ const Shop = () => {
                   setCurrentPage(1);
                 }}
               >
-                <MenuItem value="">Mặc định</MenuItem>
-                <MenuItem value="price_asc">Giá: Thấp → Cao</MenuItem>
-                <MenuItem value="price_desc">Giá: Cao → Thấp</MenuItem>
-                <MenuItem value="name_asc">Tên: A → Z</MenuItem>
-                <MenuItem value="importDate_desc">Mới nhất</MenuItem>
+                <MenuItem value="">{t("shop.sortDefault")}</MenuItem>
+                <MenuItem value="price_asc">{t("shop.sortPriceAsc")}</MenuItem>
+                <MenuItem value="price_desc">{t("shop.sortPriceDesc")}</MenuItem>
+                <MenuItem value="name_asc">{t("shop.sortNameAsc")}</MenuItem>
+                <MenuItem value="importDate_desc">{t("shop.sortNewest")}</MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -515,7 +532,7 @@ const Shop = () => {
               }}
             >
               <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                🔍 Kết quả tìm kiếm cho: &ldquo;{searchKeyword}&rdquo;
+                🔍 {t("shop.searchResults")} &ldquo;{searchKeyword}&rdquo;
               </Typography>
               <Typography
                 variant="body2"
@@ -531,7 +548,7 @@ const Shop = () => {
                   setSearchKeyword("");
                 }}
               >
-                ✕ Xóa tìm kiếm
+                ✕ {t("shop.clearSearch")}
               </Typography>
             </Box>
           )}
@@ -542,8 +559,8 @@ const Shop = () => {
             color="text.secondary"
             sx={{ mb: 2, ml: 1, fontSize: 16 }}
           >
-            Đang hiển thị {currentProducts.length} kết quả{" "}
-            {totalElements > 0 ? `trong tổng số ${totalElements} sản phẩm` : ""}
+            {t("shop.showingResults", { count: currentProducts.length })}{" "}
+            {totalElements > 0 ? t("shop.showingTotal", { total: totalElements }) : ""}
           </Typography>
 
           {/* 2. Lưới sản phẩm -- Dùng CSS Grid giống trang chủ */}
@@ -589,7 +606,7 @@ const Shop = () => {
             ) : (
               <Box sx={{ gridColumn: "1 / -1", textAlign: "center", py: 4 }}>
                 <Typography variant="h6" color="text.secondary">
-                  Không tìm thấy sản phẩm nào phù hợp.
+                  {t("shop.noProducts")}
                 </Typography>
               </Box>
             )}

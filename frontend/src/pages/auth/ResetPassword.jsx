@@ -9,9 +9,11 @@ import httpClient from "../../services/httpClient";
 import { API_PREFIX } from "../../config/api";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const navigate = useNavigate();
@@ -22,26 +24,21 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (!token) {
-      toast.error("Mã khôi phục mật khẩu không hợp lệ!");
+      toast.error(t("auth.serverError"));
       navigate("/login");
     }
-  }, [token, navigate]);
+  }, [token, navigate, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!password || !confirmPassword) {
-      toast.error("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự!");
+      toast.error(t("profile.fillRequired"));
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Mật khẩu xác nhận không khớp!");
+      toast.error(t("profile.fillRequired"));
       return;
     }
 
@@ -54,18 +51,18 @@ const ResetPassword = () => {
       });
 
       if (response.data.success) {
-        toast.success(response.data.message || "Đã đặt lại mật khẩu thành công!");
+        toast.success(response.data.message);
         setTimeout(() => {
           navigate("/login");
         }, 2500);
       } else {
-        toast.error(response.data.message || "Đã có lỗi xảy ra");
+        toast.error(response.data.message || t("auth.serverError"));
       }
     } catch (error) {
       if (error.response) {
-        toast.error(error.response.data.message || "Mã khôi phục mật khẩu không hợp lệ hoặc đã hết hạn!");
+        toast.error(error.response.data.message || t("auth.serverError"));
       } else {
-        toast.error("Lỗi kết nối máy chủ. Vui lòng thử lại.");
+        toast.error(t("auth.serverError"));
       }
     } finally {
       setLoading(false);
@@ -94,16 +91,16 @@ const ResetPassword = () => {
         }}
       >
         <Typography variant="h5" sx={{ mb: 2, textAlign: "center", fontWeight: "bold" }}>
-          Đặt Lại Mật Khẩu
+          {t("profile.changePassword")}
         </Typography>
 
         <Typography variant="body2" sx={{ mb: 3, textAlign: "center", color: "#ccc" }}>
-          Nhập mật khẩu mới cho tài khoản của bạn.
+          {t("profile.fillRequired")}
         </Typography>
 
         <form onSubmit={handleSubmit}>
           <TextField
-            label="Mật Khẩu Mới"
+            label={t("profile.newPassword")}
             name="password"
             type="password"
             variant="filled"
@@ -123,7 +120,7 @@ const ResetPassword = () => {
           />
 
           <TextField
-            label="Xác Nhận Mật Khẩu"
+            label={t("profile.confirmPassword")}
             name="confirmPassword"
             type="password"
             variant="filled"
@@ -155,14 +152,14 @@ const ResetPassword = () => {
               "&.Mui-disabled": { backgroundColor: "rgba(255, 195, 18, 0.5)", color: "rgba(0,0,0,0.5)" }
             }}
           >
-            {loading ? "Đang xử lý..." : "Đặt Lại Mật Khẩu"}
+            {loading ? t("profile.processing") : t("profile.confirm")}
           </Button>
         </form>
 
         <Box sx={{ mt: 3, textAlign: "center" }}>
           <Typography variant="body2">
             <Link to="/login" style={{ color: "#FFC312", textDecoration: "none", fontWeight: "bold" }}>
-              Quay lại Đăng Nhập
+              {t("auth.loginNow")}
             </Link>
           </Typography>
         </Box>

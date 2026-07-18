@@ -138,9 +138,7 @@ function App() {
             <Route path="/scan-qr" element={<ScanQR />} />
             <Route path="/403" element={<AccessDenied />} />
 
-            {/* Public Warranty Check - Không cần đăng nhập, không có Header/Footer */}
-            <Route path="/warranty-check" element={<WarrantyCheckPage />} />
-
+            {/* Public Warranty Check — dùng chung Header/Footer/Navigation */}
             {/* Admin Routes */}
             <Route
               path="/admin/*"
@@ -377,6 +375,7 @@ function App() {
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/chat-nhan-vien" element={<SalesLiveChatPage />} />
                       <Route path="/terms" element={<Terms />} />
+                      <Route path="/warranty-check" element={<WarrantyCheckPage />} />
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/payment/success" element={<PaymentSuccess />} />
                       <Route path="/payment/failed" element={<PaymentFailed />} />

@@ -88,7 +88,7 @@ public class PurchaseOrderService {
     }
 
     public List<PurchaseOrderDto.ListItem> listPendingApproval() {
-        List<PurchaseOrder> orders = purchaseOrderRepository.findByStatusOrderByOrderDateDesc(
+        List<PurchaseOrder> orders = purchaseOrderRepository.findByStatusWithItemsOrderByOrderDateDesc(
                 PurchaseOrder.PurchaseOrderStatus.PENDING);
         Map<Integer, String> supplierNames = loadSupplierNames(orders);
         return orders.stream()
