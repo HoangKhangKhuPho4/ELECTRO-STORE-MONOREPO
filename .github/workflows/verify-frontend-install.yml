@@ -1,0 +1,99 @@
+# =============================================================================
+# VERIFY FRONTEND INSTALL — kiểm thử cô lập các bước cài đặt Frontend
+# Khớp tài liệu: docs/INSTALL_FRONTEND.md
+# Phạm vi: Node.js, npm ci, lint (nếu có), production build (Vite)
+# Không gồm: Backend JVM, reco-service
+# =============================================================================
+
+name: Verify Frontend Install
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/verify-frontend-install.yml"
+      - "frontend/**"
+      - "docs/INSTALL_FRONTEND.md"
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/verify-frontend-install.yml"
+      - "frontend/**"
+      - "docs/INSTALL_FRONTEND.md"
+  workflow_dispatch:
+
+concurrency:
+  group: verify-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-install:
+    name: Frontend environment & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: "1. Checkout source"
+        uses: actions/checkout@v5
+
+      - name: "2. Verify frontend layout"
+        working-directory: .
+        run: |
+          set -euo pipefail
+          test -d frontend
+          test -f frontend/package.json
+          test -f frontend/vite.config.js
+          test -f frontend/index.html
+          test -d frontend/src
+          test -f frontend/.env.example
+          echo "Frontend layout OK"
+
+      - name: "3. Setup Node.js 18 (doc: chuẩn bị môi trường)"
+        uses: actions/setup-node@v5
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: "4. Print toolchain versions"
+        run: |
+          node -v
+          npm -v
+
+      - name: "5. Prepare env file (optional for Vite dev proxy)"
+        run: |
+          cp .env.example .env
+          # Dev docs: VITE_API_URL không bắt buộc (proxy /api → :8080)
+          echo "frontend/.env ready"
+
+      - name: "6. Install dependencies (npm ci)"
+        run: npm ci
+
+      - name: "7. Lint (advisory — hiện còn nợ kỹ thuật; không chặn install)"
+        continue-on-error: true
+        run: npm run lint
+
+      - name: "8. Production build (vite build) — bắt buộc PASS"
+        run: npm run build
+
+      - name: "9. Verify build output"
+        run: |
+          set -euo pipefail
+          test -d dist
+          test -f dist/index.html
+          echo "dist/ OK"
+          ls -la dist | head -n 20
+
+      - name: "10. Frontend install verification PASSED"
+        working-directory: .
+        run: |
+          echo "============================================"
+          echo " VERIFY FRONTEND INSTALL: PASS"
+          echo " Doc : docs/INSTALL_FRONTEND.md"
+          echo " Local: cd frontend && npm install && npm run dev"
+          echo " URL  : http://localhost:5173 (Gateway :8080 required)"
+          echo "============================================"

@@ -1,0 +1,164 @@
+# =============================================================================
+# VERIFY AI RECO INSTALL — kiểm thử cô lập cài đặt & chạy reco-service
+# Khớp tài liệu: docs/INSTALL_AI.md
+# Phạm vi: Python 3.10+, venv/pip, requirements.txt, .env, uvicorn, /health
+# Không gồm: chatbot-service (Java RAG — xem INSTALL_BACKEND / CHATBOT_PINECONE)
+# =============================================================================
+
+name: Verify AI Reco Install
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/verify-ai-reco-install.yml"
+      - "reco-service/**"
+      - "docs/INSTALL_AI.md"
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/verify-ai-reco-install.yml"
+      - "reco-service/**"
+      - "docs/INSTALL_AI.md"
+  workflow_dispatch:
+
+concurrency:
+  group: verify-ai-reco-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-reco-install:
+    name: AI reco-service install & run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      AI_PORT: "5003"
+      APP_NAME: reco-service
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: electro_review_db
+      ORDER_DB_NAME: electro_order_db
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    defaults:
+      run:
+        working-directory: reco-service
+
+    steps:
+      - name: "1. Checkout source"
+        uses: actions/checkout@v5
+
+      - name: "2. Verify reco-service layout"
+        working-directory: .
+        run: |
+          set -euo pipefail
+          test -d reco-service
+          test -f reco-service/main.py
+          test -f reco-service/requirements.txt
+          test -f reco-service/.env.example
+          test -d reco-service/app
+          test -f reco-service/app/services/recommend.py
+          test -f reco-service/app/models.py
+          echo "reco-service layout OK"
+
+      - name: "3. Setup Python 3.10 (doc: chuẩn bị môi trường)"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: reco-service/requirements.txt
+
+      - name: "4. Install build tools + MySQL client"
+        working-directory: .
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential mysql-client curl
+
+      - name: "5. Print toolchain versions"
+        run: |
+          python --version
+          pip --version
+
+      - name: "6. Create virtualenv + install requirements.txt"
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+
+      - name: "7. Create .env from .env.example"
+        run: |
+          cp .env.example .env
+          sed -i 's/^MYSQL_PASSWORD=.*/MYSQL_PASSWORD=root/' .env
+          sed -i 's/^MYSQL_HOST=.*/MYSQL_HOST=127.0.0.1/' .env
+          cat .env
+
+      - name: "8. Wait MySQL + create review/order DBs"
+        working-directory: .
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 40); do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
+              break
+            fi
+            sleep 3
+          done
+          mysql -h 127.0.0.1 -uroot -proot -e \
+            "CREATE DATABASE IF NOT EXISTS electro_review_db CHARACTER SET utf8mb4;"
+          mysql -h 127.0.0.1 -uroot -proot -e \
+            "CREATE DATABASE IF NOT EXISTS electro_order_db CHARACTER SET utf8mb4;"
+          if [ -f database/schemas/electro_review_db ]; then
+            mysql -h 127.0.0.1 -uroot -proot electro_review_db < database/schemas/electro_review_db
+          fi
+          if [ -f database/schemas/electro_order_db ]; then
+            mysql -h 127.0.0.1 -uroot -proot electro_order_db < database/schemas/electro_order_db || true
+          fi
+
+      - name: "9. Import FastAPI app (smoke)"
+        run: |
+          .venv/bin/python -c "from main import app; print('OK:', app.title)"
+
+      - name: "10. Start uvicorn and hit /health + /docs"
+        run: |
+          set -euo pipefail
+          .venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port ${AI_PORT} > /tmp/reco-uvicorn.log 2>&1 &
+          echo $! > /tmp/reco-uvicorn.pid
+          for i in $(seq 1 30); do
+            if curl -sf "http://127.0.0.1:${AI_PORT}/health" | grep -q UP; then
+              echo "Health UP"
+              curl -sf -o /dev/null -w "docs HTTP %{http_code}\n" "http://127.0.0.1:${AI_PORT}/docs"
+              curl -sf "http://127.0.0.1:${AI_PORT}/" || true
+              kill "$(cat /tmp/reco-uvicorn.pid)" || true
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "---- uvicorn log ----"
+          cat /tmp/reco-uvicorn.log || true
+          kill "$(cat /tmp/reco-uvicorn.pid)" || true
+          exit 1
+
+      - name: "11. AI reco install verification PASSED"
+        working-directory: .
+        run: |
+          echo "============================================"
+          echo " VERIFY AI RECO INSTALL: PASS"
+          echo " Doc : docs/INSTALL_AI.md"
+          echo " Local: cd reco-service && uvicorn main:app --port 5003 --reload"
+          echo " Or   : .\\START.ps1 (auto start reco-service)"
+          echo " URL  : http://localhost:5003/docs"
+          echo "============================================"
