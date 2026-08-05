@@ -9,6 +9,7 @@
 | **Cài AI reco-service (chuẩn team)** | [INSTALL_AI.md](INSTALL_AI.md) |
 | Chạy hệ thống (Windows) | `START.ps1`, `STOP.ps1`, `check-all-services.ps1` |
 | Chạy hệ thống (macOS/Linux) | `./start.sh`, `./stop.sh`, `./check-all-services.sh` |
+| Chạy Frontend (mọi OS) | `cd frontend` → `npm ci` → `npm run dev` — xem [INSTALL_FRONTEND.md](INSTALL_FRONTEND.md) |
 | Cấu hình `.env`, Redis, MySQL | [ENV_AND_REDIS.md](ENV_AND_REDIS.md) |
 | Chatbot / Pinecone | [CHATBOT_PINECONE.md](CHATBOT_PINECONE.md) |
 | Reco-service (AI gợi ý) | [INSTALL_AI.md](INSTALL_AI.md) |

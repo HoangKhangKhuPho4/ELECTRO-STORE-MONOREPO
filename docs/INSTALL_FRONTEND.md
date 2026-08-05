@@ -18,6 +18,8 @@
 
 Frontend chỉ là **Presentation Layer**: gọi API qua Gateway `:8080`, không chứa business logic backend.
 
+> `START.ps1` / `start.sh` **không** tự start Frontend — chạy riêng trong `frontend/` (mục 3).
+
 ## 2. Chuẩn bị môi trường
 
 - [ ] **Node.js v18+** (khuyến nghị 18 LTS hoặc 20 LTS) + npm
@@ -29,7 +31,15 @@ Frontend chỉ là **Presentation Layer**: gọi API qua Gateway `:8080`, không
 
 ### Bước 1 — Mở dự án Frontend
 
+**Windows (PowerShell):**
+
 ```powershell
+cd frontend
+```
+
+**macOS / Linux:**
+
+```bash
 cd frontend
 ```
 
@@ -37,8 +47,16 @@ Mở bằng VS Code / WebStorm (hoặc IntelliJ).
 
 ### Bước 2 — Cấu hình môi trường
 
+**Windows (PowerShell):**
+
 ```powershell
 copy .env.example .env
+```
+
+**macOS / Linux:**
+
+```bash
+cp .env.example .env
 ```
 
 - **Dev (`npm run dev`):** không bắt buộc `VITE_API_URL` — Vite proxy `/api` và `/img` → `http://localhost:8080`.
@@ -46,7 +64,7 @@ copy .env.example .env
 
 ### Bước 3 — Cài thư viện
 
-```powershell
+```bash
 npm install
 # hoặc (CI / team thống nhất lockfile):
 npm ci
@@ -54,7 +72,7 @@ npm ci
 
 ### Bước 4 — Chạy / build
 
-```powershell
+```bash
 # Phát triển
 npm run dev
 # → http://localhost:5173
@@ -67,6 +85,8 @@ npm run build
 npm run preview
 ```
 
+Gateway cần sẵn (Windows: `.\START.ps1` / macOS-Linux: `./start.sh`) trước khi test gọi API từ UI.
+
 ### Kiểm tra nhanh
 
 | Kiểm tra | Kỳ vọng |
@@ -77,7 +97,7 @@ npm run preview
 
 ## 4. CI — bằng chứng môi trường Frontend
 
-Job **Verify Frontend Install** chạy khi đổi `frontend/**`:
+Job **Verify Frontend Install** chạy khi đổi `frontend/**` hoặc `docs/INSTALL_FRONTEND.md`:
 
 1. Kiểm tra layout (`package.json`, `vite.config.js`, `src/`)  
 2. Node 18  
@@ -85,9 +105,22 @@ Job **Verify Frontend Install** chạy khi đổi `frontend/**`:
 4. `npm run lint` *(advisory — hiện còn cảnh báo/error cũ; **không chặn** merge install)*  
 5. `npm run build` + kiểm tra `dist/` **(bắt buộc xanh)**  
 
+> CI **không** chạy `npm run dev` lâu dài. Local: `cd frontend && npm run dev` (Windows hoặc macOS/Linux đều dùng npm).
+
+## Phụ lục — Lệnh đa nền tảng
+
+| Việc | Windows | macOS / Linux |
+|---|---|---|
+| Copy env | `copy .env.example .env` | `cp .env.example .env` |
+| Install / CI | `npm ci` | `npm ci` |
+| Dev server | `npm run dev` | `npm run dev` |
+| Build | `npm run build` | `npm run build` |
+| Start Backend (Gateway) | `.\START.ps1` | `./start.sh` |
+
 ## 5. Quy tắc team
 
 1. Commit cả `package-lock.json` khi thêm/đổi dependency.  
 2. Dùng `npm ci` trên CI; local ưu tiên `npm ci` trước khi push nếu vừa đổi lockfile.  
 3. PR đỏ Frontend Actions → không merge.  
-4. Không hard-code URL API trong component — dùng `src/config/api.js` / biến `VITE_*`.
+4. Không hard-code URL API trong component — dùng `src/config/api.js` / biến `VITE_*`.  
+5. Thay đổi bước cài Frontend → cập nhật **file này** + workflow `verify-frontend-install.yml`.
