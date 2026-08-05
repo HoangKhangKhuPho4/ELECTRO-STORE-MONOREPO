@@ -41,8 +41,9 @@
 
 ### Bước 2 — Cấu hình & hạ tầng
 
+**Windows (PowerShell):**
+
 ```powershell
-# Tại thư mục gốc repo
 copy .env.example .env
 # Điền MYSQL_*, AUTH_REDIS_*, STATISTICS_REDIS_*, JWT_SECRET (≥32 ký tự)
 
@@ -51,35 +52,54 @@ docker compose up -d
 .\scripts\Import-Databases.ps1
 ```
 
-### Bước 3 — Build & chạy
+**macOS / Linux (Bash):**
 
-```powershell
-mvn -f shared\pom.xml install -DskipTests   # START.ps1 cũng tự làm nếu không -SkipBuild
-.\START.ps1
+```bash
+cp .env.example .env
+# Điền MYSQL_*, AUTH_REDIS_*, STATISTICS_REDIS_*, JWT_SECRET (≥32 ký tự)
+
+docker compose up -d
+chmod +x start.sh stop.sh check-all-services.sh scripts/*.sh
+./scripts/start-redis.sh
+./scripts/import-databases.sh
+# Nếu MySQL Docker dùng password root:
+# ./scripts/import-databases.sh --password root
 ```
 
-Chế độ khác:
+### Bước 3 — Build & chạy
+
+**Windows:**
 
 ```powershell
-.\START.ps1 -SkipDocker
-.\START.ps1 -Minimal
-.\START.ps1 -SkipDocker -SkipBuild
+mvn -f shared\pom.xml install -DskipTests
+.\START.ps1
+# hoặc: .\START.ps1 -SkipDocker | -Minimal | -SkipBuild
+```
+
+**macOS / Linux:**
+
+```bash
+mvn -f shared/pom.xml install -DskipTests
+./start.sh
+# hoặc:
+./start.sh --skip-docker
+./start.sh --minimal
+./start.sh --skip-docker --skip-build
 ```
 
 ### Kiểm tra
 
-```powershell
-.\check-all-services.ps1
-```
+| OS | Lệnh kiểm tra | Dừng hệ thống |
+|---|---|---|
+| Windows | `.\check-all-services.ps1` | `.\STOP.ps1` |
+| macOS / Linux | `./check-all-services.sh` | `./stop.sh` / `./stop.sh --keep-infra` |
 
 | Thành phần | URL |
 |---|---|
 | API Gateway | http://localhost:8080 |
 | Eureka | http://localhost:8761 |
 | Swagger | http://localhost:8080/swagger-ui.html |
-| Log | `.run\*.log` |
-
-Dừng hệ thống: `.\STOP.ps1`
+| Log | `.run/*.log` |
 
 ## 4. CI — bằng chứng “không chỉ chạy trên máy tôi”
 
@@ -93,7 +113,17 @@ Mỗi PR/push đụng backend sẽ chạy job **Verify Backend Install**:
 6. `mvn -f shared/pom.xml install`  
 7. `mvn package` các service Java chính  
 
-> CI **không** chạy `START.ps1` (Windows). Chạy full JVM vẫn làm trên máy local theo mục 3.
+> CI **không** chạy `START.ps1` / `start.sh` (full JVM). Chạy full stack trên máy local theo mục 3 (Windows hoặc macOS/Linux).
+
+## Phụ lục — Script đa nền tảng
+
+| Việc | Windows | macOS / Linux |
+|---|---|---|
+| Start all | `START.ps1` | `./start.sh` |
+| Stop all | `STOP.ps1` | `./stop.sh` |
+| Health check | `check-all-services.ps1` | `./check-all-services.sh` |
+| Redis | `scripts/Start-Redis.ps1` | `./scripts/start-redis.sh` |
+| Import DB | `scripts/Import-Databases.ps1` | `./scripts/import-databases.sh` |
 
 ## 5. Quy tắc team
 

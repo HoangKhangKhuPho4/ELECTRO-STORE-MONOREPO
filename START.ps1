@@ -59,7 +59,7 @@ Write-Host ''
 
 # --- 1. Ha tang Docker ---
 if (-not $SkipDocker) {
-    Write-Host '[1/4] Ha tang Docker (MySQL + Redis)...' -ForegroundColor Cyan
+    Write-Host '[1/4] Ha tang Docker (MySQL + Redis-auth + Redis-statistics)...' -ForegroundColor Cyan
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
         throw 'Can Docker Desktop cho MySQL/Redis. Hoac dung -SkipDocker neu DB da chay.'
     }
@@ -67,7 +67,17 @@ if (-not $SkipDocker) {
     docker compose up -d
     Pop-Location
     Wait-ForPort -Port 3306 -Label 'MySQL' -TimeoutSec 90
-    Wait-ForPort -Port 6379 -Label 'Redis' -TimeoutSec 60
+    Write-Host '  Redis: chay .\scripts\Start-Redis.ps1 neu chua co redis-auth / redis-statistics' -ForegroundColor DarkGray
+    # Redis standalone — khong nam trong compose; chi doi port neu container da chay
+    if (Get-Command Test-PortOpen -ErrorAction SilentlyContinue) {
+        if (-not (Test-PortOpen -Port 6379)) {
+            Write-Host '  Chua co redis-auth — tu dong chay Start-Redis.ps1...' -ForegroundColor Yellow
+            & "$Root\scripts\Start-Redis.ps1"
+        } else {
+            Wait-ForPort -Port 6379 -Label 'redis-auth (6379)' -TimeoutSec 30
+            Wait-ForPort -Port 6380 -Label 'redis-statistics (6380)' -TimeoutSec 30
+        }
+    }
 } else {
     Write-Host '[1/4] Bo qua Docker (-SkipDocker).' -ForegroundColor DarkGray
 }

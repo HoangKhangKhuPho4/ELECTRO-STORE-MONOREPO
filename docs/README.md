@@ -7,7 +7,8 @@
 | **Cài Backend (chuẩn team)** | [INSTALL_BACKEND.md](INSTALL_BACKEND.md) |
 | **Cài Frontend (chuẩn team)** | [INSTALL_FRONTEND.md](INSTALL_FRONTEND.md) |
 | **Cài AI reco-service (chuẩn team)** | [INSTALL_AI.md](INSTALL_AI.md) |
-| Chạy hệ thống | `START.ps1`, `STOP.ps1`, `check-all-services.ps1` (thư mục gốc) |
+| Chạy hệ thống (Windows) | `START.ps1`, `STOP.ps1`, `check-all-services.ps1` |
+| Chạy hệ thống (macOS/Linux) | `./start.sh`, `./stop.sh`, `./check-all-services.sh` |
 | Cấu hình `.env`, Redis, MySQL | [ENV_AND_REDIS.md](ENV_AND_REDIS.md) |
 | Chatbot / Pinecone | [CHATBOT_PINECONE.md](CHATBOT_PINECONE.md) |
 | Reco-service (AI gợi ý) | [INSTALL_AI.md](INSTALL_AI.md) |

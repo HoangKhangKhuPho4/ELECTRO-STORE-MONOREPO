@@ -62,10 +62,16 @@ uvicorn main:app --host 0.0.0.0 --port 5003 --reload
 **Cách B — cùng toàn hệ thống:**
 
 ```powershell
-# Thư mục gốc
+# Windows
 .\START.ps1
-# START.ps1 tự tạo .venv + pip install nếu thiếu, rồi start reco :5003
 ```
+
+```bash
+# macOS / Linux
+./start.sh
+```
+
+`START.ps1` / `start.sh` tự tạo `.venv` + `pip install` nếu thiếu, rồi start reco `:5003`.
 
 ### Kiểm tra
 
