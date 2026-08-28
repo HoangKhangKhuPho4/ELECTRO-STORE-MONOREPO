@@ -23,12 +23,13 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      username: ${REDIS_USERNAME:}
-      password: ${REDIS_PASSWORD:}
+      # Redis rieng: container redis-statistics :6380 — xem .env / Start-Redis.ps1
+      host: ${STATISTICS_REDIS_HOST:${REDIS_HOST:localhost}}
+      port: ${STATISTICS_REDIS_PORT:6380}
+      username: ${STATISTICS_REDIS_USERNAME:${REDIS_USERNAME:}}
+      password: ${STATISTICS_REDIS_PASSWORD:${REDIS_PASSWORD:}}
       ssl:
-        enabled: ${REDIS_SSL:false}
+        enabled: ${STATISTICS_REDIS_SSL:${REDIS_SSL:false}}
       timeout: 10s
 
 server:

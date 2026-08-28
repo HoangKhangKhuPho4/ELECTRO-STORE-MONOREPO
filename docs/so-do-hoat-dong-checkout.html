@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Sơ đồ hoạt động — Use Case Mua hàng (Checkout)</title>
+<style>
+  body{background:#fff;margin:0;padding:20px;font-family:Arial,Helvetica,sans-serif;color:#1a202c;}
+  h1{font-size:18px;margin:0 0 6px;}
+  .sub{font-size:12px;color:#4a5568;margin:0 0 14px;}
+  .wrap{overflow-x:auto;}
+  text{font-family:Arial,Helvetica,sans-serif;}
+  .box{fill:#DCEEFB;stroke:#2B6CB0;stroke-width:1;}
+  .diamond{fill:#F8D7ED;stroke:#B83280;stroke-width:1;}
+  .term{fill:#90CDF4;stroke:#2B6CB0;stroke-width:1;}
+  .termfail{fill:#FED7D7;stroke:#C53030;stroke-width:1;}
+  .t{font-size:11px;fill:#1a202c;}
+  .lbl{font-size:10px;fill:#4a5568;}
+  .note{font-size:9px;fill:#718096;font-style:italic;}
+  .lanehdr{font-size:13px;font-weight:bold;fill:#1a202c;}
+  .arr{stroke:#4a5568;stroke-width:1.2;fill:none;}
+  .lane{fill:#FAFAFA;stroke:#999;stroke-width:1;}
+  .legend{font-size:11px;fill:#2d3748;}
+</style>
+</head>
+<body>
+<h1>Sơ đồ hoạt động — Use Case Mua hàng (Checkout)</h1>
+<p class="sub">Bám đặc tả: luồng chính 1–8 · Alt 1 (sửa địa chỉ) · Alt 2 (coupon) · Alt 3 (VNPay) · Exc 1–4</p>
+<div class="wrap">
+<svg width="1020" height="2560" viewBox="0 0 1020 2560" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M1 1L9 5L1 9Z" fill="#4a5568"/>
+  </marker>
+</defs>
+
+<!-- LANES: KH 0-300 | HT 300-700 | B3 700-1020 -->
+<rect class="lane" x="0" y="40" width="300" height="2520"/>
+<rect class="lane" x="300" y="40" width="400" height="2520"/>
+<rect class="lane" x="700" y="40" width="320" height="2520"/>
+<rect fill="#EDF2F7" stroke="#999" x="0" y="0" width="300" height="40"/>
+<rect fill="#EDF2F7" stroke="#999" x="300" y="0" width="400" height="40"/>
+<rect fill="#EDF2F7" stroke="#999" x="700" y="0" width="320" height="40"/>
+<text class="lanehdr" x="150" y="26" text-anchor="middle">Khách hàng</text>
+<text class="lanehdr" x="500" y="26" text-anchor="middle">Hệ thống</text>
+<text class="lanehdr" x="860" y="26" text-anchor="middle">Bên thứ ba</text>
+
+<!-- Legend -->
+<rect class="box" x="8" y="48" width="70" height="16" rx="3"/>
+<text class="legend" x="84" y="60">Hoạt động</text>
+<polygon class="diamond" points="175,56 187,64 175,72 163,64"/>
+<text class="legend" x="194" y="60">Quyết định</text>
+<ellipse class="term" cx="290" cy="64" rx="14" ry="8"/>
+<text class="legend" x="310" y="60">Bắt đầu / Kết thúc</text>
+
+<!-- ========== 1. START + BƯỚC 1–2 ========== -->
+<ellipse class="term" cx="150" cy="100" rx="48" ry="18"/>
+<text class="t" x="150" y="104" text-anchor="middle">Bắt đầu</text>
+
+<rect class="box" x="50" y="140" width="200" height="48" rx="6"/>
+<text class="t" x="150" y="158" text-anchor="middle">1. Nhấn "Tiến hành</text>
+<text class="t" x="150" y="172" text-anchor="middle">thanh toán" ở Giỏ hàng</text>
+
+<rect class="box" x="390" y="136" width="220" height="56" rx="6"/>
+<text class="t" x="500" y="154" text-anchor="middle">2. Chuyển Checkout, hiện</text>
+<text class="t" x="500" y="168" text-anchor="middle">thông tin người nhận lấy</text>
+<text class="t" x="500" y="182" text-anchor="middle">từ hồ sơ (tên, SĐT, địa chỉ)</text>
+
+<!-- Alt 1 diamond -->
+<polygon class="diamond" points="150,248 248,290 150,332 52,290"/>
+<text class="t" x="150" y="286" text-anchor="middle">Sửa địa chỉ</text>
+<text class="t" x="150" y="300" text-anchor="middle">nhận hàng?</text>
+<text class="note" x="150" y="344" text-anchor="middle">Alt 1</text>
+
+<rect class="box" x="40" y="370" width="220" height="48" rx="6"/>
+<text class="t" x="150" y="388" text-anchor="middle">Chỉnh sửa thông tin người</text>
+<text class="t" x="150" y="402" text-anchor="middle">nhận / địa chỉ giao hàng</text>
+
+<rect class="box" x="390" y="370" width="220" height="48" rx="6"/>
+<text class="t" x="500" y="388" text-anchor="middle">Ghi nhận địa chỉ mới</text>
+<text class="t" x="500" y="402" text-anchor="middle">(rồi tính lại phí vận chuyển)</text>
+
+<!-- ========== BƯỚC 3: SHIPPING + EXC 1 ========== -->
+<rect class="box" x="390" y="460" width="220" height="48" rx="6"/>
+<text class="t" x="500" y="478" text-anchor="middle">3. Gửi yêu cầu tính phí</text>
+<text class="t" x="500" y="492" text-anchor="middle">vận chuyển theo địa chỉ</text>
+
+<polygon class="diamond" points="500,555 605,598 500,641 395,598"/>
+<text class="t" x="500" y="594" text-anchor="middle">Kết nối dịch vụ</text>
+<text class="t" x="500" y="608" text-anchor="middle">vận chuyển?</text>
+<text class="note" x="500" y="654" text-anchor="middle">Exc 1</text>
+
+<rect class="box" x="760" y="670" width="220" height="48" rx="6"/>
+<text class="t" x="870" y="688" text-anchor="middle">Tính phí vận chuyển</text>
+<text class="t" x="870" y="702" text-anchor="middle">dựa trên địa chỉ nhận hàng</text>
+
+<rect class="box" x="390" y="670" width="220" height="48" rx="6"/>
+<text class="t" x="500" y="688" text-anchor="middle">Áp dụng phí ship đồng giá</text>
+<text class="t" x="500" y="702" text-anchor="middle">dự phòng (Fallback)</text>
+
+<!-- ========== BƯỚC 4: SUMMARY ========== -->
+<rect class="box" x="390" y="760" width="220" height="56" rx="6"/>
+<text class="t" x="500" y="778" text-anchor="middle">4. Hiển thị bảng tóm tắt:</text>
+<text class="t" x="500" y="792" text-anchor="middle">tiền hàng, phí vận chuyển,</text>
+<text class="t" x="500" y="806" text-anchor="middle">tổng thanh toán</text>
+
+<!-- ========== ALT 2: COUPON + EXC 2 ========== -->
+<polygon class="diamond" points="150,868 248,910 150,952 52,910"/>
+<text class="t" x="150" y="906" text-anchor="middle">Áp dụng mã</text>
+<text class="t" x="150" y="920" text-anchor="middle">giảm giá?</text>
+<text class="note" x="150" y="966" text-anchor="middle">Alt 2</text>
+
+<rect class="box" x="40" y="990" width="220" height="48" rx="6"/>
+<text class="t" x="150" y="1008" text-anchor="middle">Nhập mã giảm giá</text>
+<text class="t" x="150" y="1022" text-anchor="middle">và nhấn Áp dụng</text>
+
+<polygon class="diamond" points="500,1014 598,1056 500,1098 402,1056"/>
+<text class="t" x="500" y="1052" text-anchor="middle">Mã giảm giá</text>
+<text class="t" x="500" y="1066" text-anchor="middle">hợp lệ?</text>
+<text class="note" x="500" y="1112" text-anchor="middle">Exc 2</text>
+
+<rect class="box" x="390" y="1135" width="220" height="48" rx="6"/>
+<text class="t" x="500" y="1153" text-anchor="middle">Tính tiền giảm, cập nhật</text>
+<text class="t" x="500" y="1167" text-anchor="middle">Tổng thanh toán (bước 4)</text>
+
+<rect class="box" x="390" y="1205" width="220" height="48" rx="6"/>
+<text class="t" x="500" y="1223" text-anchor="middle">Báo "Mã không hợp lệ",</text>
+<text class="t" x="500" y="1237" text-anchor="middle">giữ nguyên mức giá ban đầu</text>
+
+<!-- ========== BƯỚC 5–6: PTTT + ĐẶT HÀNG ========== -->
+<rect class="box" x="40" y="1285" width="220" height="56" rx="6"/>
+<text class="t" x="150" y="1303" text-anchor="middle">5. Kiểm tra thông tin, chọn</text>
+<text class="t" x="150" y="1317" text-anchor="middle">PTTT: COD (luồng chính)</text>
+<text class="t" x="150" y="1331" text-anchor="middle">hoặc VNPay (Alt 3)</text>
+
+<rect class="box" x="40" y="1365" width="220" height="44" rx="6"/>
+<text class="t" x="150" y="1391" text-anchor="middle">6. Nhấn "Đặt hàng ngay"</text>
+
+<!-- ========== BƯỚC 7: TỒN KHO + EXC 3 ========== -->
+<polygon class="diamond" points="500,1430 605,1475 500,1520 395,1475"/>
+<text class="t" x="500" y="1471" text-anchor="middle">Còn đủ tồn kho</text>
+<text class="t" x="500" y="1485" text-anchor="middle">lúc đặt hàng?</text>
+<text class="note" x="500" y="1534" text-anchor="middle">Exc 3 · bước 7</text>
+
+<rect class="box" x="40" y="1448" width="200" height="56" rx="6"/>
+<text class="t" x="140" y="1466" text-anchor="middle">Nhận lỗi hết hàng,</text>
+<text class="t" x="140" y="1480" text-anchor="middle">được đưa về trang</text>
+<text class="t" x="140" y="1494" text-anchor="middle">Giỏ hàng để điều chỉnh</text>
+
+<ellipse class="termfail" cx="140" cy="1548" rx="52" ry="18"/>
+<text class="t" x="140" y="1552" text-anchor="middle">Kết thúc</text>
+
+<rect class="box" x="380" y="1555" width="240" height="56" rx="6"/>
+<text class="t" x="500" y="1573" text-anchor="middle">7. Tạo đơn, xóa sản phẩm</text>
+<text class="t" x="500" y="1587" text-anchor="middle">khỏi giỏ, tạm khấu trừ tồn kho</text>
+<text class="t" x="500" y="1601" text-anchor="middle">(COD: Chờ xử lý / VNPay: Chờ TT)</text>
+
+<!-- ========== D_PAY: COD vs VNPAY ========== -->
+<polygon class="diamond" points="500,1665 610,1710 500,1755 390,1710"/>
+<text class="t" x="500" y="1706" text-anchor="middle">Phương thức</text>
+<text class="t" x="500" y="1720" text-anchor="middle">đã chọn?</text>
+<text class="note" x="500" y="1768" text-anchor="middle">Alt 3 nếu VNPay</text>
+
+<!-- COD -->
+<rect class="box" x="320" y="1790" width="175" height="48" rx="6"/>
+<text class="t" x="407" y="1808" text-anchor="middle">Ghi nhận đơn trạng thái</text>
+<text class="t" x="407" y="1822" text-anchor="middle">"Chờ xử lý" (COD)</text>
+
+<rect class="box" x="320" y="1865" width="175" height="56" rx="6"/>
+<text class="t" x="407" y="1883" text-anchor="middle">8. Hiện "Đặt hàng</text>
+<text class="t" x="407" y="1897" text-anchor="middle">thành công" kèm</text>
+<text class="t" x="407" y="1911" text-anchor="middle">mã đơn hàng</text>
+
+<ellipse class="term" cx="407" cy="1958" rx="52" ry="18"/>
+<text class="t" x="407" y="1962" text-anchor="middle">Kết thúc</text>
+
+<!-- VNPay -->
+<rect class="box" x="525" y="1790" width="175" height="48" rx="6"/>
+<text class="t" x="612" y="1808" text-anchor="middle">Ghi nhận đơn trạng thái</text>
+<text class="t" x="612" y="1822" text-anchor="middle">"Chờ thanh toán"</text>
+
+<rect class="box" x="525" y="1865" width="175" height="48" rx="6"/>
+<text class="t" x="612" y="1883" text-anchor="middle">Điều hướng khách sang</text>
+<text class="t" x="612" y="1897" text-anchor="middle">cổng thanh toán VNPay</text>
+
+<rect class="box" x="750" y="1865" width="230" height="48" rx="6"/>
+<text class="t" x="865" y="1883" text-anchor="middle">Hiển thị cổng VNPay</text>
+<text class="t" x="865" y="1897" text-anchor="middle">và xử lý giao dịch</text>
+
+<polygon class="diamond" points="500,2040 618,2090 500,2140 382,2090"/>
+<text class="t" x="500" y="2082" text-anchor="middle">Kết quả thanh toán</text>
+<text class="t" x="500" y="2096" text-anchor="middle">VNPay?</text>
+<text class="note" x="500" y="2154" text-anchor="middle">Exc 4: thất bại / hủy / quá hạn 15 phút</text>
+
+<!-- VNPay success -->
+<rect class="box" x="320" y="2180" width="175" height="56" rx="6"/>
+<text class="t" x="407" y="2198" text-anchor="middle">Hiện "Đặt hàng</text>
+<text class="t" x="407" y="2212" text-anchor="middle">thành công" kèm</text>
+<text class="t" x="407" y="2226" text-anchor="middle">mã đơn hàng</text>
+
+<ellipse class="term" cx="407" cy="2278" rx="52" ry="18"/>
+<text class="t" x="407" y="2282" text-anchor="middle">Kết thúc</text>
+
+<!-- VNPay fail Exc 4 — toàn bộ ở làn Hệ thống -->
+<rect class="box" x="525" y="2180" width="175" height="48" rx="6"/>
+<text class="t" x="612" y="2198" text-anchor="middle">Cập nhật đơn hàng</text>
+<text class="t" x="612" y="2212" text-anchor="middle">sang "Đã hủy"</text>
+
+<rect class="box" x="525" y="2250" width="175" height="48" rx="6"/>
+<text class="t" x="612" y="2268" text-anchor="middle">Hoàn trả số lượng đã</text>
+<text class="t" x="612" y="2282" text-anchor="middle">tạm giữ về lại kho</text>
+
+<rect class="box" x="525" y="2320" width="175" height="56" rx="6"/>
+<text class="t" x="612" y="2338" text-anchor="middle">Gửi thông báo cho khách:</text>
+<text class="t" x="612" y="2352" text-anchor="middle">đơn đã hủy do thanh toán</text>
+<text class="t" x="612" y="2366" text-anchor="middle">không thành công / quá hạn</text>
+
+<ellipse class="termfail" cx="612" cy="2420" rx="52" ry="18"/>
+<text class="t" x="612" y="2424" text-anchor="middle">Kết thúc</text>
+
+<!-- ============ ARROWS ============ -->
+<!-- start → bước 1 -->
+<path class="arr" d="M150,118 L150,140" marker-end="url(#arrow)"/>
+<!-- 1 → 2 -->
+<path class="arr" d="M250,164 L390,164" marker-end="url(#arrow)"/>
+<!-- 2 → diamond sửa địa chỉ -->
+<path class="arr" d="M500,192 L500,210 L150,210 L150,248" marker-end="url(#arrow)"/>
+
+<!-- Alt1 Có -->
+<path class="arr" d="M150,332 L150,370" marker-end="url(#arrow)"/>
+<text class="lbl" x="158" y="354">Có (Alt 1)</text>
+<path class="arr" d="M260,394 L390,394" marker-end="url(#arrow)"/>
+<path class="arr" d="M500,418 L500,460" marker-end="url(#arrow)"/>
+
+<!-- Alt1 Không → bước 3 (đi vòng phải, không xuyên ô ghi nhận địa chỉ) -->
+<path class="arr" d="M248,290 L680,290 L680,484 L610,484" marker-end="url(#arrow)"/>
+<text class="lbl" x="255" y="278">Không (luồng chính)</text>
+
+<!-- 3 → kết nối -->
+<path class="arr" d="M500,508 L500,555" marker-end="url(#arrow)"/>
+
+<!-- Kết nối OK → bên thứ ba -->
+<path class="arr" d="M605,598 L870,598 L870,670" marker-end="url(#arrow)"/>
+<text class="lbl" x="640" y="590">Thành công</text>
+
+<!-- Kết nối lỗi → fallback -->
+<path class="arr" d="M500,641 L500,670" marker-end="url(#arrow)"/>
+<text class="lbl" x="508" y="658">Lỗi kết nối (Exc 1)</text>
+
+<!-- merge → tóm tắt -->
+<path class="arr" d="M870,718 L870,740 L500,740 L500,760" marker-end="url(#arrow)"/>
+<path class="arr" d="M500,718 L500,760" marker-end="url(#arrow)"/>
+
+<!-- tóm tắt → coupon? -->
+<path class="arr" d="M390,788 L150,788 L150,868" marker-end="url(#arrow)"/>
+
+<!-- Coupon Có -->
+<path class="arr" d="M150,952 L150,990" marker-end="url(#arrow)"/>
+<text class="lbl" x="158" y="974">Có (Alt 2)</text>
+<path class="arr" d="M260,1014 L402,1056" marker-end="url(#arrow)"/>
+
+<!-- Coupon hợp lệ / không -->
+<path class="arr" d="M500,1098 L500,1135" marker-end="url(#arrow)"/>
+<text class="lbl" x="508" y="1122">Hợp lệ</text>
+<path class="arr" d="M598,1056 L650,1056 L650,1229 L610,1229" marker-end="url(#arrow)"/>
+<text class="lbl" x="658" y="1048">Không hợp lệ (Exc 2)</text>
+
+<!-- sau coupon → chọn PTTT ; H5 cũng đi xuống C1 -->
+<path class="arr" d="M390,1159 L280,1159 L280,1313 L260,1313" marker-end="url(#arrow)"/>
+<path class="arr" d="M390,1229 L280,1229 L280,1313" marker-end="url(#arrow)"/>
+
+<!-- Coupon Không (luồng chính) → C1 -->
+<path class="arr" d="M52,910 L20,910 L20,1313 L40,1313" marker-end="url(#arrow)"/>
+<text class="lbl" x="24" y="980">Không</text>
+<text class="lbl" x="24" y="994">(luồng chính)</text>
+
+<!-- C1 → C2 -->
+<path class="arr" d="M150,1341 L150,1365" marker-end="url(#arrow)"/>
+<!-- C2 → tồn kho -->
+<path class="arr" d="M260,1387 L500,1387 L500,1430" marker-end="url(#arrow)"/>
+
+<!-- Hết hàng Exc 3 -->
+<path class="arr" d="M395,1475 L240,1475" marker-end="url(#arrow)"/>
+<text class="lbl" x="242" y="1440">Hết hàng (Exc 3)</text>
+<text class="lbl" x="242" y="1452">Hủy GD, báo lỗi</text>
+<path class="arr" d="M140,1506 L140,1530" marker-end="url(#arrow)"/>
+
+<!-- Còn hàng → tạo đơn -->
+<path class="arr" d="M500,1520 L500,1555" marker-end="url(#arrow)"/>
+<text class="lbl" x="508" y="1542">Còn hàng</text>
+<path class="arr" d="M500,1611 L500,1665" marker-end="url(#arrow)"/>
+
+<!-- COD -->
+<path class="arr" d="M410,1735 L407,1790" marker-end="url(#arrow)"/>
+<text class="lbl" x="350" y="1778">COD (luồng chính)</text>
+<path class="arr" d="M407,1838 L407,1865" marker-end="url(#arrow)"/>
+<path class="arr" d="M407,1921 L407,1940" marker-end="url(#arrow)"/>
+
+<!-- VNPay -->
+<path class="arr" d="M590,1735 L612,1790" marker-end="url(#arrow)"/>
+<text class="lbl" x="630" y="1778">VNPay (Alt 3)</text>
+<path class="arr" d="M612,1838 L612,1865" marker-end="url(#arrow)"/>
+<path class="arr" d="M700,1889 L750,1889" marker-end="url(#arrow)"/>
+<path class="arr" d="M865,1913 L865,2090 L618,2090" marker-end="url(#arrow)"/>
+
+<!-- VNPay success -->
+<path class="arr" d="M410,2115 L407,2180" marker-end="url(#arrow)"/>
+<text class="lbl" x="318" y="2168">Thành công</text>
+<path class="arr" d="M407,2236 L407,2260" marker-end="url(#arrow)"/>
+
+<!-- VNPay fail Exc 4 -->
+<path class="arr" d="M590,2115 L612,2180" marker-end="url(#arrow)"/>
+<text class="lbl" x="620" y="2168">Thất bại / hủy / quá hạn 15p</text>
+<path class="arr" d="M612,2228 L612,2250" marker-end="url(#arrow)"/>
+<path class="arr" d="M612,2298 L612,2320" marker-end="url(#arrow)"/>
+<path class="arr" d="M612,2376 L612,2402" marker-end="url(#arrow)"/>
+
+</svg>
+</div>
+</body>
+</html>

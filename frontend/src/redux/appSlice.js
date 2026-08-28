@@ -10,11 +10,12 @@ const persistedUser = (() => {
   }
 })();
 const persistedToken = localStorage.getItem("token");
+const persistedTheme = localStorage.getItem("adminTheme") === "dark" ? "dark" : "light";
 
 // Ví dụ về một slice thông thường (không phải API slice)
 const initialState = {
   user: persistedUser,
-  theme: "light",
+  theme: persistedTheme,
   cart: [],
   wishlist: [],
   isLoggedIn: !!persistedToken && !!persistedUser,
@@ -40,6 +41,7 @@ export const appSlice = createSlice({
     // Action để thay đổi theme
     toggleTheme: (state) => {
       state.theme = state.theme === "light" ? "dark" : "light";
+      localStorage.setItem("adminTheme", state.theme);
     },
 
     loginSuccess: (state, action) => {

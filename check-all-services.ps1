@@ -21,7 +21,8 @@ function Show-StatusTable {
 
     $infra = @(
         @{ Name = 'MySQL (Docker)'; Port = 3306; Required = $true }
-        @{ Name = 'Redis (Docker)'; Port = 6379; Required = $true }
+        @{ Name = 'Redis-auth (Docker)'; Port = 6379; Required = $true }
+        @{ Name = 'Redis-statistics (Docker)'; Port = 6380; Required = $true }
     )
 
     Write-Host ''

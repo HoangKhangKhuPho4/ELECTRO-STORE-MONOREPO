@@ -19,6 +19,11 @@ def recommend(
     return recommend_service.get_recommendations(db, user_id=user_id, top_n=top_k)
 
 
+@router.get("/api/model-status")
+def model_status():
+    return recommend_service.get_model_status()
+
+
 @router.post("/api/retrain", response_model=RetrainResponse)
 def retrain(db: Session = Depends(get_db)):
     return recommend_service.trigger_retrain(db)

@@ -13,19 +13,21 @@ import {
   AccountTree as TreeIcon,
 } from "@mui/icons-material";
 import {
-  Avatar,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   IconButton,
   InputAdornment,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Switch,
   Table,
@@ -42,7 +44,31 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import AdminLayout from "../../components/Admin-Layout/AdminLayout";
-import { adminGetCategories, adminToggleCategoryStatus } from "../../services/masterService";
+import CategoryIconAvatar from "../../components/Admin-Categories/CategoryIconAvatar";
+import {
+  adminGetCategories,
+  adminCreateCategory,
+  adminUpdateCategory,
+  adminToggleCategoryStatus,
+} from "../../services/masterService";
+
+const emptyForm = () => ({
+  name: "",
+  code: "",
+  description: "",
+  iconUrl: "",
+  parentId: "",
+  displayOrder: 0,
+});
+
+const toCategoryPayload = (data) => ({
+  name: data.name?.trim(),
+  code: data.code?.trim() || undefined,
+  description: data.description?.trim() || undefined,
+  iconUrl: data.iconUrl?.trim() || undefined,
+  parentId: data.parentId ? Number(data.parentId) : undefined,
+  displayOrder: data.displayOrder !== "" && data.displayOrder != null ? Number(data.displayOrder) : 0,
+});
 
 const CategoryManagementPage = () => {
   const [categories, setCategories] = useState([]);
@@ -52,6 +78,10 @@ const CategoryManagementPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [togglingId, setTogglingId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("add");
+  const [formData, setFormData] = useState(emptyForm());
+  const [saving, setSaving] = useState(false);
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -60,6 +90,7 @@ const CategoryManagementPage = () => {
       const data = await adminGetCategories();
       const normalized = (data || []).map((c) => ({
         ...c,
+        parentId: c.parentId ?? c.parentCategory?.id ?? null,
         status: c.status ?? (c.isActive === false ? "inactive" : "active"),
       }));
       setCategories(normalized);
@@ -129,6 +160,60 @@ const CategoryManagementPage = () => {
     const parent = categories.find((cat) => cat.id === parentId);
     return parent ? parent.name : `ID: ${parentId}`;
   };
+
+  const handleOpenModal = (mode, data = null) => {
+    setModalMode(mode);
+    if (mode === "edit" && data) {
+      setFormData({
+        id: data.id,
+        name: data.name || "",
+        code: data.code || "",
+        description: data.description || "",
+        iconUrl: data.iconUrl || "",
+        parentId: data.parentId ?? data.parentCategory?.id ?? "",
+        displayOrder: data.displayOrder ?? 0,
+      });
+    } else {
+      setFormData(emptyForm());
+    }
+    setModalOpen(true);
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!formData.name?.trim()) {
+      toast.warning("Vui lòng nhập tên danh mục");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = toCategoryPayload(formData);
+
+      if (modalMode === "add") {
+        await adminCreateCategory(payload);
+        toast.success("Tạo danh mục thành công");
+      } else {
+        await adminUpdateCategory(formData.id, payload);
+        toast.success("Cập nhật danh mục thành công");
+      }
+
+      setModalOpen(false);
+      fetchCategories();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi khi lưu danh mục");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const parentOptions = categories.filter(
+    (cat) => modalMode !== "edit" || cat.id !== formData.id
+  );
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -204,6 +289,7 @@ const CategoryManagementPage = () => {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
+                onClick={() => handleOpenModal("add")}
                 sx={{
                   bgcolor: "#ff9f1a",
                   "&:hover": { bgcolor: "#e68a00" },
@@ -339,14 +425,7 @@ const CategoryManagementPage = () => {
                         <TableRow key={category.id} hover sx={{ transition: 'all 0.2s' }}>
                           <TableCell>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                              <Avatar
-                                src={category.iconUrl || category.image}
-                                alt={category.name}
-                                sx={{ width: 44, height: 44, bgcolor: '#f0f0f0' }}
-                                variant="rounded"
-                              >
-                                {category.name?.charAt(0)}
-                              </Avatar>
+                              <CategoryIconAvatar category={category} size={48} />
                               <Box>
                                 <Typography variant="subtitle1" fontWeight="600" color="text.primary">
                                   {category.name}
@@ -397,7 +476,7 @@ const CategoryManagementPage = () => {
                               <IconButton size="small" color="primary" title="Xem chi tiết">
                                 <ViewIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="warning" title="Chỉnh sửa">
+                              <IconButton size="small" color="warning" title="Chỉnh sửa" onClick={() => handleOpenModal("edit", category)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
                               <IconButton size="small" color="error" title="Xóa">
@@ -424,6 +503,106 @@ const CategoryManagementPage = () => {
             labelRowsPerPage="Hiển thị:"
           />
         </Card>
+
+        <Dialog
+          open={modalOpen}
+          onClose={() => !saving && setModalOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ fontWeight: "bold" }}>
+            {modalMode === "add" ? "Thêm danh mục mới" : "Chỉnh sửa danh mục"}
+          </DialogTitle>
+          <DialogContent dividers sx={{ pt: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <TextField
+                fullWidth
+                required
+                label="Tên danh mục"
+                name="name"
+                value={formData.name}
+                onChange={handleFormChange}
+                placeholder="VD: Laptop, Điện thoại..."
+              />
+              <TextField
+                fullWidth
+                label="Mã (slug)"
+                name="code"
+                value={formData.code}
+                onChange={handleFormChange}
+                placeholder="Để trống sẽ tự tạo từ tên"
+                helperText="Dùng cho URL, ví dụ: laptop-gaming"
+              />
+              <TextField
+                fullWidth
+                label="Mô tả"
+                name="description"
+                value={formData.description}
+                onChange={handleFormChange}
+                multiline
+                rows={3}
+              />
+              <TextField
+                fullWidth
+                label="URL icon (tùy chọn)"
+                name="iconUrl"
+                value={formData.iconUrl}
+                onChange={handleFormChange}
+                placeholder="https://..."
+              />
+              <FormControl fullWidth>
+                <InputLabel>Danh mục cha</InputLabel>
+                <Select
+                  name="parentId"
+                  value={formData.parentId === null || formData.parentId === undefined ? "" : formData.parentId}
+                  label="Danh mục cha"
+                  onChange={handleFormChange}
+                >
+                  <MenuItem value="">Danh mục gốc (không có cha)</MenuItem>
+                  {parentOptions.map((cat) => (
+                    <MenuItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                type="number"
+                label="Thứ tự hiển thị"
+                name="displayOrder"
+                value={formData.displayOrder}
+                onChange={handleFormChange}
+                inputProps={{ min: 0 }}
+              />
+              {formData.name && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, bgcolor: "#f8fafc", borderRadius: 2 }}>
+                  <Typography variant="body2" color="text.secondary">Xem trước icon:</Typography>
+                  <CategoryIconAvatar category={formData} size={44} />
+                </Box>
+              )}
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, gap: 1 }}>
+            <Button onClick={() => setModalOpen(false)} disabled={saving} sx={{ textTransform: "none" }}>
+              Huỷ
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving}
+              sx={{
+                bgcolor: "#ff9f1a",
+                textTransform: "none",
+                fontWeight: "bold",
+                "&:hover": { bgcolor: "#e68a00" },
+              }}
+            >
+              {saving ? "Đang lưu..." : modalMode === "add" ? "Tạo danh mục" : "Lưu thay đổi"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </AdminLayout>
   );

@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Card,
+  CircularProgress,
   TextField,
   Typography,
 } from "@mui/material";
@@ -11,6 +12,55 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import "./Login.css";
+
+const PRIMARY = "#2563eb";
+const BRAND = "#ea580c";
+
+const BrandMark = () => (
+  <a href="/" className="login-brand-mark" aria-label="Electro">
+    <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="8" fill="#fff" />
+      <path d="M10 15H30L28.5 27H11.5L10 15Z" fill={BRAND} />
+      <path
+        d="M14 12C14 10.9 14.9 10 16 10H24C25.1 10 26 10.9 26 12V15H14V12Z"
+        fill="none"
+        stroke={BRAND}
+        strokeWidth="2"
+      />
+      <circle cx="16" cy="31" r="2" fill={BRAND} />
+      <circle cx="24" cy="31" r="2" fill={BRAND} />
+    </svg>
+    <span className="login-brand-name">Electro</span>
+  </a>
+);
+
+const fieldSx = {
+  mb: 2.25,
+  "& .MuiOutlinedInput-root": {
+    backgroundColor: "#fff",
+    borderRadius: "10px",
+    minHeight: 52,
+    "& fieldset": {
+      borderColor: "#cbd5e1",
+      borderRadius: "10px",
+    },
+    "&:hover fieldset": {
+      borderColor: "#94a3b8",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: PRIMARY,
+      borderWidth: "1.5px",
+    },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: PRIMARY },
+  "& .MuiInputBase-input": {
+    py: 1.75,
+    px: 1.5,
+    fontSize: "0.9375rem",
+    lineHeight: 1.5,
+  },
+};
 
 const ForgotPassword = () => {
   const { t } = useTranslation();
@@ -46,81 +96,80 @@ const ForgotPassword = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        backgroundImage:
-          "url('http://getwallpapers.com/wallpaper/full/a/5/d/544750.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Card
-        sx={{
-          p: 4,
-          width: 400,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          color: "white",
-        }}
-      >
-        <Typography variant="h5" sx={{ mb: 2, textAlign: "center", fontWeight: "bold" }}>
-          {t("auth.forgotPassword")}
-        </Typography>
-
-        <Typography variant="body2" sx={{ mb: 3, textAlign: "center", color: "#ccc" }}>
-          {t("auth.fillAllFields")}
-        </Typography>
-
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label={t("auth.email")}
-            name="email"
-            type="email"
-            variant="filled"
-            fullWidth
-            required
-            sx={{
-              mb: 3,
-              "& .MuiFilledInput-root": {
-                backgroundColor: "white",
-                "&:hover": { backgroundColor: "white" },
-                "&.Mui-focused": { backgroundColor: "white" },
-              },
-              "& .MuiInputLabel-root.Mui-focused": { color: "black" },
-            }}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+    <Box className="login-page">
+      <aside className="login-brand" aria-hidden={false}>
+        <div className="login-brand-content">
+          <BrandMark />
+          <h1 className="login-brand-title">{t("auth.loginBrandTitle")}</h1>
+          <p className="login-brand-desc">{t("auth.loginBrandDesc")}</p>
+        </div>
+        <svg
+          className="login-brand-bag"
+          viewBox="0 0 200 220"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden
+        >
+          <rect x="30" y="70" width="140" height="130" rx="16" fill="#fff" />
+          <path
+            d="M70 70V52c0-16.5 13.5-30 30-30s30 13.5 30 30v18"
+            stroke="#fff"
+            strokeWidth="12"
+            strokeLinecap="round"
           />
+          <circle cx="75" cy="175" r="10" fill="#fff" />
+          <circle cx="125" cy="175" r="10" fill="#fff" />
+        </svg>
+      </aside>
 
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={loading}
-            sx={{
-              backgroundColor: "#FFC312",
-              color: "black",
-              fontWeight: "bold",
-              "&:hover": { backgroundColor: "white" },
-              "&.Mui-disabled": { backgroundColor: "rgba(255, 195, 18, 0.5)", color: "rgba(0,0,0,0.5)" }
-            }}
-          >
-            {loading ? t("profile.processing") : t("auth.forgotPassword")}
-          </Button>
-        </form>
-
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Typography variant="body2">
-            {t("auth.hasAccount")}{" "}
-            <Link to="/login" style={{ color: "#FFC312", textDecoration: "none", fontWeight: "bold" }}>
-              {t("auth.loginNow")}
-            </Link>
+      <main className="login-form-panel">
+        <Card elevation={0} className="login-form-card">
+          <Typography className="login-form-title" component="h2">
+            {t("auth.forgotPasswordTitle")}
           </Typography>
-        </Box>
-      </Card>
+          <Typography className="login-form-subtitle">
+            {t("auth.forgotPasswordSubtitle")}
+          </Typography>
+
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ display: "flex", flexDirection: "column" }}
+          >
+            <TextField
+              label={t("auth.email")}
+              name="email"
+              type="email"
+              autoComplete="email"
+              variant="outlined"
+              fullWidth
+              required
+              sx={fieldSx}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              className="login-submit-btn"
+              startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
+            >
+              {loading ? t("profile.processing") : t("auth.forgotPasswordSubmit")}
+            </Button>
+          </Box>
+
+          <Box className="login-footer-links">
+            <Typography variant="body2" color="text.secondary">
+              {t("auth.hasAccount")}{" "}
+              <Link to="/login">{t("auth.loginNow")}</Link>
+            </Typography>
+          </Box>
+        </Card>
+      </main>
     </Box>
   );
 };

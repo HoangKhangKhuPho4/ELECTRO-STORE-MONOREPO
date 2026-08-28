@@ -132,9 +132,19 @@ const PurchaseOrderProcurementPage = () => {
         setLines([emptyLine()]);
         setTab(1);
         loadPoList();
+      } else {
+        toast.error(res?.message || "Tạo PO thất bại — phản hồi không hợp lệ từ server.");
       }
     } catch (e) {
-      toast.error(e.response?.data?.message || "Tạo PO thất bại.");
+      const status = e.response?.status;
+      const msg = e.response?.data?.message;
+      if (status === 403) {
+        toast.error(msg || "Bạn không có quyền tạo PO. Hãy đăng nhập tài khoản Admin.");
+      } else if (status === 401) {
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      } else {
+        toast.error(msg || "Tạo PO thất bại.");
+      }
     } finally {
       setSaving(false);
     }

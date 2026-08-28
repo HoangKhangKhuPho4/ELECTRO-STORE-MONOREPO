@@ -30,12 +30,14 @@ try {
     Write-Host 'Dang khoi dong MySQL + Redis (docker compose up -d)...' -ForegroundColor Cyan
     docker compose up -d
     Wait-ForPort -Port 3306 -Label 'MySQL (3306)' -TimeoutSec 90
-    Wait-ForPort -Port 6379 -Label 'Redis (6379)' -TimeoutSec 60
+    Wait-ForPort -Port 6379 -Label 'Redis-auth (6379)' -TimeoutSec 60
+    Wait-ForPort -Port 6380 -Label 'Redis-statistics (6380)' -TimeoutSec 60
 
     Write-Host ''
     Write-Host 'Ha tang san sang:' -ForegroundColor Green
-    Write-Host '  MySQL  -> localhost:3306  (root, mat khau trong)'
-    Write-Host '  Redis  -> localhost:6379'
+    Write-Host '  MySQL              -> localhost:3306  (root, mat khau trong)'
+    Write-Host '  Redis-auth         -> localhost:6379  (container redis-auth)'
+    Write-Host '  Redis-statistics   -> localhost:6380  (container redis-statistics)'
     Write-Host ''
     Write-Host 'Tiep theo chay:  .\START.ps1 -SkipDocker' -ForegroundColor Yellow
 } finally {

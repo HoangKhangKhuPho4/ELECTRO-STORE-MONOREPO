@@ -14,4 +14,6 @@ public interface CouponService {
     void deleteCoupon(Integer id);
     CouponDto.Response toggleActive(Integer id);
     List<CouponDto.Response> getActiveCoupons();
+
+    CouponDto.StatsResponse getCouponStats();
 }

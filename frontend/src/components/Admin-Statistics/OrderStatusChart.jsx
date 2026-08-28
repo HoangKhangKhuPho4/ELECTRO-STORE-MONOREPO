@@ -1,6 +1,7 @@
 import { Box, Card, CardContent, Skeleton, Typography } from "@mui/material";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { useNavigate } from "react-router-dom";
+import { DASHBOARD_CARD_CONTENT } from "./dashboardStyles";
 
 const OrderStatusChart = ({ data, loading }) => {
     const navigate = useNavigate();
@@ -41,11 +42,11 @@ const OrderStatusChart = ({ data, loading }) => {
                 flexDirection: "column"
             }}
         >
-            <CardContent sx={{ p: 4, position: "relative", flexGrow: 1 }}>
-                <Typography variant="h5" fontWeight={900} color="#1e293b" sx={{ mb: 1, letterSpacing: -0.5 }}>
+            <CardContent sx={{ ...DASHBOARD_CARD_CONTENT, position: "relative", flexGrow: 1 }}>
+                <Typography variant="h6" fontWeight={900} color="text.primary" sx={{ mb: 0.5, letterSpacing: -0.3 }}>
                     Trạng thái Đơn hàng
                 </Typography>
-                <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 4, opacity: 0.6 }}>
+                <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 2, lineHeight: 1.6 }}>
                     Tỉ trọng phân bổ các vận đơn
                 </Typography>
 

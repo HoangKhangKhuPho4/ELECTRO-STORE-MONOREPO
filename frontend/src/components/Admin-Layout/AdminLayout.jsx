@@ -1,4 +1,4 @@
-import { Box, Drawer } from "@mui/material";
+import { Box, Drawer, useTheme } from "@mui/material";
 import { useState } from "react";
 import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
@@ -7,6 +7,7 @@ const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 80;
 
 const AdminLayout = ({ children, currentPage = "Dashboard" }) => {
+  const theme = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -72,7 +73,7 @@ const AdminLayout = ({ children, currentPage = "Dashboard" }) => {
               zIndex: (theme) => theme.zIndex.appBar - 1,
               transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               overflowX: "hidden",
-              backgroundColor: "#ffffff",
+              backgroundColor: theme.palette.background.paper,
             },
           }}
           open
@@ -94,7 +95,7 @@ const AdminLayout = ({ children, currentPage = "Dashboard" }) => {
           mt: "64px",
           minHeight: "calc(100vh - 64px)",
           height: "calc(100vh - 64px)",
-          backgroundColor: "#f8f9fa",
+          backgroundColor: theme.palette.background.default,
           transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           overflow: "auto",
           position: "relative",

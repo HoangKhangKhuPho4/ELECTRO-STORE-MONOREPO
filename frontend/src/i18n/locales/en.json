@@ -26,7 +26,7 @@
     "warrantyRepair": "Warranty & Repair",
     "wishlist": "Wishlist",
     "cart": "Shopping cart",
-    "randomProduct": "Random product"
+    "notifications": "Notifications"
   },
   "search": {
     "minChars": "Type at least 2 characters...",
@@ -100,7 +100,9 @@
     "socialYoutube": "Electro Store on YouTube",
     "socialInstagram": "Electro Store on Instagram",
     "ministryBadge": "Registered with the Ministry of Industry and Trade",
-    "ministryBadgeDesc": "This website is registered with Vietnamese regulators"
+    "ministryBadgeDesc": "This website is registered with Vietnamese regulators",
+    "antiCounterfeitBadge": "Anti-counterfeit",
+    "antiCounterfeitBadgeDesc": "100% genuine products guaranteed"
   },
   "home": {
     "bestSellers": "Best Sellers",
@@ -335,6 +337,9 @@
     "password": "Password",
     "rememberMe": "Remember me",
     "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Forgot password",
+    "forgotPasswordSubtitle": "Enter your registered email and we will send instructions to reset your password.",
+    "forgotPasswordSubmit": "Send request",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "registerNow": "Sign up now",

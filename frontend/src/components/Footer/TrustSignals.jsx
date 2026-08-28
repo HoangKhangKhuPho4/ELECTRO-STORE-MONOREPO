@@ -93,25 +93,30 @@ const SectionLabel = ({ children }) => (
   </Typography>
 );
 
-const MinistryBadge = ({ title, desc }) => (
+const TRUST_ICON = {
+  width: { xs: 40, md: 44 },
+  height: { xs: 40, md: 44 },
+};
+
+const TrustBadge = ({ href, iconSrc, iconAlt, title, desc }) => (
   <Box
     component="a"
-    href="https://www.thongkecongthuong.gov.vn/"
+    href={href}
     target="_blank"
     rel="noopener noreferrer"
     sx={{
       display: "flex",
       alignItems: "center",
-      gap: 1.5,
+      gap: 1.25,
       textDecoration: "none",
       bgcolor: "#fff",
       border: "1px solid #e2e8f0",
       borderRadius: 1.5,
-      px: 2,
-      py: 1.5,
+      px: 1.75,
+      py: 1.25,
       width: "100%",
       height: "100%",
-      minHeight: 88,
+      minHeight: 72,
       boxSizing: "border-box",
       transition: "border-color 0.15s ease, box-shadow 0.15s ease",
       boxShadow: "0 1px 3px rgba(15, 23, 42, 0.05)",
@@ -123,12 +128,12 @@ const MinistryBadge = ({ title, desc }) => (
   >
     <Box
       component="img"
-      src="/images/footer/bo-cong-thuong.png"
-      alt={title}
+      src={iconSrc}
+      alt={iconAlt}
+      title={iconAlt}
       loading="lazy"
       sx={{
-        width: { xs: 64, md: 72 },
-        height: { xs: 64, md: 72 },
+        ...TRUST_ICON,
         objectFit: "contain",
         flexShrink: 0,
         display: "block",
@@ -217,8 +222,20 @@ const TrustSignals = () => {
             alignItems: "stretch",
           }}
         >
-          <MinistryBadge title={t("footer.ministryBadge")} desc={t("footer.ministryBadgeDesc")} />
-          <MinistryBadge title={t("footer.ministryBadge")} desc={t("footer.ministryBadgeDesc")} />
+          <TrustBadge
+            href="https://www.thongkecongthuong.gov.vn/"
+            iconSrc="/images/footer/bo-cong-thuong.png"
+            iconAlt={t("footer.ministryBadge")}
+            title={t("footer.ministryBadge")}
+            desc={t("footer.ministryBadgeDesc")}
+          />
+          <TrustBadge
+            href="https://www.thongkecongthuong.gov.vn/"
+            iconSrc="/images/footer/icon_chong_hang_gia.png"
+            iconAlt={t("footer.antiCounterfeitBadge")}
+            title={t("footer.antiCounterfeitBadge")}
+            desc={t("footer.antiCounterfeitBadgeDesc")}
+          />
         </Box>
       </Box>
     </Box>

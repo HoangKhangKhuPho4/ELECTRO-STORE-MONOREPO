@@ -84,10 +84,19 @@ public class CouponDto {
         private BigDecimal maxDiscountAmount;
         private Integer usageLimit;
         private Integer usedCount;
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         private LocalDateTime dateStart;
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         private LocalDateTime dateEnd;
+
         private Boolean isActive;
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         private LocalDateTime createdAt;
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         private LocalDateTime updatedAt;
 
         // Constructor to maintain compatibility with existing code
@@ -96,5 +105,15 @@ public class CouponDto {
             this.code = code;
             this.discountValue = discountValue;
         }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StatsResponse {
+        private long total;
+        private long activeCount;
+        private long inactiveCount;
+        private long percentCount;
     }
 }

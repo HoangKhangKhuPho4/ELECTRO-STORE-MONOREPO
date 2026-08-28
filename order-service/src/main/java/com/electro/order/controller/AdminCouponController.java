@@ -44,6 +44,12 @@ public class AdminCouponController {
                 couponService.getActiveCoupons()));
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<CouponDto.StatsResponse>> getCouponStats() {
+        return ResponseEntity.ok(ApiResponse.success("Lấy thống kê mã giảm giá thành công",
+                couponService.getCouponStats()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CouponDto.Response>> getCouponById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success("Chi tiết mã giảm giá", couponService.getCouponById(id)));

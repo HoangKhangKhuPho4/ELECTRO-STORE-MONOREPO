@@ -11,13 +11,13 @@ spring:
           enabled: true
   data:
     redis:
-      # Redis local (Docker electro-redis): dat REDIS_* trong .env — xem .env.example
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      username: ${REDIS_USERNAME:}
-      password: ${REDIS_PASSWORD:}
+      # Redis rieng: container redis-auth :6379 — xem .env / Start-Redis.ps1
+      host: ${AUTH_REDIS_HOST:${REDIS_HOST:localhost}}
+      port: ${AUTH_REDIS_PORT:${REDIS_PORT:6379}}
+      username: ${AUTH_REDIS_USERNAME:${REDIS_USERNAME:}}
+      password: ${AUTH_REDIS_PASSWORD:${REDIS_PASSWORD:}}
       ssl:
-        enabled: ${REDIS_SSL:false}
+        enabled: ${AUTH_REDIS_SSL:${REDIS_SSL:false}}
       timeout: 10s
 
 server:

@@ -1,11 +1,13 @@
-/* Login — nền cam full trang kiểu Shopee; form trắng nổi bên phải */
+/* Login — panel trái cam đất nhẹ; form phải accent xanh #2563eb */
 
 .login-page {
-  --login-brand: #ff7a00;
-  --login-brand-deep: #e86a00;
-  --login-brand-soft: #ff9a33;
+  --login-primary: #2563eb;
+  --login-primary-hover: #1d4ed8;
+  --login-brand: #ea580c;
+  --login-brand-deep: #c2410c;
+  --login-brand-soft: #fdba74;
+  --login-radius: 10px;
 
-  /* Phá padding của .main-content để cam full chiều ngang/dọc vùng nội dung */
   width: 100vw;
   max-width: 100vw;
   margin-left: calc(50% - 50vw);
@@ -19,9 +21,9 @@
   box-sizing: border-box;
 
   background:
-    radial-gradient(ellipse 70% 55% at 15% 85%, rgba(255, 255, 255, 0.16), transparent 55%),
-    radial-gradient(ellipse 55% 45% at 88% 12%, rgba(0, 0, 0, 0.1), transparent 50%),
-    linear-gradient(145deg, var(--login-brand-soft) 0%, var(--login-brand) 45%, var(--login-brand-deep) 100%);
+    radial-gradient(ellipse 70% 55% at 15% 85%, rgba(255, 255, 255, 0.14), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 88% 12%, rgba(0, 0, 0, 0.08), transparent 50%),
+    linear-gradient(145deg, var(--login-brand-soft) 0%, var(--login-brand) 48%, var(--login-brand-deep) 100%);
   position: relative;
   overflow: hidden;
 }
@@ -31,15 +33,13 @@
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.12) 0 2px, transparent 3px),
-    radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.1) 0 2px, transparent 3px),
-    radial-gradient(circle at 40% 88%, rgba(255, 255, 255, 0.08) 0 1.5px, transparent 2.5px);
-  background-size: 120px 120px, 160px 160px, 90px 90px;
-  opacity: 0.65;
+    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.1) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.08) 0 2px, transparent 3px);
+  background-size: 120px 120px, 160px 160px;
+  opacity: 0.55;
   pointer-events: none;
 }
 
-/* —— Brand trái (trong nền cam chung) —— */
 .login-brand {
   position: relative;
   z-index: 1;
@@ -74,7 +74,7 @@
 
 .login-brand-mark svg {
   flex-shrink: 0;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
 }
 
 .login-brand-name {
@@ -107,17 +107,15 @@
   right: -2%;
   bottom: -8%;
   width: min(52%, 380px);
-  opacity: 0.2;
+  opacity: 0.18;
   pointer-events: none;
 }
 
-/* —— Form phải: cùng nền cam, chỉ card trắng nổi —— */
 .login-form-panel {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
-  /* Đẩy form vào phía giữa (xê vô), tránh sát mép phải */
   justify-content: flex-start;
   padding: clamp(1.75rem, 4vw, 3rem) clamp(3rem, 9vw, 6.5rem) clamp(1.75rem, 4vw, 3rem) 0.5rem;
   background: transparent;
@@ -130,20 +128,20 @@
   transform: translateX(-1.25rem);
   padding: clamp(2rem, 3.5vw, 2.85rem) clamp(1.75rem, 3.2vw, 2.6rem);
   background: #fff;
-  border-radius: 6px;
+  border-radius: 12px;
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.08),
-    0 16px 40px rgba(0, 0, 0, 0.18);
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 16px 40px rgba(0, 0, 0, 0.14);
   border: none;
 }
 
 .login-form-card .MuiTextField-root .MuiInputBase-root {
   min-height: 52px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
 }
 
 .login-form-card .MuiInputLabel-root {
-  font-size: 1rem;
+  font-size: 0.9375rem;
 }
 
 .login-form-title {
@@ -162,7 +160,9 @@
 }
 
 .login-tabs .MuiTabs-indicator {
-  background-color: var(--login-brand) !important;
+  background-color: var(--login-primary) !important;
+  height: 3px;
+  border-radius: 3px;
 }
 
 .login-tabs .MuiTab-root {
@@ -174,22 +174,81 @@
 }
 
 .login-tabs .MuiTab-root.Mui-selected {
-  color: var(--login-brand);
+  color: var(--login-primary);
 }
 
 .login-submit-btn {
   margin-top: 0.75rem !important;
-  background-color: var(--login-brand) !important;
+  background-color: var(--login-primary) !important;
   color: #fff !important;
   font-weight: 700 !important;
   text-transform: none !important;
   box-shadow: none !important;
-  height: 50px;
-  font-size: 1.05rem !important;
+  height: 48px !important;
+  font-size: 1rem !important;
+  border-radius: var(--login-radius) !important;
 }
 
 .login-submit-btn:hover {
-  background-color: var(--login-brand-deep) !important;
+  background-color: var(--login-primary-hover) !important;
+}
+
+/* Social login — 2 cột 50%, cùng chiều cao */
+.login-social-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.login-social-cell {
+  position: relative;
+  height: 48px;
+  min-width: 0;
+}
+
+.login-social-btn {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  height: 48px !important;
+  min-height: 48px !important;
+  border-radius: var(--login-radius) !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  pointer-events: none;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.login-social-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.01;
+  overflow: hidden;
+  border-radius: var(--login-radius);
+  cursor: pointer;
+}
+
+.login-social-overlay > div {
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+}
+
+.login-social-overlay iframe {
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  border-radius: var(--login-radius);
+}
+
+.login-social-btn--facebook {
+  pointer-events: auto;
 }
 
 .login-footer-links {
@@ -198,7 +257,7 @@
 }
 
 .login-footer-links a {
-  color: var(--login-brand);
+  color: var(--login-primary);
   text-decoration: none;
   font-weight: 600;
 }
@@ -247,11 +306,14 @@
   .login-form-card {
     transform: none;
     margin-right: 0;
-  }
-
-  .login-form-card {
     box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.08),
-      0 12px 32px rgba(0, 0, 0, 0.16);
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+}
+
+@media (max-width: 420px) {
+  .login-social-grid {
+    grid-template-columns: 1fr;
   }
 }

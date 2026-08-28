@@ -35,37 +35,39 @@ Các service đọc qua `application.yml`: `${MYSQL_HOST}`, `${MYSQL_PORT}`, …
 
 ---
 
-## Redis (Docker local)
+## Redis (Docker local) — tách theo service
 
-Khởi động: cùng `docker compose up -d` (container `electro-redis`, port `6379`).
+Khởi động: `docker compose up -d`
 
-### Vai trò
-
-| Service | Dùng Redis cho |
-|---------|----------------|
-| **auth-service** | Refresh token (`auth:refresh:{uuid}`), TTL 7 ngày |
-| **statistics-service** | Hàng đợi analytics (`analytics:interactions_queue`) |
+| Container | Port host | Service dùng | Mục đích |
+|-----------|-----------|--------------|----------|
+| `electro-redis-auth` | `6379` | **auth-service** | Refresh token (`auth:refresh:{uuid}`), TTL 7 ngày |
+| `electro-redis-statistics` | `6380` | **statistics-service** | Hàng đợi analytics (`analytics:interactions_queue`) |
 
 ### Cấu hình khuyên dùng
 
 ```env
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_USERNAME=
-REDIS_PASSWORD=
-REDIS_SSL=false
+AUTH_REDIS_HOST=localhost
+AUTH_REDIS_PORT=6379
+AUTH_REDIS_USERNAME=
+AUTH_REDIS_PASSWORD=
+AUTH_REDIS_SSL=false
+
+STATISTICS_REDIS_HOST=localhost
+STATISTICS_REDIS_PORT=6380
+STATISTICS_REDIS_USERNAME=
+STATISTICS_REDIS_PASSWORD=
+STATISTICS_REDIS_SSL=false
 ```
 
-**Không** đặt `REDIS_URL` khi dev local — nếu có, auth/statistics sẽ ưu tiên URL đó thay vì host/port.
+**Không** đặt `AUTH_REDIS_URL` / `STATISTICS_REDIS_URL` khi dev local — nếu có, service sẽ ưu tiên URL đó thay vì host/port.
 
 ### Kiểm tra kết nối
 
 ```powershell
-pip install redis   # lần đầu
-.\scripts\Test-RedisConnection.ps1
+docker ps --filter "name=electro-redis"
+# Ky vong: electro-redis-auth (6379) + electro-redis-statistics (6380)
 ```
-
-Kỳ vọng: `Ket noi OK KHONG SSL`.
 
 Sau khi sửa `.env`:
 
@@ -80,10 +82,11 @@ Health auth: `http://localhost:8081/actuator/health` → `redis.status: UP`.
 
 | Triệu chứng | Nguyên nhân | Cách xử lý |
 |-------------|-------------|------------|
-| `redis: DOWN`, connection refused | Redis chưa chạy | `docker compose up -d` |
-| `redis: DOWN`, `NotSslRecordException` | `REDIS_SSL=true` nhưng server plain | `REDIS_SSL=false` |
-| Login 503 `Redis unavailable` | Redis chưa kết nối | Chạy `Test-RedisConnection.ps1`, restart |
+| `redis: DOWN`, connection refused | Redis chưa chạy / sai port | `docker compose up -d` — auth `:6379`, stats `:6380` |
+| `redis: DOWN`, `NotSslRecordException` | `*_REDIS_SSL=true` nhưng server plain | `AUTH_REDIS_SSL=false` / `STATISTICS_REDIS_SSL=false` |
+| Login 503 `Redis unavailable` | Redis-auth chưa kết nối | Kiểm tra container `electro-redis-auth`, restart auth |
 | Health tổng thể `DOWN` | Chỉ do Redis DOWN | Sửa Redis; các component khác vẫn có thể UP |
+| Còn container `electro-redis` cũ | Compose cũ | `docker compose down` rồi `up -d` lại |
 
 ---
 
@@ -112,6 +115,6 @@ API: `POST /api/auth/google` body `{ "idToken": "..." }`.
 | | Postman Environment | `.env` |
 |---|---------------------|--------|
 | Dùng cho | URL test, user/password Postman | Spring Boot khi `START.ps1` |
-| Redis | Không đọc `.env` | auth/statistics đọc `REDIS_*` |
+| Redis | Không đọc `.env` | auth đọc `AUTH_REDIS_*`, statistics đọc `STATISTICS_REDIS_*` |
 
 Swagger UI: `http://localhost:8081/swagger-ui/index.html` (auth-service) và các service tương ứng (xem output của `START.ps1`).

@@ -30,7 +30,8 @@ import "./Login.css";
 const GOOGLE_CLIENT_ID = "805948950640-eaq86ak8dt5qngqks1knbmpvpua77n78.apps.googleusercontent.com";
 const FACEBOOK_APP_ID = "1295828555747879";
 
-const BRAND = "#ff7a00";
+const PRIMARY = "#2563eb";
+const BRAND = "#ea580c";
 
 const BrandMark = () => (
   <a href="/" className="login-brand-mark" aria-label="Electro">
@@ -271,12 +272,30 @@ const Login = () => {
   const qrUrl = `http://${window.location.hostname}:${window.location.port}/scan-qr?token=${qrToken}`;
 
   const fieldSx = {
-    mb: 2,
+    mb: 2.25,
     "& .MuiOutlinedInput-root": {
       backgroundColor: "#fff",
-      "&.Mui-focused fieldset": { borderColor: BRAND },
+      borderRadius: "10px",
+      minHeight: 52,
+      "& fieldset": {
+        borderColor: "#cbd5e1",
+        borderRadius: "10px",
+      },
+      "&:hover fieldset": {
+        borderColor: "#94a3b8",
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: PRIMARY,
+        borderWidth: "1.5px",
+      },
     },
-    "& .MuiInputLabel-root.Mui-focused": { color: BRAND },
+    "& .MuiInputLabel-root.Mui-focused": { color: PRIMARY },
+    "& .MuiInputBase-input": {
+      py: 1.75,
+      px: 1.5,
+      fontSize: "0.9375rem",
+      lineHeight: 1.5,
+    },
   };
 
   return (
@@ -369,7 +388,7 @@ const Login = () => {
                     control={
                       <Checkbox
                         value="remember"
-                        sx={{ color: "#94a3b8", "&.Mui-checked": { color: BRAND } }}
+                        sx={{ color: "#94a3b8", "&.Mui-checked": { color: PRIMARY } }}
                       />
                     }
                     label={<Typography variant="body2" color="text.secondary">{t("auth.rememberMe")}</Typography>}
@@ -388,27 +407,40 @@ const Login = () => {
                   <Divider sx={{ flex: 1 }} />
                 </Box>
 
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 1.5,
-                    width: "100%",
-                    alignItems: "center",
-                  }}
-                >
-                  <Box sx={{ width: "100%" }}>
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      width="100%"
-                      theme="outline"
-                      text="signin"
-                      shape="rectangular"
-                    />
+                <Box className="login-social-grid">
+                  <Box className="login-social-cell">
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      fullWidth
+                      className="login-social-btn login-social-btn--google"
+                      tabIndex={-1}
+                      aria-hidden
+                      startIcon={
+                        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+                          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.083 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+                          <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                          <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.048 0-9.416-3.054-11.283-7.362l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+                          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+                        </svg>
+                      }
+                    >
+                      Google
+                    </Button>
+                    <Box className="login-social-overlay" aria-label="Đăng nhập Google">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        width="100%"
+                        theme="outline"
+                        text="signin_with"
+                        shape="rectangular"
+                        size="large"
+                      />
+                    </Box>
                   </Box>
 
-                  <Box sx={{ width: "100%" }}>
+                  <Box className="login-social-cell">
                     <FacebookLogin
                       appId={FACEBOOK_APP_ID}
                       onSuccess={handleFacebookSuccess}
@@ -416,23 +448,17 @@ const Login = () => {
                       render={({ onClick }) => (
                         <Button
                           onClick={onClick}
-                          variant="contained"
+                          variant="outlined"
                           fullWidth
                           disabled={isFbLoading}
+                          className="login-social-btn login-social-btn--facebook"
                           startIcon={
                             isFbLoading ? (
                               <CircularProgress size={18} color="inherit" />
                             ) : (
-                              <FacebookIcon />
+                              <FacebookIcon sx={{ color: "#1877F2" }} />
                             )
                           }
-                          sx={{
-                            backgroundColor: "#1877F2",
-                            color: "white",
-                            "&:hover": { backgroundColor: "#115293" },
-                            textTransform: "none",
-                            height: "40px",
-                          }}
                         >
                           {isFbLoading ? "..." : "Facebook"}
                         </Button>
@@ -466,7 +492,7 @@ const Login = () => {
                   }}
                 >
                   {qrLoading ? (
-                    <CircularProgress size={48} sx={{ color: BRAND }} />
+                    <CircularProgress size={48} sx={{ color: PRIMARY }} />
                   ) : qrToken ? (
                     <QRCodeCanvas value={qrUrl} size={180} />
                   ) : qrError ? (
@@ -482,7 +508,7 @@ const Login = () => {
                   )}
                 </Box>
 
-                <Button variant="text" sx={{ mt: 2, color: BRAND }} onClick={fetchQrToken}>
+                <Button variant="text" sx={{ mt: 2, color: PRIMARY }} onClick={fetchQrToken}>
                   {t("auth.refreshQr")}
                 </Button>
               </Box>

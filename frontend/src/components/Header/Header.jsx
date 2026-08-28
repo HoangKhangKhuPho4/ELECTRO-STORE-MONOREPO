@@ -4,7 +4,7 @@ import {
   Logout as LogoutIcon,
   ReceiptLongOutlined as OrderIcon,
   Search as SearchIcon,
-  Shuffle as ShuffleIcon,
+  NotificationsNoneOutlined as NotificationsIcon,
   ShieldOutlined as ShieldOutlinedIcon,
 } from "@mui/icons-material";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -142,6 +142,7 @@ const Header = () => {
         >
           <Box
             component="form"
+            className="header-search-form"
             onSubmit={handleSearch}
             sx={{
               display: "flex",
@@ -150,16 +151,29 @@ const Header = () => {
               backgroundColor: "white",
               border: "2px solid #FF7A00",
               borderRadius: "25px",
-              overflow: "hidden",
+              overflow: "visible",
             }}
           >
             <FormControl
+              className="header-search-category"
               sx={{
                 minWidth: 140,
+                height: "100%",
+                "& .MuiOutlinedInput-root": {
+                  height: "100%",
+                  borderRadius: 0,
+                  borderTopLeftRadius: "23px",
+                  borderBottomLeftRadius: "23px",
+                },
                 "& .MuiSelect-select": {
-                  padding: "12px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                  boxSizing: "border-box",
+                  padding: "0 32px 0 16px",
                   borderRadius: 0,
                   border: "none",
+                  lineHeight: "20px",
                   "&:focus": {
                     backgroundColor: "transparent",
                   },
@@ -174,10 +188,13 @@ const Header = () => {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 displayEmpty
                 sx={{
+                  height: "100%",
                   color: "#666",
                   fontSize: "14px",
+                  lineHeight: "20px",
                   "& .MuiSelect-icon": {
                     color: "#999",
+                    right: 10,
                   },
                 }}
               >
@@ -199,9 +216,16 @@ const Header = () => {
               categoryId={selectedCategoryId}
               onSubmit={handleSearch}
               placeholder={t("header.searchPlaceholder")}
+              className="header-search-input"
               sx={{
                 flex: 1,
+                height: "100%",
                 "& .MuiOutlinedInput-root": {
+                  height: "100%",
+                  minHeight: "unset",
+                  padding: "0 8px 0 0",
+                  alignItems: "center",
+                  overflow: "visible",
                   "& fieldset": {
                     border: "none",
                     borderLeft: "1px solid #e0e0e0",
@@ -216,9 +240,12 @@ const Header = () => {
                   },
                 },
                 "& .MuiInputBase-input": {
-                  padding: "12px 16px",
+                  padding: "0 16px",
+                  height: "100%",
+                  lineHeight: "20px",
                   fontSize: "14px",
                   color: "#333",
+                  boxSizing: "border-box",
                   "&::placeholder": { color: "#999", opacity: 1 },
                 },
               }}
@@ -226,10 +253,11 @@ const Header = () => {
 
             <IconButton
               type="submit"
+              className="header-search-submit"
               sx={{
                 backgroundColor: "#FF7A00",
-                borderRadius: 0,
-                padding: "12px 20px",
+                alignSelf: "stretch",
+                px: 2.5,
                 "&:hover": {
                   backgroundColor: "#e66900",
                 },
@@ -240,130 +268,143 @@ const Header = () => {
           </Box>
         </Box>
 
-        <Box
-          className="header-actions"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            gap: "12px",
-          }}
-        >
-          <IconButton sx={{ color: "#666" }} title={t("header.randomProduct")}>
-            <ShuffleIcon />
-          </IconButton>
-
-          <Link
-            to="/wishlist"
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <IconButton sx={{ color: "#666" }} title={t("header.wishlist")}>
-              <Badge badgeContent={wishlistCount} color="error">
-                <FavoriteIcon />
-              </Badge>
+        <Box className="header-actions">
+          <Box className="header-action-item">
+            <IconButton sx={{ color: "#666" }} title={t("header.notifications")}>
+              <NotificationsIcon />
             </IconButton>
-          </Link>
+          </Box>
 
-          <Link
-            to="/cart"
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <IconButton sx={{ color: "#666" }} title={t("header.cart")}>
-              <Badge badgeContent={cartItemCount} color="error">
-                <CartIcon />
-              </Badge>
-            </IconButton>
-          </Link>
+          <Box className="header-action-item">
+            <Link
+              to="/wishlist"
+              className="header-action-link"
+            >
+              <IconButton sx={{ color: "#666" }} title={t("header.wishlist")}>
+                <Badge badgeContent={wishlistCount} color="error">
+                  <FavoriteIcon />
+                </Badge>
+              </IconButton>
+            </Link>
+          </Box>
 
-          <LanguageSwitcher />
+          <Box className="header-action-item">
+            <Link
+              to="/cart"
+              className="header-action-link"
+            >
+              <IconButton sx={{ color: "#666" }} title={t("header.cart")}>
+                <Badge badgeContent={cartItemCount} color="error">
+                  <CartIcon />
+                </Badge>
+              </IconButton>
+            </Link>
+          </Box>
 
-          {isLoggedIn ? (
-            <>
-              <Button
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                startIcon={
-                  <Avatar
+          <Box className="header-action-item">
+            <LanguageSwitcher />
+          </Box>
+
+          <Box className="header-action-item">
+            {isLoggedIn ? (
+              <>
+                <Button
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                  startIcon={
+                    <Avatar
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        bgcolor: "#D32F2F",
+                        fontSize: "14px",
+                      }}
+                    >
+                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </Avatar>
+                  }
+                  sx={{
+                    textTransform: "none",
+                    color: "#333",
+                    fontWeight: "bold",
+                    borderRadius: "20px",
+                    px: 1.5,
+                    minWidth: 0,
+                    maxWidth: 200,
+                  }}
+                >
+                  <Box
+                    component="span"
                     sx={{
-                      width: 32,
-                      height: 32,
-                      bgcolor: "#D32F2F",
-                      fontSize: "14px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                  </Avatar>
-                }
-                sx={{
-                  textTransform: "none",
-                  color: "#333",
-                  fontWeight: "bold",
-                  borderRadius: "20px",
-                  px: 2,
-                }}
-              >
-                {user?.name || "User"}
-              </Button>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={() => setAnchorEl(null)}
-                PaperProps={{
-                  sx: { minWidth: 200, mt: 1 },
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    navigate("/profile");
-                    setAnchorEl(null);
+                    {user?.name || "User"}
+                  </Box>
+                </Button>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={() => setAnchorEl(null)}
+                  PaperProps={{
+                    sx: { minWidth: 200, mt: 1 },
                   }}
                 >
-                  <PersonOutlineIcon sx={{ mr: 1, fontSize: 20 }} />
-                  {t("header.myAccount")}
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    navigate("/user/orders");
-                    setAnchorEl(null);
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/profile");
+                      setAnchorEl(null);
+                    }}
+                  >
+                    <PersonOutlineIcon sx={{ mr: 1, fontSize: 20 }} />
+                    {t("header.myAccount")}
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/user/orders");
+                      setAnchorEl(null);
+                    }}
+                  >
+                    <OrderIcon sx={{ mr: 1, fontSize: 20 }} />
+                    {t("header.myOrders")}
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/user/warranty");
+                      setAnchorEl(null);
+                    }}
+                  >
+                    <ShieldOutlinedIcon sx={{ mr: 1, fontSize: 20 }} />
+                    {t("header.warrantyRepair")}
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout} sx={{ color: "#D32F2F" }}>
+                    <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
+                    {t("header.logout")}
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Link to="/login" className="header-action-link">
+                <Button
+                  variant="contained"
+                  startIcon={<PersonOutlineIcon />}
+                  sx={{
+                    backgroundColor: "#D32F2F",
+                    borderRadius: "20px",
+                    textTransform: "none",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      backgroundColor: "#B71C1C",
+                    },
                   }}
                 >
-                  <OrderIcon sx={{ mr: 1, fontSize: 20 }} />
-                  {t("header.myOrders")}
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    navigate("/user/warranty");
-                    setAnchorEl(null);
-                  }}
-                >
-                  <ShieldOutlinedIcon sx={{ mr: 1, fontSize: 20 }} />
-                  {t("header.warrantyRepair")}
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogout} sx={{ color: "#D32F2F" }}>
-                  <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
-                  {t("header.logout")}
-                </MenuItem>
-              </Menu>
-            </>
-          ) : (
-            <Link to="/login" style={{ textDecoration: "none" }}>
-              <Button
-                variant="contained"
-                startIcon={<PersonOutlineIcon />}
-                sx={{
-                  backgroundColor: "#D32F2F",
-                  borderRadius: "20px",
-                  textTransform: "none",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#B71C1C",
-                  },
-                }}
-              >
-                {t("header.login")}
-              </Button>
-            </Link>
-          )}
+                  {t("header.login")}
+                </Button>
+              </Link>
+            )}
+          </Box>
         </Box>
       </Toolbar>
     </AppBar>

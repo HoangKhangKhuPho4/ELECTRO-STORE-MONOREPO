@@ -22,6 +22,7 @@ const ProductSearchAutocomplete = ({
   categoryId = null,
   placeholder,
   onSubmit,
+  className,
   sx = {},
 }) => {
   const { t } = useTranslation();
@@ -103,11 +104,19 @@ const ProductSearchAutocomplete = ({
     }
   };
 
+  const trimmedValue = (value || "").trim();
+  const canShowList = trimmedValue.length >= 2;
+
   return (
     <Autocomplete
       freeSolo
-      open={open && debouncedQuery.trim().length >= 2}
-      onOpen={() => setOpen(true)}
+      className={className}
+      open={open && canShowList}
+      onOpen={() => {
+        if (trimmedValue.length >= 2) {
+          setOpen(true);
+        }
+      }}
       onClose={() => setOpen(false)}
       options={options}
       loading={loading}
@@ -118,6 +127,11 @@ const ProductSearchAutocomplete = ({
       onInputChange={(_, v, reason) => {
         if (reason === "input" || reason === "clear") {
           onChange?.(v);
+          if (v.trim().length >= 2) {
+            setOpen(true);
+          } else {
+            setOpen(false);
+          }
         }
       }}
       onChange={handleSelect}
@@ -127,7 +141,10 @@ const ProductSearchAutocomplete = ({
           : t("search.noResults")
       }
       slotProps={{
-        popper: { sx: { zIndex: 1400 } },
+        popper: {
+          sx: { zIndex: 1500 },
+          placement: "bottom-start",
+        },
         paper: { sx: { mt: 0.5, borderRadius: 2, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" } },
       }}
       renderOption={(props, option) => (

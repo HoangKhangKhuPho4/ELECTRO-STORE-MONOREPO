@@ -1,0 +1,178 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-reco-ai-recommend-001",
+    "name": "Electro Store - Goi y thong minh (AI Reco)",
+    "description": "Collection test API goi y san pham (Item-based KNNBaseline).\n\n## Truoc khi test\n1. MySQL + Redis (neu can) dang chay\n2. reco-service :5003 (uvicorn / START.ps1)\n3. De test qua Gateway: discovery + gateway :8080 + statistics-service\n4. Chay **Retrain Model** it nhat 1 lan de co reco_model.pkl\n\n## Bien collection\n- `recoBaseUrl`: http://localhost:5003\n- `gatewayBaseUrl`: http://localhost:8080\n- `userId`: ID user co rating trong DB (vd. 1)\n- `topK`: so san pham goi y (1-50)\n\n## Thu tu goi y\n1. Health\n2. Retrain (neu chua co model)\n3. Recommend / Recommend Explain\n4. (Tuy chon) Recommend qua Gateway (BFF)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "recoBaseUrl",
+      "value": "http://localhost:5003"
+    },
+    {
+      "key": "gatewayBaseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "topK",
+      "value": "10"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Docs (reco-service truc tiep)",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{recoBaseUrl}}/health",
+            "description": "Kiem tra reco-service song. Ky vong: {\"status\":\"UP\"}."
+          }
+        },
+        {
+          "name": "Root info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{recoBaseUrl}}/",
+            "description": "Thong tin service."
+          }
+        },
+        {
+          "name": "Swagger UI (mo trinh duyet)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{recoBaseUrl}}/docs",
+            "description": "Mo Swagger FastAPI trong Postman Preview hoac trinh duyet."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Train model",
+      "item": [
+        {
+          "name": "Retrain Model",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{recoBaseUrl}}/api/retrain",
+            "description": "Train KNNBaseline tu rating MySQL, luu models/reco_model.pkl.\nBat buoc chay thanh cong neu chua co model truoc khi Recommend."
+          }
+        },
+        {
+          "name": "Retrain qua Gateway",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gatewayBaseUrl}}/api/retrain",
+            "description": "Cung retrain nhung di qua API Gateway (route reco-service). Can Eureka + Gateway dang chay."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Goi y (reco-service truc tiep)",
+      "item": [
+        {
+          "name": "Recommend by userId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{recoBaseUrl}}/recommend/{{userId}}?top_k={{topK}}",
+              "host": ["{{recoBaseUrl}}"],
+              "path": ["recommend", "{{userId}}"],
+              "query": [
+                {
+                  "key": "top_k",
+                  "value": "{{topK}}"
+                }
+              ]
+            },
+            "description": "API goi y chinh.\nResponse: user_id, status, strategy, top_k, recommendations[{product_id, predicted_rating}].\nstrategy: item_knn_baseline | ...+purchase_fallback | popular_fallback | ..."
+          }
+        },
+        {
+          "name": "Recommend Explain (chi tiet cong thuc)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{recoBaseUrl}}/recommend_explain/{{userId}}?top_k={{topK}}",
+              "host": ["{{recoBaseUrl}}"],
+              "path": ["recommend_explain", "{{userId}}"],
+              "query": [
+                {
+                  "key": "top_k",
+                  "value": "{{topK}}"
+                }
+              ]
+            },
+            "description": "Giong recommend + giai giai baseline, residual, sim, numerator/denominator (dung cho bao cao / debug)."
+          }
+        },
+        {
+          "name": "Recommend - user khac (sua userId tren URL)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{recoBaseUrl}}/recommend/9003?top_k={{topK}}",
+              "host": ["{{recoBaseUrl}}"],
+              "path": ["recommend", "9003"],
+              "query": [
+                {
+                  "key": "top_k",
+                  "value": "{{topK}}"
+                }
+              ]
+            },
+            "description": "Vi du user fallback guest (9003) — thuong ra popular / purchase tuy data."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Goi y qua Gateway (BFF - giong Frontend)",
+      "item": [
+        {
+          "name": "GET /api/recommendations/user/{userId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gatewayBaseUrl}}/api/recommendations/user/{{userId}}",
+            "description": "Luong FE: Gateway → statistics-service → reco-service → enrich catalog.\nResponse ApiResponse: data[] thuong co id, name."
+          }
+        },
+        {
+          "name": "Recommend truc tiep qua Gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/recommend/{{userId}}?top_k={{topK}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["recommend", "{{userId}}"],
+              "query": [
+                {
+                  "key": "top_k",
+                  "value": "{{topK}}"
+                }
+              ]
+            },
+            "description": "Gateway route thang toi reco-service (khong qua BFF enrich)."
+          }
+        }
+      ]
+    }
+  ]
+}

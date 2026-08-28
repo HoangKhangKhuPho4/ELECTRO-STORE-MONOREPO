@@ -39,6 +39,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
+  overflow: visible;
 }
 
 /* Khu vực 3: Actions (Phải) */
@@ -47,6 +48,23 @@
   align-items: center;
   justify-content: flex-end;
   width: 100%;
+  gap: 16px;
+}
+
+.header-action-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.header-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: inherit;
 }
 
 /* Responsive Design for MUI */
@@ -146,6 +164,74 @@
   transition: all 0.3s ease;
 }
 
+/* Search bar — unified height & text alignment */
+.header-search-form {
+  align-items: stretch;
+  min-height: 48px;
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}
+
+.header-search-form .header-search-category .MuiOutlinedInput-root,
+.header-search-form .header-search-input .MuiOutlinedInput-root {
+  height: 48px;
+  min-height: 48px;
+}
+
+.header-search-form .header-search-category .MuiSelect-select {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 48px !important;
+  padding: 0 32px 0 16px !important;
+  line-height: 20px !important;
+  font-size: 14px !important;
+  color: #666 !important;
+}
+
+.header-search-form .header-search-input {
+  height: 48px;
+  overflow: visible;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-search-form .header-search-input .MuiOutlinedInput-root {
+  padding: 0 4px 0 0 !important;
+  align-items: center;
+  overflow: visible;
+}
+
+.header-search-form .header-search-input .MuiInputBase-input {
+  padding: 14px 16px !important;
+  height: auto !important;
+  min-height: 20px !important;
+  line-height: 20px !important;
+  font-size: 14px !important;
+  box-sizing: border-box;
+}
+
+.header-search-form .header-search-input .MuiInputBase-input::placeholder {
+  color: #999 !important;
+  opacity: 1 !important;
+  line-height: 20px !important;
+}
+
+.header-search-form .header-search-submit {
+  width: 56px;
+  min-width: 56px;
+  align-self: stretch;
+  margin: -2px -2px -2px 0;
+  height: auto;
+  min-height: calc(48px + 4px);
+  border-top-right-radius: 25px !important;
+  border-bottom-right-radius: 25px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
 /* Custom MUI overrides for search bar */
 .header-search .MuiFormControl-root .MuiSelect-select {
   color: #666 !important;
@@ -159,8 +245,15 @@
 
 /* Ensure proper spacing for icons */
 .header-actions .MuiIconButton-root {
+  width: 40px;
+  height: 40px;
   padding: 8px;
   color: #666 !important;
+}
+
+.header-actions .language-switcher__btn {
+  min-height: 40px !important;
+  height: 40px;
 }
 
 .header-actions .MuiIconButton-root:hover {

@@ -1,8 +1,9 @@
 import React from "react";
-import { Box, Typography, Chip } from "@mui/material";
-import { Dashboard as DashboardIcon, Timeline, WbSunny, NightsStay } from "@mui/icons-material";
+import { Box, Typography, Chip, useTheme } from "@mui/material";
+import { Dashboard as DashboardIcon, Timeline } from "@mui/icons-material";
 import AdminLayout from "../../components/Admin-Layout/AdminLayout";
 import AdminUserAvatar from "../../components/Admin-Layout/AdminUserAvatar";
+import AdminThemeToggle from "../../components/Admin-Layout/AdminThemeToggle";
 import AIControlPanel from "../../components/Admin-Layout/AIControlPanel";
 import StatisticsDashboard from "../../components/Admin-Statistics/StatisticsDashboard";
 import SalesStaffHomePage from "../Admin-Sales/SalesStaffHomePage";
@@ -17,6 +18,7 @@ import { getDisplayName, getPrimaryRoleInfo } from "../../utils/adminUserDisplay
  * Now powered by the high-performance StatisticsDashboard component.
  */
 const DashboardPage = () => {
+  const theme = useTheme();
   const { hasPermission, isWarehouseUser, isSalesUser, isAdminUser } = usePermissions();
   const isAdmin = hasPermission("REPORT_REVENUE");
   const isSales = hasPermission("REPORT_SALES");
@@ -31,15 +33,18 @@ const DashboardPage = () => {
   const isMorning = hours >= 5 && hours < 12;
   const isAfternoon = hours >= 12 && hours < 18;
   const greeting = isMorning ? "Chào buổi sáng" : isAfternoon ? "Chào buổi chiều" : "Chào buổi tối";
-  const GreetingIcon = isMorning || isAfternoon ? WbSunny : NightsStay;
+  const isDark = theme.palette.mode === "dark";
 
   return (
     <AdminLayout currentPage="Dashboard">
       <Box sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+        background: isDark
+          ? "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)"
+          : "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
         position: "relative",
-        pb: 8
+        pb: 8,
+        transition: "background 0.25s ease",
       }}>
 
 
@@ -50,19 +55,19 @@ const DashboardPage = () => {
               user={currentUser}
               size={50}
               sx={{
-                boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
-                border: "2px solid white",
+                boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.35)" : "0 8px 30px rgba(0,0,0,0.1)",
+                border: isDark ? "2px solid #334155" : "2px solid white",
               }}
             />
             <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.2 }}>
-                <GreetingIcon sx={{ color: isMorning || isAfternoon ? "#f59e0b" : "#6366f1", fontSize: 18 }} />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.2 }}>
+                <AdminThemeToggle />
                 <Typography variant="body2" color="text.secondary" fontWeight={800} sx={{ opacity: 0.8, letterSpacing: 0.2 }}>
                     {greeting},
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mb: 0.2 }}>
-                <Typography variant="h5" fontWeight={950} color="#1e293b" sx={{ letterSpacing: -0.5, lineHeight: 1.1 }}>
+                <Typography variant="h5" fontWeight={950} color="text.primary" sx={{ letterSpacing: -0.5, lineHeight: 1.1 }}>
                   {displayName}
                 </Typography>
                 <Chip

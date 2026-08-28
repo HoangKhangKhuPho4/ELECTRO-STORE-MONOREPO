@@ -99,22 +99,7 @@ import RTKQueryDemo from "./components/RTKQueryDemo";
 import { store } from "./redux/store";
 
 import ProtectedRoute from "./components/Auth/ProtectedRoute.jsx";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-
-const adminTheme = createTheme({
-  typography: {
-    fontFamily: '"Plus Jakarta Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: { fontWeight: 800 },
-    h2: { fontWeight: 800 },
-    h3: { fontWeight: 800 },
-    h4: { fontWeight: 800 },
-    h5: { fontWeight: 800 },
-    h6: { fontWeight: 800 },
-    subtitle1: { fontWeight: 600 },
-    subtitle2: { fontWeight: 700 },
-    button: { textTransform: "none", fontWeight: 700 }
-  }
-});
+import AdminThemeProvider from "./components/Admin-Layout/AdminThemeProvider.jsx";
 
 function App() {
   return (
@@ -143,7 +128,7 @@ function App() {
             <Route
               path="/admin/*"
               element={
-                <ThemeProvider theme={adminTheme}>
+                <AdminThemeProvider>
                   <ProtectedRoute requiredAny={["PRODUCT_VIEW", "CATEGORY_VIEW", "ORDER_VIEW_ALL", "INVENTORY_STAT", "USER_MANAGE", "CUSTOMER_VIEW", "BANNER_MANAGE", "POST_MANAGE", "REPORT_REVENUE", "REPORT_SALES", "WARRANTY_MANAGE", "IMEI_MANAGE", "STOCK_IMPORT", "STOCK_RETURN"]}>
                     <Routes>
                     <Route index element={<DashboardPage />} />
@@ -347,7 +332,7 @@ function App() {
                     <Route path="settings" element={<div>Admin Settings Page</div>} />
                     </Routes>
                   </ProtectedRoute>
-                </ThemeProvider>
+                </AdminThemeProvider>
               }
             />
 

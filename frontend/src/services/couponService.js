@@ -68,7 +68,17 @@ export const adminToggleCouponStatus = async (id) => {
 };
 
 /**
- * DELETE /api/admin/coupons/{id} - Soft delete
+ * GET /api/admin/coupons/stats - Summary statistics
+ */
+export const adminGetCouponStats = async () => {
+  const res = await httpClient.get(`${API}/admin/coupons/stats`, {
+    headers: getAuthHeader(),
+  });
+  return res.data?.data;
+};
+
+/**
+ * DELETE /api/admin/coupons/{id} - Delete (blocked if already used)
  */
 export const adminDeleteCoupon = async (id) => {
   const res = await httpClient.delete(`${API}/admin/coupons/${id}`, {

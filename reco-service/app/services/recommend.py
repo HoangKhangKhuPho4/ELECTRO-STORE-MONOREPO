@@ -5,14 +5,14 @@ from sqlalchemy.orm import Session
 
 from app.repositories.order_repository import fetch_user_purchases
 from app.schemas import (
-    BaselineUI,
+    BaselineUI, 
     CandidateExplanation,
     ExplanationTerm,
     RecommendExplainResponse,
     RecommendItem,
     RecommendResponse,
     RetrainResponse,
-)
+)    
 from app.services.model_store import load_model
 from app.services.train import train_model
 
@@ -70,6 +70,85 @@ def _baseline_ui(algo: Any, inner_uid: int, inner_iid: int, global_mean: float) 
     return BaselineUI(mu=mu, bu=bu, bi=bi, b_ui=mu + bu + bi)
 
 
+def item_based_knn_baseline_predict_single(
+    algo: Any,
+    trainset: Any,
+    inner_uid: int,
+    raw_iid: int,
+    k: int = 40,
+) -> float:
+    global_mean = float(trainset.global_mean)
+    
+    try:
+        inner_iid = trainset.to_inner_iid(raw_iid)
+    except ValueError:
+        bu = _get_bu(algo, inner_uid)
+        return _clip(global_mean + bu)
+
+    bu = _get_bu(algo, inner_uid)
+    bj = _get_bi(algo, inner_iid)
+    b_uj = global_mean + bu + bj
+
+    try:
+        user_ratings = trainset.ur[inner_uid]
+    except (IndexError, KeyError):
+        return _clip(b_uj)
+
+    rated_dict = {iid: r for iid, r in user_ratings}
+    neighbors = algo.get_neighbors(inner_iid, k=k)
+    
+    numerator = 0.0
+    denominator = 0.0
+
+    for neighbor_iid in neighbors:
+        if neighbor_iid not in rated_dict:
+            continue
+
+        sim_ji = float(algo.sim[inner_iid, neighbor_iid])
+
+        if sim_ji <= 0:
+            continue
+
+        r_ui = float(rated_dict[neighbor_iid])
+        bi_neighbor = _get_bi(algo, neighbor_iid)
+        b_ui = global_mean + bu + bi_neighbor
+        residual = r_ui - b_ui
+
+        numerator += sim_ji * residual
+        denominator += sim_ji
+
+    if denominator > 0:
+        est = b_uj + (numerator / denominator)
+    else:
+        est = b_uj
+
+    return _clip(est)   
+
+
+def item_based_knn_baseline_predict(
+    algo: Any,
+    trainset: Any,
+    inner_uid: int,
+    k: int = 40,
+) -> list[tuple[int, float]]:   
+    try:
+        rated_set = {iid for iid, _ in trainset.ur[inner_uid]}
+    except (IndexError, KeyError):
+        return []
+
+    predictions = []
+    for inner_iid in trainset.all_items():
+        if inner_iid in rated_set:
+            continue
+        raw_iid = int(trainset.to_raw_iid(inner_iid))
+        est = item_based_knn_baseline_predict_single(algo, trainset, inner_uid, raw_iid, k=k)
+        predictions.append((raw_iid, round(est, 4)))
+
+    predictions.sort(key=lambda x: x[1], reverse=True)
+
+    return predictions
+
+
 def _purchased_inner_items(db: Session, trainset: Any, user_id: int) -> tuple[list[int], list[int]]:
     """Lấy product_id user đã mua (order_db), map sang inner id của trainset để làm seed.
     Trả về (purchases_raw, seed_items). Item không có trong model sẽ bị bỏ qua.
@@ -121,7 +200,6 @@ def _score_from_seeds(
     preds.sort(key=lambda x: x[1], reverse=True)
     return preds[:top_n]
 
-
 def _user_rated_raw_items(trainset: Any, user_id: int) -> tuple[set[int], bool]:
     """Kiểm tra user đã có rating trong model chưa.
     Trả về (tập product_id đã rate, user_known). False = cold-start (chưa từng đánh giá).
@@ -135,21 +213,47 @@ def _user_rated_raw_items(trainset: Any, user_id: int) -> tuple[set[int], bool]:
 
 
 def _recommend_known_user(
-    algo: Any, trainset: Any, user_id: int, rated_items: set[int], top_n: int
+    algo: Any,
+    trainset: Any,
+    user_id: int,
+    rated_items: set[int],
+    top_n: int,
+    neighbor_k: int = 100,
 ) -> list[RecommendItem]:
-    """User đã có rating: predict điểm các item chưa rate bằng algo.predict (KNNBaseline), lấy Top-N."""
-    candidates = [
-        int(trainset.to_raw_iid(iid))
-        for iid in trainset.all_items()
-        if int(trainset.to_raw_iid(iid)) not in rated_items
-    ]
+    """User đã có rating: thu hẹp ứng viên theo neighbor của item đã rate, rồi ước điểm
+    bằng item_based_knn_baseline_predict_single (thay cho algo.predict / cộng điểm qua sim).
+    """
+    try:
+        inner_uid = trainset.to_inner_uid(user_id)
+        rated_items_inner = list(trainset.ur[inner_uid])
+    except ValueError:
+        return []
 
-    preds = [(pid, float(algo.predict(user_id, pid).est)) for pid in candidates]
-    preds.sort(key=lambda x: x[1], reverse=True)
+    if not rated_items_inner:
+        return []
+
+    rated_items_set = {iid for iid, _ in rated_items_inner}
+
+    # Ứng viên = union láng giềng của các item đã rate (loại item đã rate)
+    candidates: set[int] = set()
+    for i_cf, _ in rated_items_inner:
+        for j_cf in algo.get_neighbors(i_cf, k=neighbor_k):
+            if j_cf not in rated_items_set:
+                candidates.add(j_cf)
+
+    predictions: list[tuple[int, float]] = []
+    for j_cf in candidates:
+        raw_iid = int(trainset.to_raw_iid(j_cf))
+        est = item_based_knn_baseline_predict_single(
+            algo, trainset, inner_uid, raw_iid, k=neighbor_k
+        )
+        predictions.append((raw_iid, est))
+
+    predictions.sort(key=lambda x: x[1], reverse=True)
 
     return [
-        RecommendItem(product_id=pid, predicted_rating=round(est, 4))
-        for pid, est in preds[:top_n]
+        RecommendItem(product_id=pid, predicted_rating=round(float(est), 4))
+        for pid, est in predictions[:top_n]
     ]
 
 
@@ -194,7 +298,7 @@ def get_recommendations(db: Session, user_id: int, top_n: int = 10) -> Recommend
     rated_items, user_known = _user_rated_raw_items(trainset, user_id)
 
     if user_known:
-        # User đã có rating trong model → Item-based KNNBaseline
+        # User đã có rating → neighbor làm ứng viên, chấm điểm bằng predict tự viết
         recommendations = _recommend_known_user(algo, trainset, user_id, rated_items, top_n)
         strategy = "item_knn_baseline"
     else:
@@ -398,6 +502,26 @@ def get_recommendations_with_explanation(
         recommendations=recommendations,
         explanations=explanations,
     )
+
+
+def get_model_status() -> dict[str, Any]:
+    """Trạng thái mô hình gợi ý — dùng bởi Admin AIControlPanel."""
+    model = load_model()
+    if model is None:
+        return {
+            "model_loaded": False,
+            "is_training": False,
+            "total_users": 0,
+            "total_products": 0,
+            "trained_at": None,
+        }
+    return {
+        "model_loaded": True,
+        "is_training": False,
+        "total_users": model.n_users,
+        "total_products": model.n_items,
+        "trained_at": model.trained_at,
+    }
 
 
 def trigger_retrain(db: Session) -> RetrainResponse:

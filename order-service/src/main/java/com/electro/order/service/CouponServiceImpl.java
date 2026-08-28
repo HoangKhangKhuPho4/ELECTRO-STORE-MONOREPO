@@ -2,6 +2,8 @@ package com.electro.order.service;
 
 import com.electro.order.dto.CouponDto;
 import com.electro.order.entity.Coupon;
+import com.electro.order.exception.BadRequestException;
+import com.electro.order.exception.ResourceNotFoundException;
 import com.electro.order.repository.CouponRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -9,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,33 +33,81 @@ public class CouponServiceImpl implements CouponService {
     @Transactional(readOnly = true)
     public CouponDto.Response getCouponById(Integer id) {
         return couponRepository.findById(id).map(this::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Coupon not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", "id", id));
     }
 
     @Override
     public CouponDto.Response createCoupon(CouponDto.CreateRequest request) {
+        String code = request.getCode().trim().toUpperCase();
+        if (couponRepository.existsByCode(code)) {
+            throw new BadRequestException("Mã giảm giá đã tồn tại: " + code);
+        }
+
+        validateBusinessRules(
+                request.getDiscountType(),
+                request.getDiscountValue(),
+                request.getDateStart(),
+                request.getDateEnd(),
+                request.getUsageLimit());
+
         Coupon coupon = new Coupon();
         applyCreate(coupon, request);
+        coupon.setCode(code);
         return toResponse(couponRepository.save(coupon));
     }
 
     @Override
     public CouponDto.Response updateCoupon(Integer id, CouponDto.UpdateRequest request) {
         Coupon coupon = couponRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Coupon not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", "id", id));
+
+        String discountType = request.getDiscountType() != null
+                ? request.getDiscountType()
+                : (coupon.getDiscountType() != null ? coupon.getDiscountType().name() : null);
+        BigDecimal discountValue = request.getDiscountValue() != null
+                ? request.getDiscountValue()
+                : coupon.getDiscountValue();
+        LocalDateTime dateStart = request.getDateStart() != null
+                ? request.getDateStart()
+                : coupon.getDateStart();
+        LocalDateTime dateEnd = request.getDateEnd() != null
+                ? request.getDateEnd()
+                : coupon.getDateEnd();
+        Integer usageLimit = request.getUsageLimit() != null
+                ? request.getUsageLimit()
+                : coupon.getUsageLimit();
+
+        validateBusinessRules(discountType, discountValue, dateStart, dateEnd, usageLimit);
+
+        if (request.getCode() != null) {
+            String newCode = request.getCode().trim().toUpperCase();
+            if (!newCode.equals(coupon.getCode()) && couponRepository.existsByCode(newCode)) {
+                throw new BadRequestException("Mã giảm giá đã tồn tại: " + newCode);
+            }
+        }
+
         applyUpdate(coupon, request);
         return toResponse(couponRepository.save(coupon));
     }
 
     @Override
     public void deleteCoupon(Integer id) {
+        Coupon coupon = couponRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", "id", id));
+
+        if (coupon.getUsedCount() != null && coupon.getUsedCount() > 0) {
+            throw new BadRequestException(
+                    "Không thể xóa mã đã được sử dụng " + coupon.getUsedCount()
+                            + " lần. Hãy tắt mã thay vì xóa.");
+        }
+
         couponRepository.deleteById(id);
     }
 
     @Override
     public CouponDto.Response toggleActive(Integer id) {
         Coupon coupon = couponRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Coupon not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", "id", id));
         coupon.setIsActive(!Boolean.TRUE.equals(coupon.getIsActive()));
         return toResponse(couponRepository.save(coupon));
     }
@@ -67,6 +118,44 @@ public class CouponServiceImpl implements CouponService {
         return couponRepository.findActiveCoupons(LocalDateTime.now()).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CouponDto.StatsResponse getCouponStats() {
+        CouponDto.StatsResponse stats = new CouponDto.StatsResponse();
+        stats.setTotal(couponRepository.count());
+        stats.setActiveCount(couponRepository.countByIsActive(true));
+        stats.setInactiveCount(couponRepository.countByIsActive(false));
+        stats.setPercentCount(couponRepository.countByDiscountType(Coupon.DiscountType.PERCENT));
+        return stats;
+    }
+
+    private void validateBusinessRules(
+            String discountType,
+            BigDecimal discountValue,
+            LocalDateTime dateStart,
+            LocalDateTime dateEnd,
+            Integer usageLimit) {
+        if (discountValue == null || discountValue.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Giá trị giảm phải lớn hơn 0");
+        }
+
+        if ("PERCENT".equalsIgnoreCase(discountType) && discountValue.compareTo(new BigDecimal("100")) > 0) {
+            throw new BadRequestException("Giảm theo % không được vượt quá 100%");
+        }
+
+        if (dateStart == null || dateEnd == null) {
+            throw new BadRequestException("Ngày bắt đầu và ngày kết thúc là bắt buộc");
+        }
+
+        if (!dateStart.isBefore(dateEnd)) {
+            throw new BadRequestException("Ngày bắt đầu phải nhỏ hơn ngày kết thúc");
+        }
+
+        if (usageLimit != null && usageLimit <= 0) {
+            throw new BadRequestException("Giới hạn sử dụng phải lớn hơn 0");
+        }
     }
 
     private CouponDto.Response toResponse(Coupon c) {

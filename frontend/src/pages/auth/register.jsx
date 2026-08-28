@@ -66,7 +66,6 @@ const Register = () => {
   };
 
   return (
-    // THAY THẾ <section> VÀ CÁC <div> CONTAINER BẰNG BOX CỦA MUI
     <Box
       sx={{
         backgroundColor: "#eee",
@@ -78,26 +77,51 @@ const Register = () => {
       }}
     >
       <Box sx={{ width: "100%", maxWidth: 1100 }}>
-        <Card sx={{ borderRadius: 6, p: { xs: 2, md: 5 } }}>
+        <Card sx={{ borderRadius: 6, overflow: "hidden", p: 0 }}>
           <Box
             sx={{
               display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: "stretch",
             }}
           >
-            {/* Vùng Form */}
+            {/* Flash Sale — cột trái, lấp đầy chiều cao form */}
             <Box
               sx={{
-                width: { md: "45%", xs: "100%" },
-                order: { xs: 2, lg: 1 },
-                pr: { md: 3 },
+                position: "relative",
+                flex: { md: "0 0 48%" },
+                width: { xs: "100%", md: "48%" },
+                minHeight: { xs: 240, md: "auto" },
+                alignSelf: "stretch",
+              }}
+            >
+              <Box
+                component="img"
+                src="/images/register/flash-sale.jpg"
+                alt="Flash Sale"
+                sx={{
+                  position: { xs: "relative", md: "absolute" },
+                  inset: { md: 0 },
+                  width: "100%",
+                  height: { xs: 240, md: "100%" },
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            </Box>
+
+            {/* Form — cột phải */}
+            <Box
+              sx={{
+                flex: 1,
+                width: { xs: "100%", md: "52%" },
+                p: { xs: 3, md: 5 },
               }}
             >
               <Typography
                 variant="h4"
                 align="center"
-                sx={{ mb: 5, mt: 4, fontWeight: "bold" }}
+                sx={{ mb: 5, mt: { xs: 1, md: 2 }, fontWeight: "bold" }}
               >
                 {t("auth.registerTitle")}
               </Typography>
@@ -160,15 +184,7 @@ const Register = () => {
                   sx={{ mb: 4 }}
                 />
 
-                {/* Nút Đăng Ký */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    mx: 4,
-                    mb: 3,
-                  }}
-                >
+                <Box sx={{ mb: 3 }}>
                   <Button
                     type="submit"
                     variant="contained"
@@ -180,7 +196,6 @@ const Register = () => {
                   </Button>
                 </Box>
 
-                {/* Quay lại Login */}
                 <Box sx={{ textAlign: "center", mt: 3 }}>
                   <Typography variant="body2">
                     {t("auth.hasAccount")}{" "}
@@ -190,24 +205,6 @@ const Register = () => {
                   </Typography>
                 </Box>
               </form>
-            </Box>
-
-            {/* Vùng Hình ảnh */}
-            <Box
-              sx={{
-                width: { md: "45%", xs: "100%" },
-                order: { xs: 1, lg: 2 },
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: { xs: 3, md: 0 },
-              }}
-            >
-              <img
-                src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-registration/draw1.webp"
-                alt="Sample image"
-                style={{ maxWidth: "100%", height: "auto" }}
-              />
             </Box>
           </Box>
         </Card>

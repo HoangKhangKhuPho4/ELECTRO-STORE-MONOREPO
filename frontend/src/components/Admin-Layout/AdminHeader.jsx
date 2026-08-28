@@ -15,6 +15,7 @@ import {
   TextField, // <-- Thêm TextField
   Toolbar,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ import { selectUser, logout } from "../../redux/appSlice";
 import { clearAuthSession } from "../../utils/authSession";
 import { getDisplayName, getPrimaryRoleInfo } from "../../utils/adminUserDisplay";
 import AdminUserAvatar from "./AdminUserAvatar";
+import AdminThemeToggle from "./AdminThemeToggle";
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 80;
@@ -37,6 +39,7 @@ const AdminHeader = ({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUser = useSelector(selectUser);
+  const theme = useTheme();
   const displayName = getDisplayName(currentUser);
   const roleInfo = getPrimaryRoleInfo(currentUser);
 
@@ -72,9 +75,11 @@ const AdminHeader = ({
         left: 0,
         right: 0,
         top: 0,
-        background: "#FFFFFF",
-        color: "#555",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+        background: theme.palette.background.paper,
+        color: theme.palette.text.primary,
+        boxShadow: theme.palette.mode === "dark"
+          ? "0 1px 4px rgba(0,0,0,0.35)"
+          : "0 1px 4px rgba(0,0,0,0.1)",
         zIndex: (theme) => theme.zIndex.drawer + 1,
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
@@ -171,7 +176,8 @@ const AdminHeader = ({
             width: { xs: 200, sm: 300, md: sidebarCollapsed ? 400 : 300 }, // 🔥 Dynamic width dựa trên sidebar state
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
-              backgroundColor: "#f5f5f5",
+              backgroundColor: theme.palette.mode === "dark" ? "rgba(148,163,184,0.12)" : "#f5f5f5",
+              color: theme.palette.text.primary,
               "& fieldset": { border: "none" },
             },
           }}
@@ -184,6 +190,7 @@ const AdminHeader = ({
           }}
         />
         <Box sx={{ flexGrow: 1 }} />
+        <AdminThemeToggle sx={{ mr: 0.5 }} />
         <IconButton
           onClick={handleProfileMenuOpen}
           disableRipple
@@ -212,8 +219,8 @@ const AdminHeader = ({
           transformOrigin={{ vertical: "top", horizontal: "right" }}
           PaperProps={{ sx: { minWidth: 220, mt: 1 } }}
         >
-          <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid #f0f0f0" }}>
-            <Typography variant="subtitle2" fontWeight={800} color="#1e293b">
+          <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Typography variant="subtitle2" fontWeight={800} color="text.primary">
               {displayName}
             </Typography>
             <Typography variant="caption" color="text.secondary" fontWeight={600}>

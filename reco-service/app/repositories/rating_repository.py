@@ -20,10 +20,10 @@ def fetch_approved_ratings(db: Session) -> list[dict[str, Any]]:
     )
 
     return [
-        {
+        { 
             "user_id": int(user_id),
             "product_id": int(product_id),
             "rating": float(rating),
-        }
+        }  
         for user_id, product_id, rating in rows
     ]

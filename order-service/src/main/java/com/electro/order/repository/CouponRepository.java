@@ -28,4 +28,8 @@ public interface CouponRepository extends JpaRepository<Coupon, Integer> {
     Optional<Coupon> findActiveCouponByCode(String code, LocalDateTime now);
     
     boolean existsByCode(String code);
+
+    long countByIsActive(Boolean isActive);
+
+    long countByDiscountType(Coupon.DiscountType discountType);
 }

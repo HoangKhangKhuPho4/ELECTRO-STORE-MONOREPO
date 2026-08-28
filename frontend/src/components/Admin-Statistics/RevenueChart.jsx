@@ -1,6 +1,7 @@
 import { Box, Card, CardContent, Divider, Skeleton, Typography } from "@mui/material";
 import { Assessment } from "@mui/icons-material";
 import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
+import { DASHBOARD_CARD_CONTENT } from "./dashboardStyles";
 
 const RevenueChart = ({ data, loading }) => {
     if (loading) {
@@ -78,13 +79,13 @@ const RevenueChart = ({ data, loading }) => {
                 flexDirection: "column"
             }}
         >
-            <CardContent sx={{ p: 4, display: "flex", flexDirection: "column", flexGrow: 1, pb: "24px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+            <CardContent sx={{ ...DASHBOARD_CARD_CONTENT, display: "flex", flexDirection: "column", flexGrow: 1, pb: "20px !important" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
                     <Box>
-                        <Typography variant="h6" fontWeight={900} color="#1e293b">
+                        <Typography variant="h6" fontWeight={900} color="text.primary">
                             Biểu đồ Doanh thu
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.5 }}>
                             Phân tích xu hướng kinh doanh
                         </Typography>
                     </Box>
@@ -92,7 +93,7 @@ const RevenueChart = ({ data, loading }) => {
                         <Typography variant="h5" fontWeight={950} color="#3b82f6">
                             {formatCurrency(data?.totalRevenue || 0)}
                         </Typography>
-                        <Typography variant="caption" color="primary" fontWeight={800} sx={{ letterSpacing: 0.5, fontSize: "0.6rem" }}>
+                        <Typography variant="caption" color="primary" fontWeight={800} sx={{ letterSpacing: 0.4, fontSize: "0.75rem" }}>
                             TỔNG DOANH THU KỲ NÀY
                         </Typography>
                     </Box>

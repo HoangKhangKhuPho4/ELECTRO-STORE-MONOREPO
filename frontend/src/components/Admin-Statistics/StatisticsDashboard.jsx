@@ -73,6 +73,17 @@ import ConversionRateTable from "./ConversionRateTable";
 import CustomerSegmentsChart from "./CustomerSegmentsChart";
 import ActionKpiCards from "./ActionKpiCards";
 import CategoryRevenueChart from "./CategoryRevenueChart";
+import DashboardWidgetFilter, {
+    buildDefaultWidgetState,
+    loadWidgetState,
+} from "./DashboardWidgetFilter";
+import {
+    DASHBOARD_CARD_CONTENT,
+    DASHBOARD_SECTION_GAP,
+    DASHBOARD_TABLE_CELL,
+    DASHBOARD_TABLE_CELL_STRONG,
+    DASHBOARD_TABLE_HEAD,
+} from "./dashboardStyles";
 import { PLACEHOLDER_IMG } from "../../services/masterService";
 
 const resolveImageSrc = (url) => {
@@ -107,9 +118,23 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [toastOpen, setToastOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
+    const [visibleWidgets, setVisibleWidgets] = useState(loadWidgetState);
 
+    const toggleWidget = (widgetId) => {
+        setVisibleWidgets((prev) => {
+            const next = { ...prev, [widgetId]: !prev[widgetId] };
+            localStorage.setItem("dashboardWidgets", JSON.stringify(next));
+            return next;
+        });
+    };
 
+    const resetWidgets = () => {
+        const next = buildDefaultWidgetState();
+        setVisibleWidgets(next);
+        localStorage.setItem("dashboardWidgets", JSON.stringify(next));
+    };
 
+    const show = (id) => visibleWidgets[id] !== false;
     const formatCurrency = (val) =>
         val?.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) || "0 ₫";
 
@@ -281,14 +306,19 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
             >
                 <Box>
                     <Typography variant="h4" fontWeight="bold" gutterBottom>
-                        📊 Báo cáo Thống kê
+                        Báo cáo Thống kê
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
                         Dữ liệu kinh doanh thời gian thực
                     </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                    <DashboardWidgetFilter
+                        visibleWidgets={visibleWidgets}
+                        onToggle={toggleWidget}
+                        onReset={resetWidgets}
+                    />
                     {isAdmin && (
                         <Button
                             variant="outlined"
@@ -359,20 +389,21 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
                 </Box>
             </Box>
 
-            {/* Action KPIs — việc cần xử lý ngay */}
-            <Box sx={{ mb: 1 }}>
-                <Typography variant="subtitle2" fontWeight={800} color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            {show("actionKpis") && (
+            <Box sx={{ mb: DASHBOARD_SECTION_GAP }}>
+                <Typography variant="subtitle1" fontWeight={800} color="text.primary" sx={{ mb: 1.5 }}>
                     Cần xử lý
                 </Typography>
                 <ActionKpiCards data={actionKpis} loading={loading} />
             </Box>
+            )}
 
-            {/* KPI Cards — 4 columns, always side by side */}
+            {show("kpiCards") && (
             <Box sx={{ 
                 display: "grid", 
-                gridTemplateColumns: "repeat(4, 1fr)", 
-                gap: 3, 
-                mb: 3 
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+                gap: 2.5, 
+                mb: DASHBOARD_SECTION_GAP 
             }}>
                 <StatCard
                     title="Tổng doanh thu"
@@ -412,9 +443,10 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
                     loading={loading}
                 />
             </Box>
+            )}
 
-            {/* Charts Section — 2 charts side by side */}
-            <Box sx={{ display: "flex", gap: 3, mb: 3, alignItems: "stretch" }}>
+            {show("mainCharts") && (
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2.5, mb: DASHBOARD_SECTION_GAP, alignItems: "stretch" }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <RevenueChart data={revenueData} loading={loading} />
                 </Box>
@@ -422,9 +454,10 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
                     <OrderStatusChart data={orderStatusData} loading={loading} />
                 </Box>
             </Box>
+            )}
 
-            {/* Insights Section — top products + payment methods + category */}
-            <Box sx={{ display: "flex", gap: 3, mb: 3, alignItems: "stretch", flexWrap: "wrap" }}>
+            {show("insights") && (
+            <Box sx={{ display: "flex", gap: 2.5, mb: DASHBOARD_SECTION_GAP, alignItems: "stretch", flexWrap: "wrap" }}>
                 <Box sx={{ flex: { xs: "1 1 100%", lg: "1" }, minWidth: 0 }}>
                     <TopProductsCard data={bestSellingData} loading={loading} />
                 </Box>
@@ -437,10 +470,10 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
                     <PaymentMethodsBar data={paymentStats} loading={loading} />
                 </Box>
             </Box>
+            )}
 
-            {/* Customer Behavior Insights Section */}
-            {isAdmin && (
-                <Box sx={{ display: "flex", flexWrap: { xs: "wrap", md: "nowrap" }, gap: 3, mb: 3, alignItems: "stretch" }}>
+            {isAdmin && show("behavior") && (
+            <Box sx={{ display: "flex", flexWrap: { xs: "wrap", md: "nowrap" }, gap: 2.5, mb: DASHBOARD_SECTION_GAP, alignItems: "stretch" }}>
                     <Box sx={{ flex: { xs: "1 1 100%", md: "2" }, minWidth: 0 }}>
                         <ConversionRateTable data={conversionRateData} loading={loading} />
                     </Box>
@@ -450,8 +483,8 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
                 </Box>
             )}
 
-            {/* Advanced Tables Section — recent orders + low stock */}
-            <Box sx={{ display: "flex", gap: 3, alignItems: "stretch" }}>
+            {show("tables") && (
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 2.5, alignItems: "stretch" }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <RecentOrdersTable orders={recentOrders} loading={loading} />
                 </Box>
@@ -459,6 +492,7 @@ const StatisticsDashboard = ({ isAdmin = true, isSales = true }) => {
                     <LowStockAlerts data={lowStockData} loading={loading} />
                 </Box>
             </Box>
+            )}
 
             {/* Error Toast */}
             <Snackbar
@@ -513,7 +547,7 @@ const RecentOrdersTable = ({ orders, loading }) => {
                 label={config.label}
                 color={config.color}
                 size="small"
-                sx={{ fontWeight: 800, borderRadius: 2 }}
+                sx={{ fontWeight: 800, borderRadius: 2, fontSize: "0.8125rem", height: 26 }}
             />
         );
     };
@@ -531,9 +565,9 @@ const RecentOrdersTable = ({ orders, loading }) => {
                 flexDirection: "column"
             }}
         >
-            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                    <Typography variant="h6" fontWeight={900}>
+            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", ...DASHBOARD_CARD_CONTENT }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                    <Typography variant="h6" fontWeight={900} color="text.primary">
                         Đơn hàng gần đây
                     </Typography>
                     <Button
@@ -545,42 +579,44 @@ const RecentOrdersTable = ({ orders, loading }) => {
                     </Button>
                 </Box>
 
-                <TableContainer sx={{ minHeight: 400, overflowY: "auto", flexGrow: 1 }}>
-                    <Table size="small">
+                <TableContainer sx={{ minHeight: 360, overflowY: "auto", flexGrow: 1 }}>
+                    <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>Mã đơn</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>Khách hàng</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>Tổng tiền</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>Trạng thái</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>Ngày đặt</TableCell>
+                                <TableCell sx={DASHBOARD_TABLE_HEAD}>Mã đơn</TableCell>
+                                <TableCell sx={DASHBOARD_TABLE_HEAD}>Khách hàng</TableCell>
+                                <TableCell sx={DASHBOARD_TABLE_HEAD}>Tổng tiền</TableCell>
+                                <TableCell sx={DASHBOARD_TABLE_HEAD}>Trạng thái</TableCell>
+                                <TableCell sx={DASHBOARD_TABLE_HEAD}>Ngày đặt</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {loading
                                 ? Array.from(new Array(5)).map((_, i) => (
                                     <TableRow key={i}>
-                                        <TableCell colSpan={5} sx={{ py: 2 }} align="center">
+                                        <TableCell colSpan={5} sx={{ py: 2.5 }} align="center">
                                             <CircularProgress size={20} />
                                         </TableCell>
                                     </TableRow>
                                 ))
                                 : paginatedOrders.map((order, index) => (
                                     <TableRow key={order.orderId ? `${order.orderId}-${index}` : index} hover>
-                                        <TableCell sx={{ fontWeight: 700 }}>#{order.orderCode}</TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={700}>
+                                        <TableCell sx={{ ...DASHBOARD_TABLE_CELL, ...DASHBOARD_TABLE_CELL_STRONG }}>
+                                            #{order.orderCode}
+                                        </TableCell>
+                                        <TableCell sx={DASHBOARD_TABLE_CELL}>
+                                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.5 }}>
                                                 {order.customerName}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography sx={{ fontSize: "0.8125rem", color: "#475569", lineHeight: 1.5, mt: 0.25 }}>
                                                 {order.customerEmail}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: "primary.main" }}>
+                                        <TableCell sx={{ ...DASHBOARD_TABLE_CELL, fontWeight: 800, color: "primary.main" }}>
                                             {formatCurrency(order.totalAmount)}
                                         </TableCell>
-                                        <TableCell>{getStatusChip(order.status)}</TableCell>
-                                        <TableCell variant="caption">
+                                        <TableCell sx={DASHBOARD_TABLE_CELL}>{getStatusChip(order.status)}</TableCell>
+                                        <TableCell sx={{ ...DASHBOARD_TABLE_CELL, color: "#475569" }}>
                                             {new Date(order.orderDate).toLocaleDateString("vi-VN")}
                                         </TableCell>
                                     </TableRow>
@@ -601,7 +637,7 @@ const RecentOrdersTable = ({ orders, loading }) => {
                     <TablePagination
                         rowsPerPageOptions={[5, 10, 25]}
                         component="div"
-                        sx={{ mt: "auto", borderTop: "1px solid rgba(0,0,0,0.05)" }}
+                        sx={{ mt: "auto", borderTop: "1px solid rgba(0,0,0,0.05)", "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": { fontSize: "0.875rem" } }}
                         count={orders.length}
                         rowsPerPage={rowsPerPage}
                         page={page}
@@ -645,10 +681,10 @@ const LowStockAlerts = ({ data, loading }) => {
                 flexDirection: "column"
             }}
         >
-            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", ...DASHBOARD_CARD_CONTENT }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
                     <Inventory sx={{ color: "warning.main" }} />
-                    <Typography variant="h6" fontWeight={900}>
+                    <Typography variant="h6" fontWeight={900} color="text.primary">
                         Cảnh báo tồn kho
                     </Typography>
                 </Box>
@@ -656,8 +692,8 @@ const LowStockAlerts = ({ data, loading }) => {
                 <Box sx={{ 
                     display: "flex", 
                     flexDirection: "column", 
-                    gap: 1.5, 
-                    minHeight: 400, 
+                    gap: 1.25, 
+                    minHeight: 360, 
                     flexGrow: 1,
                     overflowY: "auto", 
                     pr: 1,
@@ -674,7 +710,7 @@ const LowStockAlerts = ({ data, loading }) => {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
-                                    p: 1.5,
+                                    p: 1.75,
                                     borderRadius: 3,
                                     bgcolor:
                                         product.status === "CRITICAL"
@@ -698,10 +734,12 @@ const LowStockAlerts = ({ data, loading }) => {
                                     />
                                     <Box>
                                         <Typography
-                                            variant="body2"
-                                            fontWeight={800}
                                             sx={{
-                                                maxWidth: 150,
+                                                fontSize: "0.875rem",
+                                                fontWeight: 800,
+                                                color: "#0f172a",
+                                                lineHeight: 1.55,
+                                                maxWidth: 180,
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
                                                 whiteSpace: "nowrap",
@@ -709,22 +747,24 @@ const LowStockAlerts = ({ data, loading }) => {
                                         >
                                             {product.productName}
                                         </Typography>
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography sx={{ fontSize: "0.8125rem", color: "#475569", lineHeight: 1.5 }}>
                                             {product.variantName}
                                         </Typography>
                                     </Box>
                                 </Box>
                                 <Box sx={{ textAlign: "right" }}>
                                     <Typography
-                                        variant="body2"
-                                        fontWeight={900}
-                                        color={
-                                            product.status === "CRITICAL"
-                                                ? "error.main"
-                                                : product.status === "OUT_OF_STOCK"
-                                                    ? "text.disabled"
-                                                    : "warning.main"
-                                        }
+                                        sx={{
+                                            fontSize: "0.875rem",
+                                            fontWeight: 900,
+                                            lineHeight: 1.5,
+                                            color:
+                                                product.status === "CRITICAL"
+                                                    ? "error.main"
+                                                    : product.status === "OUT_OF_STOCK"
+                                                        ? "text.disabled"
+                                                        : "warning.main",
+                                        }}
                                     >
                                         Tồn: {product.currentStock}
                                     </Typography>
@@ -738,9 +778,9 @@ const LowStockAlerts = ({ data, loading }) => {
                                         }
                                         size="small"
                                         sx={{
-                                            height: 18,
-                                            fontSize: "0.65rem",
-                                            fontWeight: 900,
+                                            height: 22,
+                                            fontSize: "0.75rem",
+                                            fontWeight: 800,
                                         }}
                                     />
                                 </Box>
@@ -756,7 +796,7 @@ const LowStockAlerts = ({ data, loading }) => {
                     <TablePagination
                         rowsPerPageOptions={[5, 10, 25]}
                         component="div"
-                        sx={{ mt: "auto", borderTop: "1px solid rgba(0,0,0,0.05)", pt: 1 }}
+                        sx={{ mt: "auto", borderTop: "1px solid rgba(0,0,0,0.05)", pt: 1, "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": { fontSize: "0.875rem" } }}
                         count={products.length}
                         rowsPerPage={rowsPerPage}
                         page={page}

@@ -13,13 +13,16 @@ import org.springframework.util.StringUtils;
 
 import java.net.URI;
 
+/**
+ * Khi dat STATISTICS_REDIS_URL — uu tien hon STATISTICS_REDIS_HOST/PORT.
+ */
 @Configuration
-@ConditionalOnProperty(name = "REDIS_URL")
+@ConditionalOnProperty(name = "STATISTICS_REDIS_URL")
 public class RedisUrlConfiguration {
 
     @Bean
     @Primary
-    public RedisConnectionFactory redisConnectionFactory(@Value("${REDIS_URL}") String redisUrl) {
+    public RedisConnectionFactory redisConnectionFactory(@Value("${STATISTICS_REDIS_URL}") String redisUrl) {
         URI uri = URI.create(redisUrl.trim());
         RedisStandaloneConfiguration standalone = new RedisStandaloneConfiguration();
         standalone.setHostName(uri.getHost());
