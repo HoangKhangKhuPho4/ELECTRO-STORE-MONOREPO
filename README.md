@@ -95,11 +95,36 @@ I am a passionate **Backend Software Engineer** specializing in **Microservices 
 
 ---
 
-<!-- More Information Details Myself -->
-<details open>
-<summary><b>🔥 GitHub Activity & Dev Stats</b>
-  <img align="center" src="https://visitor-badge.laobi.icu/badge?page_id=HoangKhangKhuPho4.visitor-badge">
-</summary> 
+## 📈 GitHub Activity Graph & Developer Metrics
+
+<div align="center">
+  <!-- Interactive Activity Graph Full-width -->
+  <a href="https://github.com/HoangKhangKhuPho4">
+    <img alt="HoangKhangKhuPho4's Activity Graph" src="https://github-readme-activity-graph.vercel.app/graph/?username=HoangKhangKhuPho4&bg_color=0d1117&color=00D2FF&line=00F2FE&point=FFFFFF&area=true&hide_border=true" width="100%"/>
+  </a>
+</div>
+
+<br/>
+
+<div align="center">
+  <!-- GitHub Streak Stats -->
+  <a href="https://github.com/HoangKhangKhuPho4">
+    <img title="GitHub Streak Stats" alt="HoangKhangKhuPho4's streak" src="https://streak-stats.demolab.com/?user=HoangKhangKhuPho4&theme=react&hide_border=true"/>
+  </a>
+</div>
+
+<br/>
+
+<div align="center">
+  <!-- Github Stats & Top Languages -->
+  <a href="https://github.com/HoangKhangKhuPho4">
+    <img alt="GitHub Stats" src="https://github-readme-stats.vercel.app/api?username=HoangKhangKhuPho4&show_icons=true&include_all_commits=true&count_private=true&theme=react&hide_border=true&title_color=00D2FF&icon_color=00F2FE" height="185px"/>
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/HoangKhangKhuPho4">
+    <img alt="Top Languages" src="https://github-readme-stats.vercel.app/api/top-langs/?username=HoangKhangKhuPho4&langs_count=8&layout=compact&theme=react&hide_border=true&title_color=00D2FF&icon_color=00F2FE" height="185px"/>
+  </a>
+</div>
 
 <br/>
 
@@ -129,32 +154,6 @@ I am a passionate **Backend Software Engineer** specializing in **Microservices 
   <img src="https://cultofthepartyparrot.com/parrots/hd/meldparrot.gif" width="25" height="25"/>
 </div>
 
-<br/>
-
-<div align="center">
-  <!-- GitHub Streak Stats -->
-  <a href="https://github.com/HoangKhangKhuPho4">
-    <img title="GitHub Streak Stats" alt="HoangKhangKhuPho4's streak" src="https://streak-stats.demolab.com/?user=HoangKhangKhuPho4&theme=react&hide_border=true"/>
-  </a>
-</div>
-
-<br/>
-
-<div align="center">
-  <!-- Github Stats & Top Languages -->
-  <a href="https://github.com/HoangKhangKhuPho4"><img alt="GitHub Stats" src="https://github-readme-stats.vercel.app/api?username=HoangKhangKhuPho4&show_icons=true&include_all_commits=true&count_private=true&theme=react&hide_border=true&title_color=00D2FF&icon_color=00F2FE" height="185px"/></a>
-  &nbsp;
-  <a href="https://github.com/HoangKhangKhuPho4"><img alt="Top Languages" src="https://github-readme-stats.vercel.app/api/top-langs/?username=HoangKhangKhuPho4&langs_count=8&layout=compact&theme=react&hide_border=true&title_color=00D2FF&icon_color=00F2FE" height="185px"/></a>
-</div>
-
-<br/>
-
-<div align="center">
-  <!-- Activity Graph -->
-  <a href="https://github.com/HoangKhangKhuPho4"><img alt="Activity Graph" src="https://github-readme-activity-graph.vercel.app/graph/?username=HoangKhangKhuPho4&theme=react-dark&hide_border=true" width="90%"/></a>
-</div>
-
-</details>
 
 ---
 
